@@ -1,0 +1,114 @@
+{
+    "name": "azure-deploy",
+    "displayName": "Deploy to Azure",
+    "description": "Generating CI/CD pipelines to Azure from GitHub Repo and Azure Repo",
+    "version": "1.0.0",
+    "publisher": "ms-azure-devops",
+    "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Microsoft/vscode-deploy-azure"
+    },
+    "homepage": "https://github.com/Microsoft/vscode-deploy-azure/blob/master/README.md",
+    "bugs": "https://github.com/Microsoft/vscode-deploy-azure/issues/",
+    "license": "MIT",
+    "icon": "assets/pipelines.png",
+    "galleryBanner": {
+        "color": "#D4DCEC",
+        "theme": "light"
+    },
+    "engines": {
+        "vscode": "^1.32.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Formatters",
+        "Azure"
+    ],
+    "tags": [
+        "azure-pipelines",
+        "Azure Pipelines",
+        "YAML"
+    ],
+    "keywords": [
+        "YAML",
+        "Azure Pipelines",
+        "continuous integration",
+        "CI/CD"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "configure-pipeline",
+                "title": "Configure Pipeline",
+                "category": "Azure Pipelines"
+            },
+            {
+                "command": "browse-pipeline",
+                "title": "Browse Pipeline",
+                "category": "Azure Pipelines"
+            }
+        ],
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "configure-pipeline",
+                    "group": "Azure Pipelines",
+                    "when": "explorerResourceIsFolder == true"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "browse-pipeline",
+                    "when": "never"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./ && node copyStaticFiles.js",
+        "watch": "node copyStaticFiles.js && tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "npm run compile && node ./node_modules/vscode/bin/test",
+        "unittest": "node_modules/.bin/mocha -u tdd out/unittest/*.js"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "4.0.5",
+        "@types/mocha": "5.2.5",
+        "@types/mustache": "0.8.32",
+        "@types/node": "7.0.43",
+        "@types/q": "1.5.0",
+        "@types/underscore": "1.8.9",
+        "ajv": "^6.9.1",
+        "assert": "1.4.1",
+        "mocha": "5.2.0",
+        "tslint": "5.8.0",
+        "ts-node": "7.0.1",
+        "typescript": "3.3.1",
+        "vscode": "1.1.33",
+        "vscode-azureextensiondev": "0.2.1"
+    },
+    "dependencies": {
+        "azure-arm-resource": "7.3.0",
+        "azure-arm-website": "5.7.0",
+        "mustache": "3.0.1",
+        "q": "1.5.1",
+        "shelljs": "^0.3.0",
+        "simple-git": "1.110.0",
+        "typed-rest-client": "1.0.7",
+        "underscore": "1.9.1",
+        "uuid": "^3.3.2",
+        "vscode-azureextensionui": "0.26.3",
+        "vscode-extension-telemetry": "0.0.18",
+        "vscode-nls": "3.2.4",
+        "vscode-uri": "1.0.6"
+    },
+    "extensionDependencies": [
+        "ms-vscode.azure-account"
+    ]
+}
