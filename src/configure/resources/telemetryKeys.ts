@@ -16,6 +16,7 @@ export class TelemetryKeys {
     public static ClickedConfigurePipeline = 'clickedConfigurePipeline';
     public static UpdatedWebAppMetadata = 'updatedWebAppMetadata';
     public static NewDevOpsRepository = 'newDevOpsRepository';
+    public static AzureLoginOption = 'azureLoginOption';
 
     public static resourceType = 'resourceType';
     public static resourceKind = 'resourceKind';
