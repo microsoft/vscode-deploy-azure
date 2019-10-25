@@ -30,16 +30,21 @@ export async function configurePipeline(node: AzureTreeItem) {
                 // set telemetry
                 telemetryHelper.setTelemetry(TelemetryKeys.AzureLoginRequired, 'true');
 
-                let signIn = await vscode.window.showInformationMessage(Messages.azureLoginRequired, Messages.signInLabel);
-                if (signIn && signIn.toLowerCase() === Messages.signInLabel.toLowerCase()) {
+                let loginOption = await vscode.window.showInformationMessage(Messages.azureLoginRequired, Messages.signInLabel, Messages.signUpLabel);
+                if (loginOption && loginOption.toLowerCase() === Messages.signInLabel.toLowerCase()) {
+                    telemetryHelper.setTelemetry(TelemetryKeys.AzureLoginOption, 'SignIn');
                     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.waitForAzureSignIn },
                         async () => {
                             await vscode.commands.executeCommand("azure-account.login");
                         });
                 }
+                else if (loginOption && loginOption.toLowerCase() === Messages.signUpLabel.toLowerCase()) {
+                    telemetryHelper.setTelemetry(TelemetryKeys.AzureLoginOption, 'SignUp');
+                    await vscode.commands.executeCommand("azure-account.createAccount");
+                    return;
+                }
                 else {
-                    let error = new Error(Messages.azureLoginRequired);
-                    telemetryHelper.setResult(Result.Failed, error);
+                    let error = new UserCancelledError(Messages.azureLoginRequired);
                     throw error;
                 }
             }
@@ -166,7 +171,7 @@ class Orchestrator {
                 this.workspacePath = selectedFolder[0].fsPath;
             }
             else {
-                throw new Error(Messages.noWorkSpaceSelectedError);
+                throw new UserCancelledError(Messages.noWorkSpaceSelectedError);
             }
         }
     }
@@ -254,6 +259,16 @@ class Orchestrator {
                 };
             }
             else {
+                let repositoryProvider: string = "Other";
+
+                if(remoteUrl.indexOf("bitbucket.org") >= 0) {
+                    repositoryProvider = "Bitbucket";
+                }
+                else if(remoteUrl.indexOf("gitlab.com") >= 0) {
+                    repositoryProvider = "GitLab";
+                }
+
+                telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, repositoryProvider);
                 throw new Error(Messages.cannotIdentifyRespositoryDetails);
             }
         }
@@ -290,14 +305,20 @@ class Orchestrator {
         );
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
-        let selectedOption = await this.controlProvider.showQuickPick(
-            constants.SelectPipelineTemplate,
-            appropriatePipelines.map((pipeline) => { return { label: pipeline.label }; }),
-            { placeHolder: Messages.selectPipelineTemplate },
-            TelemetryKeys.PipelineTempateListCount);
-        this.inputs.pipelineParameters.pipelineTemplate = appropriatePipelines.find((pipeline) => {
-            return pipeline.label === selectedOption.label;
-        });
+        if (appropriatePipelines.length > 1) {
+            let selectedOption = await this.controlProvider.showQuickPick(
+                constants.SelectPipelineTemplate,
+                appropriatePipelines.map((pipeline) => { return { label: pipeline.label }; }),
+                { placeHolder: Messages.selectPipelineTemplate },
+                TelemetryKeys.PipelineTempateListCount);
+            this.inputs.pipelineParameters.pipelineTemplate = appropriatePipelines.find((pipeline) => {
+                return pipeline.label === selectedOption.label;
+            });
+        }
+        else {
+            this.inputs.pipelineParameters.pipelineTemplate = appropriatePipelines[0];
+        }
+        
         telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineParameters.pipelineTemplate.label);
     }
 
