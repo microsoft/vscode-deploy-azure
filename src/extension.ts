@@ -32,7 +32,7 @@ export async function activate(context: vscode.ExtensionContext) {
 function registerUiVariables(context: vscode.ExtensionContext) {
     // Register ui extension variables is required to be done for telemetry to start flowing for extension activation and other events.
     // It also facilitates registering command and called events telemetry.
-    extensionVariables.outputChannel = vscode.window.createOutputChannel('Azure Pipelines');
+    extensionVariables.outputChannel = vscode.window.createOutputChannel('Deploy to Azure');
     context.subscriptions.push(extensionVariables.outputChannel);
     extensionVariables.context = context;
     extensionVariables.ui = new AzureUserInput(context.globalState);

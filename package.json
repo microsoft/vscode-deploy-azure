@@ -45,19 +45,19 @@
             {
                 "command": "configure-pipeline",
                 "title": "Configure Pipeline",
-                "category": "Azure Pipelines"
+                "category": "Deploy to Azure"
             },
             {
                 "command": "browse-pipeline",
                 "title": "Browse Pipeline",
-                "category": "Azure Pipelines"
+                "category": "Deploy to Azure"
             }
         ],
         "menus": {
             "explorer/context": [
                 {
                     "command": "configure-pipeline",
-                    "group": "Azure Pipelines",
+                    "group": "Deploy to Azure",
                     "when": "explorerResourceIsFolder == true"
                 }
             ],

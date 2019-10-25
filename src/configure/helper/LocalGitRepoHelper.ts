@@ -23,7 +23,7 @@ export class LocalGitRepoHelper {
 
         let gitFolderExists = fs.existsSync(path.join(repositoryPath, ".git"));
         telemetryHelper.setTelemetry(TelemetryKeys.GitFolderExists, gitFolderExists.toString());
-        
+
         return repoService;
     }
 
@@ -44,6 +44,10 @@ export class LocalGitRepoHelper {
         });
 
         return deferred.promise;
+    }
+
+    public static getTrimmedRemoteUrl(remoteUrl: string) {
+        return remoteUrl.endsWith('.git') ? remoteUrl.substr(0, remoteUrl.length - '.git'.length) : remoteUrl;
     }
 
     public async isGitRepository(): Promise<boolean> {
@@ -129,7 +133,7 @@ export class LocalGitRepoHelper {
     }
 
     public async initializeGitRepository(remoteName: string, remoteUrl: string, filesToExcludeRegex?: string): Promise<void> {
-        let isGitRepository = await this.isGitRepository()
+        let isGitRepository = await this.isGitRepository();
 
         if(!isGitRepository) {
             await this.gitReference.init();

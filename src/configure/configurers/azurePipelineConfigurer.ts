@@ -14,7 +14,7 @@ import { GraphHelper } from '../helper/graphHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TracePoints } from '../resources/tracePoints';
 import { UniqueResourceNameSuffix } from '../configure';
-import { AppServiceClient } from '../clients/azure/appServiceClient';
+import { AppServiceClient, ScmType } from '../clients/azure/appServiceClient';
 import { AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { Build } from '../model/azureDevOps';
@@ -235,7 +235,7 @@ export class AzurePipelineConfigurer implements Configurer {
         if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
             try {
                 // update SCM type
-                let updateScmPromise = (azureResourceClient as AppServiceClient).updateScmType(inputs.targetResource.resource.id);
+                let updateScmPromise = (azureResourceClient as AppServiceClient).updateScmType(inputs.targetResource.resource.id, ScmType.VSTSRM);
 
                 let buildDefinitionUrl = this.azureDevOpsClient.getOldFormatBuildDefinitionUrl(inputs.organizationName, inputs.project.id, this.queuedPipeline.definition.id);
                 let buildUrl = this.azureDevOpsClient.getOldFormatBuildUrl(inputs.organizationName, inputs.project.id, this.queuedPipeline.id);

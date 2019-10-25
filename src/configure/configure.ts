@@ -221,7 +221,7 @@ class Orchestrator {
                 repositoryId: '',
                 repositoryName: '',
                 repositoryProvider: RepositoryProvider.AzureRepos
-            }
+            };
     }
 
     private async getGitRepositoryParameters(gitRepositoryDetails: GitBranchDetails): Promise<GitRepositoryParameters> {

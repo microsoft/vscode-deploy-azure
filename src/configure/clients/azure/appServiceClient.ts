@@ -82,9 +82,9 @@ export class AppServiceClient extends AzureResourceClient {
         return this.webSiteManagementClient.webApps.getConfiguration(parsedResourceId.resourceGroup, parsedResourceId.resourceName);
     }
 
-    public async updateScmType(resourceId: string): Promise<SiteConfigResource> {
+    public async updateScmType(resourceId: string, scmType: ScmType): Promise<SiteConfigResource> {
         let siteConfig = await this.getAppServiceConfig(resourceId);
-        siteConfig.scmType = ScmType.VSTSRM;
+        siteConfig.scmType = scmType;
         let parsedResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(resourceId);
         return this.webSiteManagementClient.webApps.updateConfiguration(parsedResourceId.resourceGroup, parsedResourceId.resourceName, siteConfig);
     }
@@ -130,6 +130,7 @@ export class AppServiceClient extends AzureResourceClient {
 
 export enum ScmType {
     VSTSRM = 'VSTSRM',
+    GITHUBACTIONS = 'GithubActions',
     NONE = 'NONE'
 }
 

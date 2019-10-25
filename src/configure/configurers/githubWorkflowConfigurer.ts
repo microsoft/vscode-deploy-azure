@@ -2,16 +2,19 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as utils from 'util';
 import * as vscode from 'vscode';
+import { AzureResourceClient } from '../clients/azure/azureResourceClient';
+import { AppServiceClient, ScmType } from '../clients/azure/appServiceClient';
 import { Configurer } from "./configurerBase";
-import { WizardInputs, AzureSession, TargetResourceType } from "../model/models";
-import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
-import { Messages } from '../resources/messages';
-import { UserCancelledError } from 'vscode-azureextensionui';
-import { telemetryHelper } from '../helper/telemetryHelper';
-import { TelemetryKeys } from '../resources/telemetryKeys';
+import { AzureSession, TargetResourceType, WizardInputs } from "../model/models";
 import { ControlProvider } from '../helper/controlProvider';
 import { GraphHelper } from '../helper/graphHelper';
+import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
+import { telemetryHelper } from '../helper/telemetryHelper';
+import { Messages } from '../resources/messages';
+import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
+import { UserCancelledError } from 'vscode-azureextensionui';
+import Q = require('q');
 
 const Layer = 'GitHubWorkflowConfigurer';
 
@@ -105,7 +108,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 inputs.sourceRepository.commitId = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
                     try {
                         // handle when the branch is not upto date with remote branch and push fails
-                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineParameters.pipelineFilePath, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
+                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineParameters.pipelineFilePath, inputs.sourceRepository, Messages.addGitHubWorkflowYmlFile);
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);
@@ -128,8 +131,37 @@ export class GitHubWorkflowConfigurer implements Configurer {
         return this.queuedPipelineUrl;
     }
 
-    public async executePostPipelineCreationSteps(): Promise<void> {
-        return;
+    public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
+        if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
+            try {
+                // update SCM type
+                let updateScmPromise = (azureResourceClient as AppServiceClient).updateScmType(inputs.targetResource.resource.id, ScmType.GITHUBACTIONS);
+
+                // update metadata of app service to store information about the pipeline deploying to web app.
+                let updateMetadataPromise = new Promise<void>(async (resolve) => {
+                    let metadata = await (azureResourceClient as AppServiceClient).getAppServiceMetadata(inputs.targetResource.resource.id);
+                    metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
+                    metadata["properties"]["GithubActionSettingsRepoUrl"] = `${LocalGitRepoHelper.getTrimmedRemoteUrl(inputs.sourceRepository.remoteUrl)}`;
+                    metadata["properties"]["GithubActionSettingsBranch"] = `${inputs.sourceRepository.branch}`;
+                    metadata["properties"]["GithubActionSettingsConfigPath"] = `${path.relative(inputs.sourceRepository.localPath, inputs.pipelineParameters.pipelineFilePath)}`;
+
+                    (azureResourceClient as AppServiceClient).updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
+                    resolve();
+                });
+
+                Q.all([updateScmPromise, updateMetadataPromise])
+                    .then(() => {
+                        telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
+                    })
+                    .catch((error) => {
+                        telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'false');
+                        throw error;
+                    });
+            }
+            catch (error) {
+                telemetryHelper.logError(Layer, TracePoints.PostDeploymentActionFailed, error);
+            }
+        }
     }
 
     public async browseQueuedPipeline(): Promise<void> {
