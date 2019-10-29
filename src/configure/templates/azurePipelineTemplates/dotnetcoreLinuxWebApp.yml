@@ -17,16 +17,16 @@ variables:
   vmImageName: 'ubuntu-latest'
 
   # Working Directory
-  workingDirectory: '$(System.DefaultWorkingDirectory)'
+  workingDirectory: '{{{ pipelineParameters.workingDirectory }}}'
 
   # Build Configuration
   buildConfiguration: 'Release'
 
   # Build Projects
-  buildProjects: "**/*.csproj"
+  buildProjects: "$(workingDirectory)/**/*.csproj"
 
   # Test Projects
-  testProjects: "**/*[Tt]est*/*.csproj"
+  testProjects: "$(workingDirectory)/**/*[Tt]est*/*.csproj"
 
   # Dotnet Core Version
   dotnetCoreVersion: 2.x

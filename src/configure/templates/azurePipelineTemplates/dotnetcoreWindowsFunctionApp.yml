@@ -17,7 +17,7 @@ variables:
   vmImageName: 'vs2017-win2016'
 
   # Working Directory
-  workingDirectory: '$(System.DefaultWorkingDirectory)'
+  workingDirectory: '{{{ pipelineParameters.workingDirectory }}}'
 
 stages:
 - stage: Build

@@ -16,6 +16,9 @@ variables:
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
 
+  # Working Directory
+  workingDirectory: '{{{ pipelineParameters.workingDirectory }}}'
+
 stages:
 - stage: Build
   displayName: Build stage
@@ -37,16 +40,19 @@ stages:
             dotnet build extensions.csproj --runtime ubuntu.16.04-x64 --output ./bin
         fi
       displayName: 'Build extensions'
+      workingDirectory: $(workingDirectory)
+
     - script: |
         npm install
         npm run build --if-present
         npm run test --if-present
       displayName: 'Prepare binaries'
+      workingDirectory: $(workingDirectory)
       
     - task: ArchiveFiles@2
       displayName: 'Archive files'
       inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        rootFolderOrFile: '$(workingDirectory)'
         includeRootFolder: false
         archiveType: zip
         archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
