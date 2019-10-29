@@ -204,8 +204,7 @@ class Orchestrator {
 
             // Set working directory relative to repository root
             let gitRootDir = await this.localGitRepoHelper.getGitRootDirectory();
-            var pathObjs = path.relative(gitRootDir, this.workspacePath).split(path.sep);
-            this.inputs.pipelineParameters.workingDirectory = pathObjs.join('/'); 
+            this.inputs.pipelineParameters.workingDirectory = path.relative(gitRootDir, this.workspacePath).split(path.sep).join('/'); 
 
             this.inputs.sourceRepository = this.inputs.sourceRepository ? this.inputs.sourceRepository : await this.getGitRepositoryParameters(gitBranchDetails);
         }
@@ -319,7 +318,8 @@ class Orchestrator {
         else {
             this.inputs.pipelineParameters.pipelineTemplate = appropriatePipelines[0];
         }
-        
+
+        telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineParameters.pipelineTemplate.label);
 }
 
     private async getAzureResourceDetails(): Promise<void> {
