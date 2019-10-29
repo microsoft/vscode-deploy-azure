@@ -244,13 +244,6 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
 {
     'Microsoft.Web/sites-functionapp': [
         {
-            label: 'Python Function App to Linux Azure Function',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonLinuxFunctionApp.yml'),
-            language: 'python',
-            targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinux
-        },
-        {
             label: 'Node.js Function App to Windows Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWindowsFunctionApp.yml'),
             language: 'node',
@@ -277,6 +270,13 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             language: 'dotnet',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionAppLinux
-        }
+        },
+        {
+            label: 'Python Function App to Linux Azure Function',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonLinuxFunctionApp.yml'),
+            language: 'python',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.FunctionAppLinux
+        },
     ]
 }
