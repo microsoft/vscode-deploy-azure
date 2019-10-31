@@ -19,6 +19,9 @@ variables:
   # Working Directory
   workingDirectory: '{{{ pipelineParameters.workingDirectory }}}'
 
+  # Python Version
+  pythonVersion: 3.6 # Functions V2 supports Python 3.6 as of today
+
 stages:
 - stage: Build
   displayName: Build stage
@@ -41,7 +44,7 @@ stages:
     - task: UsePythonVersion@0
       displayName: 'Use Python 3.6'
       inputs:
-        versionSpec: 3.6 # Functions V2 supports Python 3.6 as of today
+        versionSpec: $(pythonVersion)
 
     - bash: |
         python -m venv worker_venv
@@ -86,5 +89,5 @@ stages:
               appType: functionAppLinux
               appName: $(functionAppName)
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-              runtimeStack: 'DOCKER|microsoft/azure-functions-python3.6:2.0' 
+              runtimeStack: 'DOCKER|microsoft/azure-functions/python:2.0' 
               appSettings: '-FUNCTIONS_WORKER_RUNTIME python'

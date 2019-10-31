@@ -1,6 +1,6 @@
 # Node.js Function App to Linux on Azure
 # Build a Node.js function app and deploy it to Azure as a Linux function app.
-# Add steps that analyze code, save build artifacts, deploy, and more:
+# Add steps that build code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 trigger:
@@ -82,5 +82,5 @@ stages:
               appType: functionAppLinux
               appName: $(functionAppName)
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-              runtimeStack: 'DOCKER|microsoft/azure-functions-node8:2.0' 
+              runtimeStack: 'DOCKER|microsoft/azure-functions/node:2.0' 
               appSettings: '-FUNCTIONS_WORKER_RUNTIME node'
