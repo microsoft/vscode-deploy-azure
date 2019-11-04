@@ -7,7 +7,7 @@ import * as constants from '../resources/constants';
 import { AzureDevOpsClient } from "../clients/devOps/azureDevOpsClient";
 import { generateDevOpsOrganizationName, generateDevOpsProjectName } from '../helper/commonHelper';
 import { AzureDevOpsHelper } from "../helper/devOps/azureDevOpsHelper";
-import { TargetResourceType, WizardInputs, AzureSession } from "../model/models";
+import { TargetResourceType, WizardInputs, AzureSession, RepositoryProvider } from "../model/models";
 import { ServiceConnectionHelper } from '../helper/devOps/serviceConnectionHelper';
 import { Messages } from '../resources/messages';
 import { GraphHelper } from '../helper/graphHelper';
@@ -39,9 +39,19 @@ export class AzurePipelineConfigurer implements Configurer {
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
         try {
+            if(inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+                inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
+                    placeHolder: Messages.enterGitHubPat,
+                    prompt: Messages.githubPatTokenHelpMessage,
+                    validateInput: (inputValue) => {
+                        return !inputValue ? Messages.githubPatTokenErrorMessage : null;
+                    }
+                });
+            }
+
             inputs.isNewOrganization = false;
 
-            if (!inputs.sourceRepository.remoteUrl) {
+            if (!inputs.sourceRepository.remoteUrl || inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
                 let devOpsOrganizations = await this.azureDevOpsClient.listOrganizations();
 
                 if (devOpsOrganizations && devOpsOrganizations.length > 0) {
@@ -133,6 +143,26 @@ export class AzurePipelineConfigurer implements Configurer {
         }
 
         let serviceConnectionHelper = new ServiceConnectionHelper(inputs.organizationName, inputs.project.name, this.azureDevOpsClient);
+
+        if (inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+            // Create GitHub service connection in Azure DevOps
+            await vscode.window.withProgress(
+                {
+                    location: vscode.ProgressLocation.Notification,
+                    title: Messages.creatingGitHubServiceConnection
+                },
+                async () => {
+                    try {
+                        let serviceConnectionName = `${inputs.sourceRepository.repositoryName}-${UniqueResourceNameSuffix}`;
+                        inputs.sourceRepository.serviceConnectionId = await serviceConnectionHelper.createGitHubServiceConnection(serviceConnectionName, inputs.githubPATToken);
+                    }
+                    catch (error) {
+                        telemetryHelper.logError(Layer, TracePoints.GitHubServiceConnectionError, error);
+                        throw error;
+                    }
+                });
+        }
+
         // TODO: show notification while setup is being done.
         // ?? should SPN created be scoped to resource group of target azure resource.
         inputs.targetResource.serviceConnectionId = await vscode.window.withProgress(

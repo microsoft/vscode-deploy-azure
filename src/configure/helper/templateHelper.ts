@@ -1,4 +1,4 @@
-import { PipelineTemplate, WizardInputs, RepositoryProvider, TargetResourceType, WebAppKind } from '../model/models';
+import { PipelineTemplate, WizardInputs, RepositoryProvider, TargetResourceType, WebAppKind, extensionVariables } from '../model/models';
 import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
@@ -15,7 +15,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
             templateList = azurePipelineTemplates;
             break;
         case RepositoryProvider.Github:
-            templateList = githubWorklowTemplates;
+            templateList = extensionVariables.enableGitHubWorkflow ? githubWorklowTemplates : azurePipelineTemplates;
             break;
         default:
             throw new Error(Messages.cannotIdentifyRespositoryDetails);
