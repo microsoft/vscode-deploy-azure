@@ -8,11 +8,15 @@ import { Messages } from '../resources/messages';
 
 class ExtensionVariables implements UIExtensionVariables {
     public azureAccountExtensionApi: AzureAccountExtensionExports;
-
     public context: ExtensionContext;
     public outputChannel: OutputChannel;
     public reporter: ITelemetryReporter;
     public ui: IAzureUserInput;
+    public enableGitHubWorkflow: boolean;
+
+    constructor() {
+        this.enableGitHubWorkflow = false;
+    }
 }
 
 let extensionVariables = new ExtensionVariables();
@@ -33,6 +37,7 @@ export class WizardInputs {
     targetResource: AzureParameters = new AzureParameters();
     pipelineParameters: PipelineParameters = new PipelineParameters();
     azureSession: AzureSession;
+    githubPATToken?: string;
 }
 
 export interface DevOpsProject {
@@ -76,6 +81,7 @@ export interface GitRepositoryParameters {
     branch: string;
     commitId: string;
     localPath: string;
+    serviceConnectionId?: string; // Id of the service connection in Azure DevOps
 }
 
 export interface PipelineTemplate {
