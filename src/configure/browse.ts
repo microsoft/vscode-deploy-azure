@@ -27,13 +27,14 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
                     telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
                 }
                 else if (siteConfig.scmType === '' || siteConfig.scmType.toLowerCase() === ScmType.NONE.toLowerCase()) {
+                    let deployToAzureAction = 'Deploy to Azure';
                     let result = await controlProvider.showInformationBox(
                         constants.BrowseNotAvailableConfigurePipeline,
                         Messages.browseNotAvailableConfigurePipeline,
-                        'Configure Pipeline');
+                        deployToAzureAction);
 
-                    if (result === 'Configure Pipeline') {
-                        vscode.commands.executeCommand('configure-pipeline', node);
+                    if (result === deployToAzureAction) {
+                        vscode.commands.executeCommand('deploy-to-azure', node);
                         telemetryHelper.setTelemetry(TelemetryKeys.ClickedConfigurePipeline, 'true');
                     }
                 }
