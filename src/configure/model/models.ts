@@ -111,6 +111,7 @@ export enum WebAppKind {
     WindowsApp = 'app',
     FunctionApp = 'functionapp',
     FunctionAppLinux = 'functionapp,linux',
+    FunctionAppLinuxContainer = 'functionapp,linux,container',
     LinuxApp = 'app,linux',
     LinuxContainerApp = 'app,linux,container'
 }
