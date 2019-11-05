@@ -195,13 +195,6 @@ export class AzurePipelineConfigurer implements Configurer {
         let initializeGitRepository = !inputs.sourceRepository.remoteUrl;
 
         if (!inputs.sourceRepository.remoteUrl) {
-            let repositoryName = path.basename(inputs.sourceRepository.localPath).trim().replace(/[^a-zA-Z0-9-]/g, '');
-            repositoryName = !!repositoryName ? repositoryName : "codetoazure";
-            let repository = await this.azureDevOpsClient.createRepository(inputs.organizationName, inputs.project.id, repositoryName);
-
-            inputs.sourceRepository.repositoryName = repository.name;
-            inputs.sourceRepository.repositoryId = repository.id;
-            inputs.sourceRepository.remoteUrl = repository.remoteUrl;
             commitMessage = Messages.modifyAndCommitFileWithGitInitialization;
             telemetryHelper.setTelemetry(TelemetryKeys.NewDevOpsRepository, 'true');
         }
@@ -219,6 +212,15 @@ export class AzurePipelineConfigurer implements Configurer {
             if (!!commitOrDiscard && commitOrDiscard.toLowerCase() === Messages.commitAndPush.toLowerCase()) {
                 inputs.sourceRepository.commitId = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
                     try {
+                        if (!inputs.sourceRepository.remoteUrl) {
+                            let repositoryName = path.basename(inputs.sourceRepository.localPath).trim().replace(/[^a-zA-Z0-9-]/g, '');
+                            repositoryName = !!repositoryName ? repositoryName : "codetoazure";
+                            let repository = await this.azureDevOpsClient.createRepository(inputs.organizationName, inputs.project.id, repositoryName);
+                            inputs.sourceRepository.repositoryName = repository.name;
+                            inputs.sourceRepository.repositoryId = repository.id;
+                            inputs.sourceRepository.remoteUrl = repository.remoteUrl;
+                        }
+
                         if (initializeGitRepository) {
                             await localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl, inputs.pipelineParameters.pipelineFilePath);
 
