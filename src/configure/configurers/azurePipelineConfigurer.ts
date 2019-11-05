@@ -132,6 +132,10 @@ export class AzurePipelineConfigurer implements Configurer {
                 });
         }
 
+        if(!inputs.targetResource.resource) {
+            return;
+        }
+        
         let serviceConnectionHelper = new ServiceConnectionHelper(inputs.organizationName, inputs.project.name, this.azureDevOpsClient);
         // TODO: show notification while setup is being done.
         // ?? should SPN created be scoped to resource group of target azure resource.
@@ -219,7 +223,7 @@ export class AzurePipelineConfigurer implements Configurer {
     public async createAndQueuePipeline(inputs: WizardInputs): Promise<string> {
         this.queuedPipeline = await vscode.window.withProgress<Build>({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
             try {
-                let pipelineName = `${inputs.targetResource.resource.name}-${UniqueResourceNameSuffix}`;
+                let pipelineName = `${(inputs.targetResource.resource ? inputs.targetResource.resource.name : inputs.pipelineParameters.pipelineTemplate.label)}-${UniqueResourceNameSuffix}`;
                 return await this.azureDevOpsHelper.createAndRunPipeline(pipelineName, inputs);
             }
             catch (error) {
