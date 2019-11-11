@@ -1,5 +1,5 @@
-# Node.js Function App to Linux on Azure
-# Build a Node.js function app and deploy it to Azure as a Linux function app.
+# Node.js Function App to Windows on Azure
+# Build a Node.js function app and deploy it to Azure as a Windows function app.
 # Add steps that build code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
@@ -14,7 +14,7 @@ variables:
   functionAppName: '{{{ targetResource.resource.name }}}'
 
   # Agent VM image name
-  vmImageName: 'ubuntu-latest'
+  vmImageName: 'vs2017-win2016'
 
   # Working Directory
   workingDirectory: '{{{ pipelineParameters.workingDirectory }}}'
@@ -34,11 +34,10 @@ stages:
         versionSpec: '10.x'
       displayName: 'Install Node.js'
 
-    - script: |
-        if [ -f extensions.csproj ]
-        then
-            dotnet build extensions.csproj --runtime ubuntu.16.04-x64 --output ./bin
-        fi
+    - powershell: |
+        if (Test-Path "extensions.csproj") {
+            dotnet build extensions.csproj --output ./bin
+        }
       displayName: 'Build extensions'
       workingDirectory: $(workingDirectory)
 
@@ -79,8 +78,6 @@ stages:
             displayName: 'Azure Functions App Deploy: {{ functionAppName }}'
             inputs:
               azureSubscription: '$(azureSubscription)'
-              appType: functionAppLinux
+              appType: functionApp
               appName: $(functionAppName)
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-              runtimeStack: 'DOCKER|microsoft/azure-functions/node:2.0' 
-              appSettings: '-FUNCTIONS_WORKER_RUNTIME node'

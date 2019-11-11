@@ -34,11 +34,16 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
                     templateResult = templateResult.concat(templateList[SupportedLanguage.PYTHON]);
                 }
                 break;
+            case SupportedLanguage.DOTNETCORE:
+                if (templateList[SupportedLanguage.DOTNETCORE] && templateList[SupportedLanguage.DOTNETCORE].length > 0 ) {
+                    templateResult = templateResult.concat(templateList[SupportedLanguage.DOTNETCORE]);
+                }
+                break;
             case SupportedLanguage.NONE:
-                    if (templateList[SupportedLanguage.NONE] && templateList[SupportedLanguage.NONE].length > 0) {
-                        templateResult = templateResult.concat(templateList[SupportedLanguage.NONE]);
-                    }
-                    break;
+                if (templateList[SupportedLanguage.NONE] && templateList[SupportedLanguage.NONE].length > 0) {
+                    templateResult = templateResult.concat(templateList[SupportedLanguage.NONE]);
+                }
+                break;    
             default:
                 break;
         }
@@ -79,6 +84,7 @@ async function analyzeRepo(repoPath: string): Promise<AnalysisResult> {
         result.languages = [];
         result.languages = isNodeRepo(files) ? result.languages.concat(SupportedLanguage.NODE) : result.languages;
         result.languages = isPythonRepo(files) ? result.languages.concat(SupportedLanguage.PYTHON) : result.languages;
+        result.languages = isDotnetCoreRepo(files) ? result.languages.concat(SupportedLanguage.DOTNETCORE) : result.languages;
         result.languages = result.languages.concat(SupportedLanguage.NONE);
 
         result.isFunctionApp = err ? true : isFunctionApp(files),
@@ -87,6 +93,12 @@ async function analyzeRepo(repoPath: string): Promise<AnalysisResult> {
     });
 
     return deferred.promise;
+}
+
+function isDotnetCoreRepo(files: string[]): boolean {
+    return files.some((file) => {
+        return file.toLowerCase().endsWith("sln") || file.toLowerCase().endsWith("csproj") || file.toLowerCase().endsWith("fsproj"); 
+    })
 }
 
 function isNodeRepo(files: string[]): boolean {
@@ -118,9 +130,10 @@ export class AnalysisResult {
 }
 
 export enum SupportedLanguage {
-    NODE = 'node',
     NONE = 'none',
-    PYTHON = 'python'
+    NODE = 'node',
+    PYTHON = 'python',
+    DOTNETCORE = 'dotnetcore'
 }
 
 let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
@@ -186,6 +199,22 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             targetType: TargetResourceType.None,
             targetKind: null
         }
+    ],
+    'dotnetcore': [
+        {
+            label: '.NET Core Web App to Windows on Azure',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreWindowsWebApp.yml'),
+            language: 'dotnetcore',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp
+        },
+        {
+            label: '.NET Core Web App to Linux on Azure',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreLinuxWebApp.yml'),
+            language: 'dotnetcore',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp
+        }
     ]
 };
 
@@ -207,18 +236,19 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
         }
     ],
     'none': [],
-    'python': []
+    'python': [],
+    'dotnetcore': []
 };
 
 const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
 {
     'Microsoft.Web/sites-functionapp': [
         {
-            label: 'Python Function App to Linux Azure Function',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonLinuxFunctionApp.yml'),
-            language: 'python',
+            label: 'Node.js Function App to Windows Azure Function',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWindowsFunctionApp.yml'),
+            language: 'node',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinux
+            targetKind: WebAppKind.FunctionApp
         },
         {
             label: 'Node.js Function App to Linux Azure Function',
@@ -233,6 +263,20 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             language: 'dotnet',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionApp
+        },    
+        {
+            label: '.NET Core Function App to Linux Azure Function',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreLinuxFunctionApp.yml'),
+            language: 'dotnet',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.FunctionAppLinux
+        },
+        {
+            label: 'Python Function App to Linux Azure Function',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonLinuxFunctionApp.yml'),
+            language: 'python',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.FunctionAppLinux
         },
     ]
 }

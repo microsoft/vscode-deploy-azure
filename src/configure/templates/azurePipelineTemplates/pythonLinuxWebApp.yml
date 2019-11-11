@@ -20,10 +20,7 @@ variables:
   environmentName: '{{{ targetResource.resource.name }}}'
 
   # Project root folder. Point to the folder containing manage.py file.
-  projectRoot: $(System.DefaultWorkingDirectory)
-  
-  # Python version: 3.7
-  pythonVersion: '3.7'
+  projectRoot: '{{{ pipelineParameters.workingDirectory }}}'
 
 stages:
 - stage: Build
@@ -35,8 +32,8 @@ stages:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '$(pythonVersion)'
-      displayName: 'Use Python $(pythonVersion)'
+        versionSpec: '3.7'
+      displayName: 'Use Python 3.7'
     
     - script: |
         python -m venv antenv
@@ -76,12 +73,14 @@ stages:
           
           - task: UsePythonVersion@0
             inputs:
-              versionSpec: '$(pythonVersion)'
-            displayName: 'Use Python version'
+              versionSpec: '3.7'
+            displayName: 'Use Python 3.7'
 
           - task: AzureWebApp@1
             displayName: 'Deploy Azure Web App : {{ webAppName }}'
             inputs:
               azureSubscription: $(azureServiceConnectionId)
               appName: $(webAppName)
+              appType: webAppLinux
               package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
+              runtimeStack: 'PYTHON|3.7' 
