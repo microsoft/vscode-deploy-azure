@@ -21,9 +21,6 @@ variables:
 
   # Project root folder. Point to the folder containing manage.py file.
   projectRoot: '{{{ pipelineParameters.workingDirectory }}}'
-  
-  # Python version: 3.7
-  pythonVersion: '3.7'
 
 stages:
 - stage: Build
@@ -35,8 +32,8 @@ stages:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '$(pythonVersion)'
-      displayName: 'Use Python $(pythonVersion)'
+        versionSpec: '3.7'
+      displayName: 'Use Python 3.7'
     
     - script: |
         python -m venv antenv
@@ -76,8 +73,8 @@ stages:
           
           - task: UsePythonVersion@0
             inputs:
-              versionSpec: '$(pythonVersion)'
-            displayName: 'Use Python version'
+              versionSpec: '3.7'
+            displayName: 'Use Python 3.7'
 
           - task: AzureWebApp@1
             displayName: 'Deploy Azure Web App : {{ webAppName }}'
