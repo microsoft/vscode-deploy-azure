@@ -1,0 +1,37 @@
+on:
+  push:
+    branches:
+      - {{{ sourceRepository.branch }}}
+
+name: Build and deploy Python Function app
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    # checkout the repo
+    - uses: actions/checkout@master
+
+    - uses: azure/login@v1
+      with:
+        creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
+
+    - name: 'Run pip'
+      shell: bash
+      run: |
+        # If your function app project is not located in your repository's root
+        # Please change your directory for pip in pushd
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt --target=".python_packages/lib/python3.6/site-packages"
+
+    # deploy web app using publish profile credentials
+    - name: 'Run Azure Functions Action'
+      uses: Azure/functions-action@v1
+      id: fa
+      with:
+        app-name: {{{ targetResource.resource.name }}}
+
+    # Azure logout
+    - name: logout
+      run: |
+        az logout

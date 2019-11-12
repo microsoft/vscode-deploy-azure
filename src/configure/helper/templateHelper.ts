@@ -53,8 +53,17 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
         templateResult = templateList[SupportedLanguage.NONE];
     }
 
-    if (analysisResult.isFunctionApp && azurePipelineTargetBasedTemplates[`${TargetResourceType.WebApp}-${WebAppKind.FunctionApp}`]) {
-        templateResult = azurePipelineTargetBasedTemplates[`${TargetResourceType.WebApp}-${WebAppKind.FunctionApp}`].concat(templateResult);
+    if(analysisResult.isFunctionApp) {
+        switch(repositoryProvider) {
+            case RepositoryProvider.AzureRepos:
+                templateResult = templateResult.concat(azurePipelineTargetBasedTemplates['Microsoft.Web/sites-functionapp']);
+                break;
+            case RepositoryProvider.Github:
+                templateResult = templateResult.concat(githubWorkflowTargetBasedTemplates['Microsoft.Web/sites-functionapp']);
+                break;
+            default:
+                break;
+        }
     }
 
     templateResult = targetResource && !!targetResource.type ? templateResult.filter((template) => !template.targetType || template.targetType.toLowerCase() === targetResource.type.toLowerCase()) : templateResult;
@@ -280,3 +289,30 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
         },
     ]
 }
+
+const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } = 
+{
+    'Microsoft.Web/sites-functionapp': [
+        {
+            label: 'Node.js Function App to Windows Azure Function',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWindowsFunctionApp.yml'),
+            language: 'node',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.FunctionApp
+        },
+        {
+            label: 'Node.js Function App to Linux Azure Function',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsLinuxFunctionApp.yml'),
+            language: 'node',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.FunctionAppLinux
+        },
+        {
+            label: 'Python Function App to Linux Azure Function',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/pythonLinuxFunctionApp.yml'),
+            language: 'python',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.FunctionAppLinux
+        }
+    ]
+} 
