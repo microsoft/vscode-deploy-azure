@@ -236,8 +236,31 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
         }
     ],
     'none': [],
-    'python': [],
-    'dotnetcore': []
+    'python': [
+        {
+            label: 'Python to Linux Web App on Azure',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/pythonLinuxWebApp.yml'),
+            language: 'python',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp
+        },
+    ],
+    'dotnetcore': [
+        {
+            label: '.NET Core Web App to Windows on Azure',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/dotnetcoreWindowsWebApp.yml'),
+            language: 'dotnetcore',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp
+        },
+        {
+            label: '.NET Core Web App to Linux on Azure',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/dotnetcoreLinuxWebApp.yml'),
+            language: 'dotnetcore',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp
+        }
+    ]
 };
 
 const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =

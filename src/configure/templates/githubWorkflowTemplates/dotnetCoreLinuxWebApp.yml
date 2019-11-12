@@ -1,0 +1,40 @@
+name: ASP.NET Core CI
+
+on:
+  push:
+    branches:
+      - {{{ sourceRepository.branch }}}
+
+jobs:
+  build_and_test:
+    runs-on: 'ubuntu-latest'
+    
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.0.100
+    
+    - name: Build with dotnet
+      run: dotnet build SampleWebProject.csproj --configuration Release 
+
+    - name: Publish with dotnet
+      run: dotnet publish SampleWebProject.csproj --configuration Release --output publish_output/
+
+    # Azure login
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }} # Define secret variable in repository settings as per action documentation
+        
+    # deploy web app
+    - uses: azure/webapps-deploy@v1
+      with: 
+        app-name: {{{ targetResource.resource.name }}}  # Replace with your app name
+        package: './publish_output/SampleWebProject.zip'
+
+    # Azure logout 
+    - name: logout
+      run: |
+        az logout
