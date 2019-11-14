@@ -28,7 +28,7 @@ jobs:
     - name: python install
       run: |
         sudo apt install python3.7-venv
-        python -m venv antenv
+        python -m venv --copies antenv
         source antenv/bin/activate
         pip install setuptools
         pip install -r requirements.txt

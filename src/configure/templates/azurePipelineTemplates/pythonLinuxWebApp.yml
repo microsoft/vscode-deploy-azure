@@ -36,7 +36,7 @@ stages:
       displayName: 'Use Python 3.7'
     
     - script: |
-        python -m venv antenv
+        python -m venv --copies antenv
         source antenv/bin/activate
         python -m pip install --upgrade pip
         pip install setup
