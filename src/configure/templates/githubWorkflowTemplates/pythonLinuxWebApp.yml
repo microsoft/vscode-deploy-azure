@@ -36,7 +36,7 @@ jobs:
     # Azure login
     - uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }} 
+        creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
         
     - uses: azure/appservice-settings@v1
       with:
