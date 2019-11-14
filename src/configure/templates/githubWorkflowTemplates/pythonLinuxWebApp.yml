@@ -1,3 +1,8 @@
+# Python Web App to Linux on Azure
+# Build a Python WebApp and deploy it to Azure as a Linux WebApp.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/languages/python
+
 on:
   push:
     branches:
@@ -14,29 +19,34 @@ jobs:
     - uses: actions/checkout@master
     
     # setup python
-    - name: Setup Python 3.6
+    - name: Setup Python 3.7
       uses: actions/setup-python@v1
       with:
-        python-version: 3.6
+        python-version: 3.7
 
     # install dependencies
     - name: python install
       run: |
-        sudo apt install python3.6-venv
-        python3.6 -m venv antenv
+        sudo apt install python3.7-venv
+        python -m venv antenv
         source antenv/bin/activate
-        pip3.6 install setuptools
-        pip3.6 install -r requirements.txt
+        pip install setuptools
+        pip install -r requirements.txt
 
     # Azure login
     - uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }} # Define secret variable in repository settings as per action documentation
+        creds: ${{ secrets.AZURE_CREDENTIALS }} 
         
+    - uses: azure/appservice-settings@v1
+      with:
+        app-name: {{{ targetResource.resource.name }}}
+        general-settings-json: '{"linuxFxVersion": "PYTHON|3.7"}' #'General configuration settings as Key Value pairs'
+    
     # deploy web app
     - uses: azure/webapps-deploy@v1
       with: 
-        app-name: {{{ targetResource.resource.name }}}  # Replace with your app name
+        app-name: {{{ targetResource.resource.name }}} 
 
     # Azure logout 
     - name: logout
