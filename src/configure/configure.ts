@@ -342,26 +342,12 @@ class Orchestrator {
             case TargetResourceType.WebApp:
             default:
                 this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.tenantId, this.inputs.azureSession.environment.portalUrl, this.inputs.targetResource.subscriptionId);
-                let selectAppText: string = "";
-                let placeHolderText: string = "";
-                switch(this.inputs.pipelineParameters.pipelineTemplate.targetKind) {
-                    case WebAppKind.FunctionApp:
-                    case WebAppKind.FunctionAppLinux:
-                        selectAppText = constants.SelectFunctionApp;
-                        placeHolderText = Messages.selectFunctionApp;
-                        break;
-                    case WebAppKind.WindowsApp:
-                    case WebAppKind.LinuxApp:
-                    default:
-                        placeHolderText = Messages.selectWebApp;
-                        selectAppText = constants.SelectWebApp;
-                }
 
                 let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
-                    selectAppText,
+                    Messages.selectTargetResource,
                     this.appServiceClient.GetAppServices(this.inputs.pipelineParameters.pipelineTemplate.targetKind ? this.inputs.pipelineParameters.pipelineTemplate.targetKind : WebAppKind.WindowsApp)
                         .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
-                    { placeHolder: placeHolderText },
+                    { placeHolder: Messages.selectTargetResource },
                     TelemetryKeys.WebAppListCount);
                 this.inputs.targetResource.resource = selectedResource.data;
         }

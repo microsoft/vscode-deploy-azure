@@ -31,20 +31,25 @@ export class AppServiceClient extends AzureResourceClient {
         let resourceList: ResourceListResult = await this.getResourceList(AppServiceClient.resourceType);
         if (!!filterForResourceKind) {
             let filteredResourceList: ResourceListResult = [];
-            resourceList.forEach((resource) => {
-                if(filterForResourceKind == WebAppKind.FunctionAppLinux) {
-                    if(resource.kind == WebAppKind.FunctionAppLinux || resource.kind == WebAppKind.FunctionAppLinuxContainer) {
+
+            if(filterForResourceKind === WebAppKind.FunctionAppLinux) {
+                resourceList.forEach((resource) => {
+                    if(resource.kind === WebAppKind.FunctionAppLinux || resource.kind === WebAppKind.FunctionAppLinuxContainer) {
                         filteredResourceList.push(resource);
                     }
-                }
-                else if (resource.kind === filterForResourceKind) {
-                    filteredResourceList.push(resource);
-                }
-            });
+                });
+            }
+            else {
+                resourceList.forEach((resource) => {
+                    if (resource.kind === filterForResourceKind) {
+                        filteredResourceList.push(resource);
+                    }
+                });
+            }
 
             resourceList = filteredResourceList;
         }
-
+        
         return resourceList;
     }
 
