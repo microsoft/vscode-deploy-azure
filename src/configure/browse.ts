@@ -3,9 +3,11 @@ import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
 
 import { AppServiceClient, ScmType } from './clients/azure/appServiceClient';
 import { getSubscriptionSession } from './helper/azureSessionHelper';
-import { AzureSession, ParsedAzureResourceId, extensionVariables } from './model/models';
-import { Messages } from './resources/messages';
+import { ControlProvider } from './helper/controlProvider';
 import { telemetryHelper, Result } from './helper/telemetryHelper';
+import { AzureSession, ParsedAzureResourceId, extensionVariables } from './model/models';
+import * as constants from './resources/constants';
+import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
 
@@ -46,14 +48,27 @@ export async function browsePipelineInternal(resourceId: string, appServiceClien
             let pipelineUrl = await appServiceClient.getAzurePipelineUrl(resourceId);
             vscode.env.openExternal(vscode.Uri.parse(pipelineUrl));
             telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
-            return;
         }
         catch (ex) {
             telemetryHelper.logError(Layer, TracePoints.CorruptMetadataForVstsRmScmType, ex);
         }
     }
+    else if (siteConfig.scmType === '' || siteConfig.scmType.toLowerCase() === ScmType.NONE.toLowerCase()) {
+        let deployToAzureAction = 'Deploy to Azure';
+        let controlProvider = new ControlProvider();
+        let result = await controlProvider.showInformationBox(
+            constants.BrowseNotAvailableConfigurePipeline,
+            Messages.browseNotAvailableConfigurePipeline,
+            deployToAzureAction);
 
-    let deploymentCenterUrl: string = await appServiceClient.getDeploymentCenterUrl(resourceId);
-    await vscode.env.openExternal(vscode.Uri.parse(deploymentCenterUrl));
-    telemetryHelper.setTelemetry(TelemetryKeys.BrowsedDeploymentCenter, 'true');
+        if (result === deployToAzureAction) {
+            vscode.commands.executeCommand('configure-pipeline', { fullId: resourceId });
+            telemetryHelper.setTelemetry(TelemetryKeys.ClickedConfigurePipeline, 'true');
+        }
+    }
+    else {
+        let deploymentCenterUrl: string = await appServiceClient.getDeploymentCenterUrl(resourceId);
+        await vscode.env.openExternal(vscode.Uri.parse(deploymentCenterUrl));
+        telemetryHelper.setTelemetry(TelemetryKeys.BrowsedDeploymentCenter, 'true');
+    }
 }

@@ -323,6 +323,7 @@ class Orchestrator {
             constants.Browse);
 
             if (browsePipelineAction) {
+                vscode.commands.executeCommand('configure-pipeline', { fullId: resourceId });
                 await browsePipelineInternal(resourceId, this.appServiceClient);
             }
         }

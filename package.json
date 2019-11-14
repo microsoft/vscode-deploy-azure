@@ -47,6 +47,11 @@
                 "command": "configure-pipeline",
                 "title": "Configure CI/CD Pipeline",
                 "category": "Deploy to Azure"
+            },
+            {
+                "command": "browse-pipeline",
+                "title": "Browse Pipeline",
+                "category": "Deploy to Azure"
             }
         ],
         "menus": {
@@ -55,6 +60,12 @@
                     "command": "configure-pipeline",
                     "group": "Deploy to Azure",
                     "when": "explorerResourceIsFolder == true"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "browse-pipeline",
+                    "when": "never"
                 }
             ]
         }
