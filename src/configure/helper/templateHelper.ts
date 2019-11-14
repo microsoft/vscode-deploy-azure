@@ -221,6 +221,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
 let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } = {
     'node': [
         {
+            label: 'Node.js with npm to Windows Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnWindows.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp
+        },
+        {
             label: 'Node.js with npm to Linux Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnLinux.yml'),
             language: SupportedLanguage.NODE,
@@ -228,11 +235,60 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             targetKind: WebAppKind.LinuxApp
         },
         {
-            label: 'Node.js with npm to Windows Web App',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnWindows.yml'),
+            label: 'Node.js with Gulp to Windows Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp
+        },
+        {
+            label: 'Node.js with Gulp to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp
+        },
+        {
+            label: 'Node.js with Grunt to Windows Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGrunt.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp
+        },
+        {
+            label: 'Node.js with Grunt to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGrunt.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp
+        },
+        {
+            label: 'Node.js with Angular to Windows Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngular.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp
+        },
+        {
+            label: 'Node.js with Angular to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngular.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp
+        },
+        {
+            label: 'Node.js with Webpack to Windows Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpack.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp
+        },
+        {
+            label: 'Node.js with Webpack to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpack.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp
         }
     ],
     'none': [],

@@ -1,0 +1,38 @@
+on:
+  push:
+    branches:
+      - {{{ sourceRepository.branch }}}
+
+name: Build and deploy Node app
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    # checkout the repo
+    - uses: actions/checkout@master
+
+    - uses: azure/login@v1
+      with:
+        creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
+    
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '10.x'
+
+    # install dependencies, build, and test
+    - name: npm install, build
+      run: |
+        npm install -g @angular/cli
+        npm install
+        ng build --prod
+
+    # deploy web app using publish profile credentials
+    - uses: azure/webapps-deploy@v1
+      with:
+        app-name: {{{ targetResource.resource.name }}}
+
+    # Azure logout
+    - name: logout
+      run: |
+        az logout
