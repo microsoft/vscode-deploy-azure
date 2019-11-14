@@ -1,5 +1,5 @@
-# Node.js with gulp on Windows Web App
-# Build a Node.js project using the gulp task runner and deploy it to Azure as a Windows web app.
+# Node.js with webpack on Linux Web App
+# Build a Node.js project using the webpack CLI and deploy it to Azure as a Linux web app.
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
@@ -28,9 +28,15 @@ jobs:
     # install dependencies, build, and test
     - name: npm install, build
       run: |
+        npm install -g webpack webpack-cli --save-dev
         npm install
-        gulp default --gulpfile gulpfile.js
+        npx webpack --config webpack.config.js
     
+    - uses: azure/appservice-settings@v1
+      with:
+        app-name: {{{ targetResource.resource.name }}}
+        general-settings-json: '{"linuxFxVersion": "NODE|lts"}' #'General configuration settings as Key Value pairs'
+
     # deploy web app using publish profile credentials
     - uses: azure/webapps-deploy@v1
       with:
