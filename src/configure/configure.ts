@@ -19,6 +19,7 @@ import { getSubscriptionSession } from './helper/azureSessionHelper';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
+import { browsePipelineInternal } from './browse';
 
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
@@ -204,7 +205,7 @@ class Orchestrator {
 
             // Set working directory relative to repository root
             let gitRootDir = await this.localGitRepoHelper.getGitRootDirectory();
-            this.inputs.pipelineParameters.workingDirectory = path.relative(gitRootDir, this.workspacePath).split(path.sep).join('/'); 
+            this.inputs.pipelineParameters.workingDirectory = path.relative(gitRootDir, this.workspacePath).split(path.sep).join('/');
 
             this.inputs.sourceRepository = this.inputs.sourceRepository ? this.inputs.sourceRepository : await this.getGitRepositoryParameters(gitBranchDetails);
         }
@@ -217,16 +218,16 @@ class Orchestrator {
 
     private setDefaultRepositoryDetails(): void {
         this.inputs.pipelineParameters.workingDirectory = '';
-            this.inputs.sourceRepository = {
-                branch: '',
-                commitId: '',
-                localPath: this.workspacePath,
-                remoteName: 'origin',
-                remoteUrl: '',
-                repositoryId: '',
-                repositoryName: '',
-                repositoryProvider: RepositoryProvider.AzureRepos
-            }
+        this.inputs.sourceRepository = {
+            branch: '',
+            commitId: '',
+            localPath: this.workspacePath,
+            remoteName: 'origin',
+            remoteUrl: '',
+            repositoryId: '',
+            repositoryName: '',
+            repositoryProvider: RepositoryProvider.AzureRepos
+        };
     }
 
     private async getGitRepositoryParameters(gitRepositoryDetails: GitBranchDetails): Promise<GitRepositoryParameters> {
@@ -277,21 +278,46 @@ class Orchestrator {
         }
     }
 
-    private async extractAzureResourceFromNode(node: any): Promise<void> {
+    private async extractAzureResourceFromNode(node: AzureTreeItem): Promise<void> {
         this.inputs.targetResource.subscriptionId = node.root.subscriptionId;
         this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
         this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.tenantId, this.inputs.azureSession.environment.portalUrl, this.inputs.targetResource.subscriptionId);
 
         try {
-            let azureResource: GenericResource = await this.appServiceClient.getAppServiceResource((<AzureTreeItem>node).fullId);
+            let azureResource: GenericResource = await this.appServiceClient.getAppServiceResource(node.fullId);
             telemetryHelper.setTelemetry(TelemetryKeys.resourceType, azureResource.type);
             telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, azureResource.kind);
             AzureResourceClient.validateTargetResourceType(azureResource);
+            if (azureResource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
+                if (!this.appServiceClient.validateIfPipelineCanBeSetupOnResource(node.fullId)) {
+                    await this.openBrowseExperience(node.fullId);
+                }
+            }
+
             this.inputs.targetResource.resource = azureResource;
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.ExtractAzureResourceFromNodeFailed, error);
             throw error;
+        }
+    }
+
+    private async openBrowseExperience(resourceId: string): Promise<void> {
+        // if pipeline is already setup, the ask the user if we should continue.
+        telemetryHelper.setTelemetry(TelemetryKeys.PipelineAlreadyConfigured, 'true');
+
+        let siteConfig = await this.appServiceClient.getAppServiceConfig(resourceId);
+        telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType);
+
+        let browsePipelineAction = await this.controlProvider.showInformationBox(
+            constants.SetupAlreadyExists,
+            Messages.setupAlreadyConfigured,
+            constants.Browse);
+
+        if (browsePipelineAction) {
+            await browsePipelineInternal(resourceId, this.appServiceClient);
+            // throw new UserCancelledError();
+            telemetryHelper.setResult(Result.Succeeded);
         }
     }
 
@@ -363,6 +389,11 @@ class Orchestrator {
                         .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
                     { placeHolder: placeHolderText },
                     TelemetryKeys.WebAppListCount);
+
+                if (!this.appServiceClient.validateIfPipelineCanBeSetupOnResource((<GenericResource>selectedResource.data).id)) {
+                    await this.openBrowseExperience((<GenericResource>selectedResource.data).id);
+                }
+
                 this.inputs.targetResource.resource = selectedResource.data;
         }
     }

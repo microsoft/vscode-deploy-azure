@@ -6,7 +6,7 @@ import { ServiceClientCredentials } from 'ms-rest';
 
 import { AzureResourceClient } from './azureResourceClient';
 import { WebAppKind, ParsedAzureResourceId } from '../../model/models';
-import {Messages} from '../../resources/messages';
+import { Messages } from '../../resources/messages';
 
 export class AppServiceClient extends AzureResourceClient {
 
@@ -32,8 +32,8 @@ export class AppServiceClient extends AzureResourceClient {
         if (!!filterForResourceKind) {
             let filteredResourceList: ResourceListResult = [];
             resourceList.forEach((resource) => {
-                if(filterForResourceKind == WebAppKind.FunctionAppLinux) {
-                    if(resource.kind == WebAppKind.FunctionAppLinux || resource.kind == WebAppKind.FunctionAppLinuxContainer) {
+                if (filterForResourceKind == WebAppKind.FunctionAppLinux) {
+                    if (resource.kind == WebAppKind.FunctionAppLinux || resource.kind == WebAppKind.FunctionAppLinuxContainer) {
                         filteredResourceList.push(resource);
                     }
                 }
@@ -111,6 +111,16 @@ export class AppServiceClient extends AzureResourceClient {
         let deploymentId = uuid();
         let deployment = this.createDeploymentObject(deploymentId, buildDefinitionUrl, releaseDefinitionUrl, triggeredBuildUrl);
         return this.webSiteManagementClient.webApps.createDeployment(parsedResourceId.resourceGroup, parsedResourceId.resourceName, deploymentId, deployment);
+    }
+
+    public async validateIfPipelineCanBeSetupOnResource(resourceId: string): Promise<boolean> {
+        // Check for SCM type, if its value is set then a pipeline is already setup.
+        let siteConfig = await this.getAppServiceConfig(resourceId);
+        if (siteConfig.scmType && siteConfig.scmType.toLowerCase() != 'NONE' || siteConfig.scmType.toLowerCase() != '') {
+            return false;
+        }
+
+        return true;
     }
 
     private createDeploymentObject(deploymentId: string, buildDefinitionUrl: string, releaseDefinitionUrl: string, triggeredBuildUrl: string): Deployment {

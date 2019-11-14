@@ -11,12 +11,13 @@ export class TelemetryKeys {
     public static MultipleWorkspaceFolders: string = 'multipleWorkspaceFolders';
     public static GitFolderExists: string = 'gitFolderExists';
     public static ScmType: string = 'scmType';
-    public static BrowsedDeploymentCenter = 'openedDeploymentCenter';
+    public static BrowsedDeploymentCenter = 'browsedDeploymentCenter';
     public static BrowsedExistingPipeline = 'browsedExistingPipeline';
     public static ClickedConfigurePipeline = 'clickedConfigurePipeline';
     public static UpdatedWebAppMetadata = 'updatedWebAppMetadata';
     public static NewDevOpsRepository = 'newDevOpsRepository';
     public static AzureLoginOption = 'azureLoginOption';
+    public static PipelineAlreadyConfigured = 'pipelineAlreadyConfigured';
 
     public static resourceType = 'resourceType';
     public static resourceKind = 'resourceKind';
