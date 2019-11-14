@@ -1,3 +1,8 @@
+# Node.js Function App to Windows on Azure
+# Build a Node.js function app and deploy it to Azure as a Windows function app.
+# Add steps that build code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+
 on:
   push:
     branches:
