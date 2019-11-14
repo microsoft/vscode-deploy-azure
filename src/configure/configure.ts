@@ -72,6 +72,7 @@ class Orchestrator {
     private appServiceClient: AppServiceClient;
     private workspacePath: string;
     private controlProvider: ControlProvider;
+    private continueOrchestration: boolean = true;
 
     public constructor() {
         this.inputs = new WizardInputs();
@@ -82,32 +83,38 @@ class Orchestrator {
     public async configure(node: any) {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
         await this.getInputs(node);
-        let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.targetResource.subscriptionId);
-        await pipelineConfigurer.getInputs(this.inputs);
 
-        telemetryHelper.setCurrentStep('CreatePreRequisites');
-        await pipelineConfigurer.createPreRequisites(this.inputs);
+        if (this.continueOrchestration) {
+            let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.targetResource.subscriptionId);
+            await pipelineConfigurer.getInputs(this.inputs);
 
-        telemetryHelper.setCurrentStep('CheckInPipeline');
-        await this.checkInPipelineFileToRepository(pipelineConfigurer);
+            telemetryHelper.setCurrentStep('CreatePreRequisites');
+            await pipelineConfigurer.createPreRequisites(this.inputs);
 
-        telemetryHelper.setCurrentStep('CreateAndRunPipeline');
-        await pipelineConfigurer.createAndQueuePipeline(this.inputs);
+            telemetryHelper.setCurrentStep('CheckInPipeline');
+            await this.checkInPipelineFileToRepository(pipelineConfigurer);
 
-        telemetryHelper.setCurrentStep('PostPipelineCreation');
-        // This step should be determined by the resoruce target provider (azure app service, function app, aks) type and pipelineProvider(azure pipeline vs github)
-        pipelineConfigurer.executePostPipelineCreationSteps(this.inputs, this.appServiceClient);
+            telemetryHelper.setCurrentStep('CreateAndRunPipeline');
+            await pipelineConfigurer.createAndQueuePipeline(this.inputs);
 
-        telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
-        pipelineConfigurer.browseQueuedPipeline();
+            telemetryHelper.setCurrentStep('PostPipelineCreation');
+            // This step should be determined by the resoruce target provider (azure app service, function app, aks) type and pipelineProvider(azure pipeline vs github)
+            pipelineConfigurer.executePostPipelineCreationSteps(this.inputs, this.appServiceClient);
+
+            telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
+            pipelineConfigurer.browseQueuedPipeline();
+        }
     }
 
-    private async getInputs(node: any) {
+    private async getInputs(node: any): Promise<void> {
         await this.analyzeNode(node);
-        await this.getSourceRepositoryDetails();
-        await this.getSelectedPipeline();
 
-        if (!this.inputs.targetResource.resource) {
+        if (this.continueOrchestration) {
+            await this.getSourceRepositoryDetails();
+            await this.getSelectedPipeline();
+        }
+
+        if (this.continueOrchestration && !this.inputs.targetResource.resource) {
             await this.getAzureResourceDetails();
         }
     }
@@ -289,7 +296,7 @@ class Orchestrator {
             telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, azureResource.kind);
             AzureResourceClient.validateTargetResourceType(azureResource);
             if (azureResource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
-                if (!this.appServiceClient.validateIfPipelineCanBeSetupOnResource(node.fullId)) {
+                if (!(await this.appServiceClient.validateIfPipelineCanBeSetupOnResource(node.fullId))) {
                     await this.openBrowseExperience(node.fullId);
                 }
             }
@@ -303,22 +310,30 @@ class Orchestrator {
     }
 
     private async openBrowseExperience(resourceId: string): Promise<void> {
-        // if pipeline is already setup, the ask the user if we should continue.
-        telemetryHelper.setTelemetry(TelemetryKeys.PipelineAlreadyConfigured, 'true');
+        try {
+            // if pipeline is already setup, the ask the user if we should continue.
+            telemetryHelper.setTelemetry(TelemetryKeys.PipelineAlreadyConfigured, 'true');
 
-        let siteConfig = await this.appServiceClient.getAppServiceConfig(resourceId);
-        telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType);
+            let siteConfig = await this.appServiceClient.getAppServiceConfig(resourceId);
+            telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType);
 
-        let browsePipelineAction = await this.controlProvider.showInformationBox(
+            let browsePipelineAction = await this.controlProvider.showInformationBox(
             constants.SetupAlreadyExists,
             Messages.setupAlreadyConfigured,
             constants.Browse);
 
-        if (browsePipelineAction) {
-            await browsePipelineInternal(resourceId, this.appServiceClient);
-            // throw new UserCancelledError();
-            telemetryHelper.setResult(Result.Succeeded);
+            if (browsePipelineAction) {
+                await browsePipelineInternal(resourceId, this.appServiceClient);
+            }
         }
+        catch (err) {
+            if (!(err instanceof UserCancelledError)) {
+                throw err;
+            }
+        }
+
+        this.continueOrchestration = false;
+        telemetryHelper.setResult(Result.Succeeded);
     }
 
     private async getSelectedPipeline(): Promise<void> {
@@ -390,7 +405,7 @@ class Orchestrator {
                     { placeHolder: placeHolderText },
                     TelemetryKeys.WebAppListCount);
 
-                if (!this.appServiceClient.validateIfPipelineCanBeSetupOnResource((<GenericResource>selectedResource.data).id)) {
+                if (!(await this.appServiceClient.validateIfPipelineCanBeSetupOnResource((<GenericResource>selectedResource.data).id))) {
                     await this.openBrowseExperience((<GenericResource>selectedResource.data).id);
                 }
 
