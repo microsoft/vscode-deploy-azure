@@ -1,14 +1,25 @@
+[![Build Status](https://dev.azure.com/mseng/AzureDevOps/_apis/build/status/vscode-deploy-azure-CI)](https://mseng.visualstudio.com/AzureDevOps/_build/latest?definitionId=9436)
+
+# Deploy to Azure from VS Code
+
+[Get it on the VS Code Marketplace!]()
+
+This VS Code extension helps you set up continuous build and deployment for Azure WebApps without leaving VS Code.
+
+To set up a pipeline, choose *Deploy to Azure: Configure CI/CD Pipeline* from the command palette (Ctrl/Cmd + Shift + P) or right-click in the file explorer. The guided workflow will generate a starter YAML file defining the build and deploy process.
+
+For code having GitHub as its git remote, you can customize the pipeline using all the features offered by [GitHub Actions,](https://github.com/features/actions) else you can customize the pipeline using all the features offered by [Azure Pipelines.](https://azure.microsoft.com/services/devops/pipelines/) 
+
+Once the setup is completed, an automatic CI/CD trigger will fire for every code push. 
+
+## Telemetry
+
+VS Code collects usage data and sends it to Microsoft to help improve our products and services. Read our [privacy statement](https://go.microsoft.com/fwlink/?LinkID=528096&clcid=0x409) to learn more. If you don’t wish to send usage data to Microsoft, you can set the `telemetry.enableTelemetry` setting to `false`. Learn more in our [FAQ](https://code.visualstudio.com/docs/supporting/faq#_how-to-disable-telemetry-reporting).
+
+## Troubleshooting failures
+
+- **Failed to determine Azure Repo details from remote url**: If you're configuring a pipeline for a Git repository backed by Azure Repos, ensure that it has a remote pointing to a valid Azure Repos Git repo URL.
 
 # Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
-
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to jump in!

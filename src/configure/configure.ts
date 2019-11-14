@@ -218,7 +218,7 @@ class Orchestrator {
     private setDefaultRepositoryDetails(): void {
         this.inputs.pipelineParameters.workingDirectory = '';
             this.inputs.sourceRepository = {
-                branch: '',
+                branch: 'master',
                 commitId: '',
                 localPath: this.workspacePath,
                 remoteName: 'origin',
@@ -226,7 +226,7 @@ class Orchestrator {
                 repositoryId: '',
                 repositoryName: '',
                 repositoryProvider: RepositoryProvider.AzureRepos
-            }
+            };
     }
 
     private async getGitRepositoryParameters(gitRepositoryDetails: GitBranchDetails): Promise<GitRepositoryParameters> {
