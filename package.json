@@ -44,12 +44,12 @@
     "contributes": {
         "commands": [
             {
-                "command": "configure-pipeline",
+                "command": "configure-cicd-pipeline",
                 "title": "Configure CI/CD Pipeline",
                 "category": "Deploy to Azure"
             },
             {
-                "command": "browse-pipeline",
+                "command": "browse-cicd-pipeline",
                 "title": "Browse Pipeline",
                 "category": "Deploy to Azure"
             }
@@ -57,14 +57,14 @@
         "menus": {
             "explorer/context": [
                 {
-                    "command": "configure-pipeline",
+                    "command": "configure-cicd-pipeline",
                     "group": "Deploy to Azure",
                     "when": "explorerResourceIsFolder == true"
                 }
             ],
             "commandPalette": [
                 {
-                    "command": "browse-pipeline",
+                    "command": "browse-cicd-pipeline",
                     "when": "never"
                 }
             ]
