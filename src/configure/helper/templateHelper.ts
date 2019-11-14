@@ -145,7 +145,15 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/simpleWebApp.yml'),
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
+        },
+        {
+            label: 'Simple application to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/simpleLinuxWebApp.yml'),
+            language: SupportedLanguage.NONE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp
         }
     ],
     'node': [
@@ -247,7 +255,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreWindowsWebApp.yml'),
             language: 'dotnetcore',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: '.NET Core Web App to Linux on Azure',
