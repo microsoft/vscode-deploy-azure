@@ -58,3 +58,4 @@ stages:
               appType: webAppLinux
               appName: $(webAppName)
               package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
+              startupCommand: '' # Provide an optional startup command that will be run as part of container startup
