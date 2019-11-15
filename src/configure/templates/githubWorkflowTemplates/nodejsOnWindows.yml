@@ -12,6 +12,10 @@ jobs:
     # checkout the repo
     - uses: actions/checkout@master
 
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '10.x'
+    
     - uses: azure/login@v1
       with:
         creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>

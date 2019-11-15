@@ -320,7 +320,7 @@ class Orchestrator {
         }
 
         telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineParameters.pipelineTemplate.label);
-}
+    }
 
     private async getAzureResourceDetails(): Promise<void> {
         // show available subscriptions and get the chosen one
