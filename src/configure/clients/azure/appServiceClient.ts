@@ -49,7 +49,6 @@ export class AppServiceClient extends AzureResourceClient {
 
             resourceList = filteredResourceList;
         }
-        
         return resourceList;
     }
 
