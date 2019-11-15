@@ -52,5 +52,5 @@ steps:
 - task: PublishPipelineArtifact@1
   displayName: Publish VSIX
   inputs:
-    artifact: azure-pipelines-vscode
+    artifact: vscode-deploy-azure
     targetPath: $(Build.ArtifactStagingDirectory)
