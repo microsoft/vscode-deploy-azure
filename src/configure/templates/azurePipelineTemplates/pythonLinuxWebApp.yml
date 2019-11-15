@@ -83,4 +83,5 @@ stages:
               appName: $(webAppName)
               appType: webAppLinux
               package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
-              runtimeStack: 'PYTHON|3.7' 
+              runtimeStack: 'PYTHON|3.7'
+              startupCommand: '' # Provide an optional startup command that will be run as part of container startup. For Node, it is the PM2 configuration file or your script file; For .Net Core it is the compiled DLL name as dotnet <myapp>.dll. Learn more at https://docs.microsoft.com/en-us/azure/app-service/containers/app-service-linux-faq#built-in-images

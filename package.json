@@ -12,7 +12,7 @@
     "homepage": "https://github.com/Microsoft/vscode-deploy-azure/blob/master/README.md",
     "bugs": "https://github.com/Microsoft/vscode-deploy-azure/issues/",
     "license": "MIT",
-    "icon": "assets/pipelines.png",
+    "icon": "assets/deployToAzure.png",
     "galleryBanner": {
         "color": "#D4DCEC",
         "theme": "light"
