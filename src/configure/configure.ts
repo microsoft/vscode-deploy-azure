@@ -19,7 +19,6 @@ import { getSubscriptionSession } from './helper/azureSessionHelper';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
-import { browsePipelineInternal } from './browse';
 
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
@@ -323,8 +322,7 @@ class Orchestrator {
             constants.Browse);
 
             if (browsePipelineAction) {
-                vscode.commands.executeCommand('configure-pipeline', { fullId: resourceId });
-                await browsePipelineInternal(resourceId, this.appServiceClient);
+                vscode.commands.executeCommand('browse-cicd-pipeline', { fullId: resourceId });
             }
         }
         catch (err) {
