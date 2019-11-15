@@ -116,7 +116,7 @@ export class AppServiceClient extends AzureResourceClient {
     public async validateIfPipelineCanBeSetupOnResource(resourceId: string): Promise<boolean> {
         // Check for SCM type, if its value is set then a pipeline is already setup.
         let siteConfig = await this.getAppServiceConfig(resourceId);
-        if (siteConfig.scmType && siteConfig.scmType.toLowerCase() != 'NONE' || siteConfig.scmType.toLowerCase() != '') {
+        if (!!siteConfig.scmType && siteConfig.scmType.toLowerCase() != ScmType.NONE.toLowerCase()) {
             return false;
         }
 
