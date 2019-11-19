@@ -303,7 +303,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/pythonLinuxWebApp.yml'),
             language: 'python',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         },
     ],
     'dotnetcore': []
