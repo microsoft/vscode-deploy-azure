@@ -6,7 +6,7 @@
 
 This VS Code extension helps you set up continuous build and deployment for Azure WebApps without leaving VS Code.
 
-![Configure CI/CD Pipeline Demo](resources/configure-cicd-pipeline.gif)
+![Configure CI/CD Pipeline Demo](https://gist.githubusercontent.com/dikhakha/d86193a3195f50d6125ec5b1b033c373/raw/c8e5c1452b068fd01387fcf5627029f9ac8db424/configure-cicd-pipeline.gif)
 
 To set up a pipeline, choose *Deploy to Azure: Configure CI/CD Pipeline* from the command palette (Ctrl/Cmd + Shift + P) or right-click in the file explorer. The guided workflow will generate a starter YAML file defining the build and deploy process.
 
@@ -14,7 +14,7 @@ You can customize the pipeline using all the features offered by [Azure Pipeline
 
 Once the setup is completed, an automatic CI/CD trigger will fire for every code push. To set this up, the extension will ask for a GitHub PAT with *repo* and *admin:repo_hook* scope.
 
-![GitHub PAT scope](resources/gitHubPatScope.png)
+![GitHub PAT scope](https://gist.githubusercontent.com/dikhakha/d86193a3195f50d6125ec5b1b033c373/raw/c8e5c1452b068fd01387fcf5627029f9ac8db424/gitHubPatScope.png)
 
 ## Telemetry
 
