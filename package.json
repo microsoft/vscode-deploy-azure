@@ -3,7 +3,7 @@
     "displayName": "Deploy to Azure",
     "description": "Generating CI/CD pipelines to Azure from GitHub Repo and Azure Repo",
     "version": "1.0.0",
-    "publisher": "ms-azure-devops",
+    "publisher": "ms-vscode-deploy-azure",
     "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
     "repository": {
         "type": "git",
@@ -12,7 +12,7 @@
     "homepage": "https://github.com/Microsoft/vscode-deploy-azure/blob/master/README.md",
     "bugs": "https://github.com/Microsoft/vscode-deploy-azure/issues/",
     "license": "MIT",
-    "icon": "assets/pipelines.png",
+    "icon": "assets/deployToAzure.png",
     "galleryBanner": {
         "color": "#D4DCEC",
         "theme": "light"
@@ -44,12 +44,12 @@
     "contributes": {
         "commands": [
             {
-                "command": "configure-pipeline",
+                "command": "configure-cicd-pipeline",
                 "title": "Configure CI/CD Pipeline",
                 "category": "Deploy to Azure"
             },
             {
-                "command": "browse-pipeline",
+                "command": "browse-cicd-pipeline",
                 "title": "Browse Pipeline",
                 "category": "Deploy to Azure"
             }
@@ -57,14 +57,14 @@
         "menus": {
             "explorer/context": [
                 {
-                    "command": "configure-pipeline",
+                    "command": "configure-cicd-pipeline",
                     "group": "Deploy to Azure",
                     "when": "explorerResourceIsFolder == true"
                 }
             ],
             "commandPalette": [
                 {
-                    "command": "browse-pipeline",
+                    "command": "browse-cicd-pipeline",
                     "when": "never"
                 }
             ]
