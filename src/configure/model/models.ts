@@ -90,6 +90,7 @@ export interface PipelineTemplate {
     language: string;
     targetType: TargetResourceType;
     targetKind: WebAppKind;
+    enabled: boolean;
 }
 
 export enum SourceOptions {

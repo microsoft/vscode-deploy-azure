@@ -23,15 +23,15 @@ export async function activateConfigurePipeline(): Promise<AzureExtensionApiProv
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with registerCommand
     // The commandId parameter must match the command field in package.json
-    registerCommand('configure-pipeline', async (actionContext: IActionContext, node: any) => {
+    registerCommand('configure-cicd-pipeline', async (actionContext: IActionContext, node: any) => {
         // The code you place here will be executed every time your command is executed
-        telemetryHelper.initialize(actionContext, 'configure-pipeline');
+        telemetryHelper.initialize(actionContext, 'configure-cicd-pipeline');
         await configurePipeline(node);
     });
 
-    registerCommand('browse-pipeline', async (actionContext: IActionContext, node: AzureTreeItem) => {
+    registerCommand('browse-cicd-pipeline', async (actionContext: IActionContext, node: AzureTreeItem) => {
         // The code you place here will be executed every time your command is executed
-        telemetryHelper.initialize(actionContext, 'browse-pipeline');
+        telemetryHelper.initialize(actionContext, 'browse-cicd-pipeline');
         await browsePipeline(node);
     });
 

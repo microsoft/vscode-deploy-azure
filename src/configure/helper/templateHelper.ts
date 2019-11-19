@@ -47,7 +47,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
             default:
                 break;
         }
-    })
+    });
 
     if (templateResult.length < 1 && templateList[SupportedLanguage.NONE] && templateList[SupportedLanguage.NONE].length > 0) {
         templateResult = templateList[SupportedLanguage.NONE];
@@ -59,6 +59,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
 
     templateResult = targetResource && !!targetResource.type ? templateResult.filter((template) => !template.targetType || template.targetType.toLowerCase() === targetResource.type.toLowerCase()) : templateResult;
     templateResult = targetResource && !!targetResource.kind ? templateResult.filter((template) => !template.targetKind || template.targetKind.toLowerCase() === targetResource.kind.toLowerCase()) : templateResult;
+    templateResult = templateResult.filter((pipelineTemplate) => pipelineTemplate.enabled);
     return templateResult;
 }
 
@@ -98,7 +99,7 @@ async function analyzeRepo(repoPath: string): Promise<AnalysisResult> {
 function isDotnetCoreRepo(files: string[]): boolean {
     return files.some((file) => {
         return file.toLowerCase().endsWith("sln") || file.toLowerCase().endsWith("csproj") || file.toLowerCase().endsWith("fsproj"); 
-    })
+    });
 }
 
 function isNodeRepo(files: string[]): boolean {
@@ -114,7 +115,7 @@ function isPythonRepo(files: string[]): boolean {
     return files.some((file) => {
         let result = new RegExp(pythonRegex).test(file.toLowerCase());
         return result;
-    })
+    });
 }
 
 function isFunctionApp(files: string[]): boolean {
@@ -144,7 +145,16 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/simpleWebApp.yml'),
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
+        },
+        {
+            label: 'Simple application to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/simpleLinuxWebApp.yml'),
+            language: SupportedLanguage.NONE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         }
     ],
     'node': [
@@ -153,35 +163,80 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejs.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: 'Node.js with Gulp to Windows Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGulp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: 'Node.js with Grunt to Windows Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGrunt.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: 'Node.js with Angular to Windows Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithAngular.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: 'Node.js with Webpack to Windows Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithWebpack.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
+        },
+        {
+            label: 'Node.js with npm to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsLinuxWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
+        },
+        {
+            label: 'Node.js with Gulp to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGulpLinuxWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
+        },
+        {
+            label: 'Node.js with Grunt to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGruntLinuxWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
+        },
+        {
+            label: 'Node.js with Angular to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithAngularLinuxWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
+        },
+        {
+            label: 'Node.js with Webpack to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithWebpackLinuxWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         }
     ],
     'python': [
@@ -190,14 +245,16 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonLinuxWebApp.yml'),
             language: 'python',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         },
         {
             label: 'Build and Test Python Django App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonDjango.yml'),
             language: 'python',
             targetType: TargetResourceType.None,
-            targetKind: null
+            targetKind: null,
+            enabled: true
         }
     ],
     'dotnetcore': [
@@ -206,14 +263,16 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreWindowsWebApp.yml'),
             language: 'dotnetcore',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: '.NET Core Web App to Linux on Azure',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreLinuxWebApp.yml'),
             language: 'dotnetcore',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         }
     ]
 };
@@ -225,70 +284,80 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnWindows.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: 'Node.js with npm to Linux Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnLinux.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         },
         {
             label: 'Node.js with Gulp to Windows Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: 'Node.js with Gulp to Linux Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         },
         {
             label: 'Node.js with Grunt to Windows Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: 'Node.js with Grunt to Linux Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         },
         {
             label: 'Node.js with Angular to Windows Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: 'Node.js with Angular to Linux Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         },
         {
             label: 'Node.js with Webpack to Windows Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
         },
         {
             label: 'Node.js with Webpack to Linux Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         }
     ],
     'none': [],
@@ -304,35 +373,40 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWindowsFunctionApp.yml'),
             language: 'node',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionApp
+            targetKind: WebAppKind.FunctionApp,
+            enabled: false
         },
         {
             label: 'Node.js Function App to Linux Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsLinuxFunctionApp.yml'),
             language: 'node',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinux
+            targetKind: WebAppKind.FunctionAppLinux,
+            enabled: true
         },
         {
             label: '.NET Core Function App to Windows Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreWindowsFunctionApp.yml'),
             language: 'dotnet',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionApp
+            targetKind: WebAppKind.FunctionApp,
+            enabled: false
         },    
         {
             label: '.NET Core Function App to Linux Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreLinuxFunctionApp.yml'),
             language: 'dotnet',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinux
+            targetKind: WebAppKind.FunctionAppLinux,
+            enabled: true
         },
         {
             label: 'Python Function App to Linux Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonLinuxFunctionApp.yml'),
             language: 'python',
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinux
+            targetKind: WebAppKind.FunctionAppLinux,
+            enabled: true
         },
     ]
-}
+};

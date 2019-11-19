@@ -44,7 +44,7 @@ async function createRelease() {
     try {
         createReleaseResult = await octokit.repos.createRelease({
             owner: 'Microsoft',
-            repo: 'azure-pipelines-vscode',
+            repo: 'vscode-deploy-azure',
             tag_name: `v${version}`,
             target_commitish: target_commitish,
             name: `${version}`,
