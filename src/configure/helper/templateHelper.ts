@@ -236,56 +236,56 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
         },
         {
             label: 'Node.js with Gulp to Windows Web App',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulp.yml'),
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp
         },
         {
             label: 'Node.js with Gulp to Linux Web App',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnLinux.yml'),
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp
         },
         {
             label: 'Node.js with Grunt to Windows Web App',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGrunt.yml'),
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp
         },
         {
             label: 'Node.js with Grunt to Linux Web App',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnLinux.yml'),
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp
         },
         {
             label: 'Node.js with Angular to Windows Web App',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngular.yml'),
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp
         },
         {
             label: 'Node.js with Angular to Linux Web App',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnLinux.yml'),
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp
         },
         {
             label: 'Node.js with Webpack to Windows Web App',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpack.yml'),
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp
         },
         {
             label: 'Node.js with Webpack to Linux Web App',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnLinux.yml'),
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp
