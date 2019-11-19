@@ -34,7 +34,7 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
                         deployToAzureAction);
 
                     if (result === deployToAzureAction) {
-                        vscode.commands.executeCommand('configure-pipeline', node);
+                        vscode.commands.executeCommand('configure-cicd-pipeline', node);
                         telemetryHelper.setTelemetry(TelemetryKeys.ClickedConfigurePipeline, 'true');
                     }
                 }
