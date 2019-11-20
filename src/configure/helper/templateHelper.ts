@@ -297,7 +297,16 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
         }
     ],
     'none': [],
-    'python': [],
+    'python': [
+        {
+            label: 'Python to Linux Web App on Azure',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/pythonLinuxWebApp.yml'),
+            language: 'python',
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
+        },
+    ],
     'dotnetcore': []
 };
 
