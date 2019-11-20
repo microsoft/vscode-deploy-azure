@@ -15,7 +15,8 @@ jobs:
     steps:
     # checkout the repo
     - uses: actions/checkout@master
-
+    
+    # login using publishing credentials
     - uses: azure/login@v1
       with:
         creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
