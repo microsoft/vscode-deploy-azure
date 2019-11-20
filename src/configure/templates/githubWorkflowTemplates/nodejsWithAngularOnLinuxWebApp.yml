@@ -1,7 +1,6 @@
 # Node.js with Angular on Linux Web App
 # Build a Node.js project that uses Angular and deploy it to Azure as a Linux web app.
 # Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 on:
   push:
@@ -37,7 +36,7 @@ jobs:
         app-name: {{{ targetResource.resource.name }}}
         general-settings-json: '{"linuxFxVersion": "NODE|10.10"}' #'General configuration settings as Key Value pairs'
     
-    # deploy web app using publish profile credentials
+    # deploy web app 
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}

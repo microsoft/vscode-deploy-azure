@@ -1,7 +1,6 @@
 # Node.js with webpack on Windows Web App
 # Build a Node.js project using the webpack CLI and deploy it to Azure as a Windows web app.
 # Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 on:
   push:
@@ -32,7 +31,7 @@ jobs:
         npm install
         npx webpack --config webpack.config.js
     
-    # deploy web app using publish profile credentials
+    # deploy web app
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
