@@ -280,6 +280,14 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
 let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } = {
     'node': [
         {
+            label: 'Node.js with npm to Windows Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnWindows.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
+        },
+        {
             label: 'Node.js with npm to Linux Web App',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnLinux.yml'),
             language: SupportedLanguage.NODE,
@@ -288,12 +296,68 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Node.js with npm to Windows Web App',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnWindows.yml'),
+            label: 'Node.js with Gulp to Windows Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
             enabled: false
+        },
+        {
+            label: 'Node.js with Gulp to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnLinuxWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
+        },
+        {
+            label: 'Node.js with Grunt to Windows Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnWindowsWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
+        },
+        {
+            label: 'Node.js with Grunt to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnLinuxWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
+        },
+        {
+            label: 'Node.js with Angular to Windows Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnWindowsWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
+        },
+        {
+            label: 'Node.js with Angular to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnLinuxWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
+        },
+        {
+            label: 'Node.js with Webpack to Windows Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnWindowsWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp,
+            enabled: false
+        },
+        {
+            label: 'Node.js with Webpack to Linux Web App',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnLinuxWebApp.yml'),
+            language: SupportedLanguage.NODE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
         }
     ],
     'none': [],
