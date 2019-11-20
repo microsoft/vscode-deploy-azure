@@ -46,7 +46,7 @@ export class Messages {
     public static selectProject: string = 'Select an Azure DevOps project';
     public static selectRemoteForBranch: string = 'Select the remote repository where you want to track your current branch';
     public static selectSubscription: string = 'Select the target Azure Subscription to deploy to your application';
-    public static selectTargetResource: string = 'Select the target Azure Resouce to deploy your application';
+    public static selectTargetResource: string = 'Select the target Azure Resource to deploy your application';
     public static selectWorkspaceFolder: string = 'Select a folder from your workspace to deploy';
     public static signInLabel: string = 'Sign In';
     public static signUpLabel: string = 'Sign Up';
