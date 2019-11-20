@@ -1,7 +1,6 @@
 # Node.js Function App to Linux on Azure
 # Build a Node.js function app and deploy it to Azure as a Linux function app.
 # Add steps that build code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 on:
   push:
@@ -28,8 +27,6 @@ jobs:
     - name: 'Run npm'
       shell: bash
       run: |
-        # If your function app project is not located in your repository's root
-        # Please change your directory for pip in pushd
         npm install
         npm run build --if-present
         npm run test --if-present
