@@ -1,9 +1,13 @@
+# Node.js Function App to Linux on Azure
+# Build a Node.js function app and deploy it to Azure as a Linux function app.
+# Add steps that build code, save build artifacts, deploy, and more:
+
 on:
   push:
     branches:
       - {{{ sourceRepository.branch }}}
 
-name: Build and deploy Node app
+name: Build and deploy Node Function app
 
 jobs:
   build-and-deploy:
@@ -11,26 +15,29 @@ jobs:
     steps:
     # checkout the repo
     - uses: actions/checkout@master
-
+    
     - uses: actions/setup-node@v1
       with:
         node-version: '10.x'
-    
+        
     - uses: azure/login@v1
       with:
         creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
 
-    # install dependencies, build, and test
-    - name: npm install, build, and test
+    - name: 'Run npm'
+      shell: bash
       run: |
         npm install
         npm run build --if-present
         npm run test --if-present
 
     # deploy web app using publish profile credentials
-    - uses: azure/webapps-deploy@v1
+    - name: 'Run Azure Functions Action'
+      uses: Azure/functions-action@v1
+      id: fa
       with:
         app-name: {{{ targetResource.resource.name }}}
+        package: .
 
     # Azure logout
     - name: logout

@@ -1,0 +1,47 @@
+# Python Function App to Linux on Azure
+# Build a Python function app and deploy it to Azure as a Linux function app.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+
+on:
+  push:
+    branches:
+      - {{{ sourceRepository.branch }}}
+
+name: Build and deploy Python Function app
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    # checkout the repo
+    - uses: actions/checkout@master
+
+    - name: Setup python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+
+    - uses: azure/login@v1
+      with:
+        creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
+
+    - name: 'Run pip'
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        python -m venv --copies worker_venv
+        source worker_venv/bin/activate
+        pip install -r requirements.txt
+
+    # deploy web app using publish profile credentials
+    - name: 'Run Azure Functions Action'
+      uses: Azure/functions-action@v1
+      id: fa
+      with:
+        app-name: {{{ targetResource.resource.name }}}
+        package: .
+
+    # Azure logout
+    - name: logout
+      run: |
+        az logout
