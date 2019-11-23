@@ -39,7 +39,7 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
     }, TelemetryKeys.CommandExecutionDuration);
 }
 
-export async function browsePipelineInternal(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
+async function browsePipelineInternal(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
     let siteConfig = await appServiceClient.getAppServiceConfig(resourceId);
     telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType);
 
@@ -51,6 +51,7 @@ export async function browsePipelineInternal(resourceId: string, appServiceClien
         }
         catch (ex) {
             telemetryHelper.logError(Layer, TracePoints.CorruptMetadataForVstsRmScmType, ex);
+            throw ex;
         }
     }
     else if (siteConfig.scmType === '' || siteConfig.scmType.toLowerCase() === ScmType.NONE.toLowerCase()) {

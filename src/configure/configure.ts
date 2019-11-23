@@ -111,10 +111,10 @@ class Orchestrator {
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
             await this.getSelectedPipeline();
-        }
 
-        if (this.continueOrchestration && !this.inputs.targetResource.resource) {
-            await this.getAzureResourceDetails();
+            if (!this.inputs.targetResource.resource) {
+                await this.getAzureResourceDetails();
+            }
         }
     }
 
@@ -295,7 +295,7 @@ class Orchestrator {
             telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, azureResource.kind);
             AzureResourceClient.validateTargetResourceType(azureResource);
             if (azureResource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
-                if (!(await this.appServiceClient.validateIfPipelineCanBeSetupOnResource(node.fullId))) {
+                if (await this.appServiceClient.isScmTypeSet(node.fullId)) {
                     await this.openBrowseExperience(node.fullId);
                 }
             }
@@ -312,9 +312,6 @@ class Orchestrator {
         try {
             // if pipeline is already setup, the ask the user if we should continue.
             telemetryHelper.setTelemetry(TelemetryKeys.PipelineAlreadyConfigured, 'true');
-
-            let siteConfig = await this.appServiceClient.getAppServiceConfig(resourceId);
-            telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType);
 
             let browsePipelineAction = await this.controlProvider.showInformationBox(
             constants.SetupAlreadyExists,
@@ -390,11 +387,12 @@ class Orchestrator {
                     { placeHolder: Messages.selectTargetResource },
                     TelemetryKeys.WebAppListCount);
 
-                if (!(await this.appServiceClient.validateIfPipelineCanBeSetupOnResource((<GenericResource>selectedResource.data).id))) {
+                if (await this.appServiceClient.isScmTypeSet((<GenericResource>selectedResource.data).id)) {
                     await this.openBrowseExperience((<GenericResource>selectedResource.data).id);
                 }
-
-                this.inputs.targetResource.resource = selectedResource.data;
+                else {
+                    this.inputs.targetResource.resource = selectedResource.data;
+                }
         }
     }
 

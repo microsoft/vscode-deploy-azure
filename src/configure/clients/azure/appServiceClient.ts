@@ -7,6 +7,8 @@ import { ServiceClientCredentials } from 'ms-rest';
 import { AzureResourceClient } from './azureResourceClient';
 import { WebAppKind, ParsedAzureResourceId } from '../../model/models';
 import { Messages } from '../../resources/messages';
+import { telemetryHelper } from '../../helper/telemetryHelper';
+import { TelemetryKeys } from '../../resources/telemetryKeys';
 
 export class AppServiceClient extends AzureResourceClient {
 
@@ -117,14 +119,15 @@ export class AppServiceClient extends AzureResourceClient {
         return this.webSiteManagementClient.webApps.createDeployment(parsedResourceId.resourceGroup, parsedResourceId.resourceName, deploymentId, deployment);
     }
 
-    public async validateIfPipelineCanBeSetupOnResource(resourceId: string): Promise<boolean> {
+    public async isScmTypeSet(resourceId: string): Promise<boolean> {
         // Check for SCM type, if its value is set then a pipeline is already setup.
         let siteConfig = await this.getAppServiceConfig(resourceId);
         if (!!siteConfig.scmType && siteConfig.scmType.toLowerCase() != ScmType.NONE.toLowerCase()) {
-            return false;
+            telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType.toLowerCase());
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     private createDeploymentObject(deploymentId: string, buildDefinitionUrl: string, releaseDefinitionUrl: string, triggeredBuildUrl: string): Deployment {
