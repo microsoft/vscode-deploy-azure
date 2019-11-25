@@ -76,9 +76,9 @@ export class GitHubWorkflowConfigurer implements Configurer {
         }
     }
 
-    public async getPathToPipelineFile(inputs: WizardInputs): Promise<string> {
+    public async getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
         // Create .github directory
-        let workflowDirectoryPath = path.join(inputs.sourceRepository.localPath, '.github');
+        let workflowDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), '.github');
         if (!fs.existsSync(workflowDirectoryPath)) {
             fs.mkdirSync(workflowDirectoryPath);
         }

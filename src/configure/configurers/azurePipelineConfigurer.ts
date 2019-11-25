@@ -189,7 +189,7 @@ export class AzurePipelineConfigurer implements Configurer {
             });
     }
 
-    public async getPathToPipelineFile(inputs: WizardInputs): Promise<string> {
+    public async getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
         return path.join(inputs.sourceRepository.localPath, await LocalGitRepoHelper.GetAvailableFileName('azure-pipelines.yml', inputs.sourceRepository.localPath));
     }
 

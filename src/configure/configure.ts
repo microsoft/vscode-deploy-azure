@@ -355,7 +355,7 @@ class Orchestrator {
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
         try {
-            this.inputs.pipelineParameters.pipelineFilePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs);
+            this.inputs.pipelineParameters.pipelineFilePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
             await this.localGitRepoHelper.addContentToFile(
                 await templateHelper.renderContent(this.inputs.pipelineParameters.pipelineTemplate.path, this.inputs),
                 this.inputs.pipelineParameters.pipelineFilePath);
