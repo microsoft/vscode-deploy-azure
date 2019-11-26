@@ -84,6 +84,13 @@ export interface GitRepositoryParameters {
     serviceConnectionId?: string; // Id of the service connection in Azure DevOps
 }
 
+export enum TargetResourceType {
+    None = 'none',
+    WebApp = 'Microsoft.Web/sites',
+    AKS = 'Microsoft.ContainerService/ManagedClusters',
+    ACR = 'Microsoft.ContainerRegistry/registries'
+}
+
 export interface PipelineTemplate {
     path: string;
     label: string;
@@ -91,6 +98,20 @@ export interface PipelineTemplate {
     targetType: TargetResourceType;
     targetKind: WebAppKind;
     enabled: boolean;
+    parameters?: Parameter[]
+}
+
+export interface Parameter {
+    name: string;
+    id: string;
+    placeHolder: string;
+    type: ParameterType;
+    value: any;
+}
+
+export enum ParameterType {
+    TextBox,
+    Acr = TargetResourceType.ACR
 }
 
 export enum SourceOptions {
@@ -102,11 +123,6 @@ export enum SourceOptions {
 export enum RepositoryProvider {
     Github = 'github',
     AzureRepos = 'tfsgit'
-}
-
-export enum TargetResourceType {
-    None = 'none',
-    WebApp = 'Microsoft.Web/sites'
 }
 
 export enum ServiceConnectionType {

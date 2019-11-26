@@ -68,6 +68,7 @@ export async function configurePipeline(node: AzureTreeItem) {
 class Orchestrator {
     private inputs: WizardInputs;
     private localGitRepoHelper: LocalGitRepoHelper;
+    private azureResourceClient: AzureResourceClient;
     private appServiceClient: AppServiceClient;
     private workspacePath: string;
     private controlProvider: ControlProvider;
@@ -375,6 +376,15 @@ class Orchestrator {
         // show available resources and get the chosen one
         switch(this.inputs.pipelineParameters.pipelineTemplate.targetType) {
             case TargetResourceType.None:
+                break;
+            case TargetResourceType.AKS:
+                this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.targetResource.subscriptionId);
+                this.inputs.targetResource.resource = (await this.controlProvider.showQuickPick(
+                    Messages.selectTargetResource,
+                    this.azureResourceClient.getResourceList(TargetResourceType.AKS, true)
+                        .then((clusters) => clusters.map(x => { return { label: x.name, data: x }; })),
+                    { placeHolder: Messages.selectTargetResource },
+                    TelemetryKeys.WebAppListCount)).data;
                 break;
             case TargetResourceType.WebApp:
             default:

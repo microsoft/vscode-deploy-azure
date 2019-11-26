@@ -43,7 +43,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
                 if (templateList[SupportedLanguage.NONE] && templateList[SupportedLanguage.NONE].length > 0) {
                     templateResult = templateResult.concat(templateList[SupportedLanguage.NONE]);
                 }
-                break;    
+                break;
             default:
                 break;
         }
@@ -107,7 +107,7 @@ async function analyzeRepo(repoPath: string): Promise<AnalysisResult> {
 
 function isDotnetCoreRepo(files: string[]): boolean {
     return files.some((file) => {
-        return file.toLowerCase().endsWith("sln") || file.toLowerCase().endsWith("csproj") || file.toLowerCase().endsWith("fsproj"); 
+        return file.toLowerCase().endsWith("sln") || file.toLowerCase().endsWith("csproj") || file.toLowerCase().endsWith("fsproj");
     });
 }
 
@@ -143,7 +143,8 @@ export enum SupportedLanguage {
     NONE = 'none',
     NODE = 'node',
     PYTHON = 'python',
-    DOTNETCORE = 'dotnetcore'
+    DOTNETCORE = 'dotnetcore',
+    DOCKER = 'docker'
 }
 
 let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
@@ -283,6 +284,19 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             targetKind: WebAppKind.LinuxApp,
             enabled: true
         }
+    ],
+    'docker': [
+        {
+            label: 'Containerized application to AKS',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/AksWithReuseACR.yml'),
+            language: 'docker',
+            targetType: TargetResourceType.AKS,
+            targetKind: null,
+            enabled: false,
+            parameters: [
+                {}
+            ]
+        }
     ]
 };
 
@@ -380,7 +394,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         },
     ],
-    'dotnetcore': []
+    'dotnetcore': [],
+    'docker': []
 };
 
 const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
@@ -409,7 +424,7 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionApp,
             enabled: false
-        },    
+        },
         {
             label: '.NET Core Function App to Linux Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreLinuxFunctionApp.yml'),
@@ -429,7 +444,7 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
     ]
 }
 
-const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } = 
+const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
 {
     'Microsoft.Web/sites-functionapp': [
         {
@@ -457,4 +472,4 @@ const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } 
             enabled: true
         }
     ]
-} 
+}
