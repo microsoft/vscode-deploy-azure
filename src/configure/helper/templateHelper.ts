@@ -70,9 +70,16 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     templateResult = targetResource && !!targetResource.kind ? templateResult.filter((template) => !template.targetKind || template.targetKind.toLowerCase() === targetResource.kind.toLowerCase()) : templateResult;
     templateResult = templateResult.filter((pipelineTemplate) => pipelineTemplate.enabled);
     // remove duplicate named template:
-    templateResult.forEach((template, index) => {
-        templateResult = templateResult.slice(0, index+1).concat(templateResult.slice(index+1).filter(internalTemplate => internalTemplate.label !== template.label));
+    let templateMap: Map<string, PipelineTemplate> = new Map<string, PipelineTemplate>();
+    let tempList = templateResult;
+    templateResult = [];
+    tempList.forEach((template) => {
+        if (!templateMap[template.label]) {
+            templateMap[template.label] = template;
+            templateResult = templateResult.concat(template);
+        }
     });
+
     return templateResult;
 }
 
