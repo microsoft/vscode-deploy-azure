@@ -145,7 +145,7 @@ export class AzurePipelineConfigurer implements Configurer {
         if(!inputs.targetResource.resource) {
             return;
         }
-        
+
         let serviceConnectionHelper = new ServiceConnectionHelper(inputs.organizationName, inputs.project.name, this.azureDevOpsClient);
 
         if (inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
@@ -226,7 +226,7 @@ export class AzurePipelineConfigurer implements Configurer {
                         }
 
                         if (initializeGitRepository) {
-                            await localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl, inputs.pipelineParameters.pipelineFilePath);
+                            await localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl, inputs.pipelineParameters.filePath);
 
                             let branchDetails = await localGitRepoHelper.getGitBranchDetails();
                             inputs.sourceRepository.branch = branchDetails.branch;
@@ -234,7 +234,7 @@ export class AzurePipelineConfigurer implements Configurer {
                         }
 
                         // handle when the branch is not upto date with remote branch and push fails
-                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineParameters.pipelineFilePath, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
+                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineParameters.filePath, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);
@@ -255,7 +255,7 @@ export class AzurePipelineConfigurer implements Configurer {
     public async createAndQueuePipeline(inputs: WizardInputs): Promise<string> {
         this.queuedPipeline = await vscode.window.withProgress<Build>({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
             try {
-                let pipelineName = `${(inputs.targetResource.resource ? inputs.targetResource.resource.name : inputs.pipelineParameters.pipelineTemplate.label)}-${UniqueResourceNameSuffix}`;
+                let pipelineName = `${(inputs.targetResource.resource ? inputs.targetResource.resource.name : inputs.pipelineParameters.template.label)}-${UniqueResourceNameSuffix}`;
                 return await this.azureDevOpsHelper.createAndRunPipeline(pipelineName, inputs);
             }
             catch (error) {

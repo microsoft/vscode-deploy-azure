@@ -5,7 +5,7 @@ import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
 import { Messages } from './resources/messages';
-import { SourceOptions, RepositoryProvider, extensionVariables, WizardInputs, WebAppKind, PipelineTemplate, QuickPickItemWithData, GitRepositoryParameters, GitBranchDetails, TargetResourceType } from './model/models';
+import { SourceOptions, RepositoryProvider, extensionVariables, WizardInputs, WebAppKind, PipelineTemplate, QuickPickItemWithData, GitRepositoryParameters, GitBranchDetails, TargetResourceType, ParameterType } from './model/models';
 import { TracePoints } from './resources/tracePoints';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import * as constants from './resources/constants';
@@ -116,6 +116,8 @@ class Orchestrator {
             if (!this.inputs.targetResource.resource) {
                 await this.getAzureResourceDetails();
             }
+
+            await this.getRequiredParameters();
         }
     }
 
@@ -269,10 +271,10 @@ class Orchestrator {
             else {
                 let repositoryProvider: string = "Other";
 
-                if(remoteUrl.indexOf("bitbucket.org") >= 0) {
+                if (remoteUrl.indexOf("bitbucket.org") >= 0) {
                     repositoryProvider = "Bitbucket";
                 }
-                else if(remoteUrl.indexOf("gitlab.com") >= 0) {
+                else if (remoteUrl.indexOf("gitlab.com") >= 0) {
                     repositoryProvider = "GitLab";
                 }
 
@@ -315,9 +317,9 @@ class Orchestrator {
             telemetryHelper.setTelemetry(TelemetryKeys.PipelineAlreadyConfigured, 'true');
 
             let browsePipelineAction = await this.controlProvider.showInformationBox(
-            constants.SetupAlreadyExists,
-            Messages.setupAlreadyConfigured,
-            constants.Browse);
+                constants.SetupAlreadyExists,
+                Messages.setupAlreadyConfigured,
+                constants.Browse);
 
             if (browsePipelineAction) {
                 vscode.commands.executeCommand('browse-cicd-pipeline', { fullId: resourceId });
@@ -349,15 +351,15 @@ class Orchestrator {
                 appropriatePipelines.map((pipeline) => { return { label: pipeline.label }; }),
                 { placeHolder: Messages.selectPipelineTemplate },
                 TelemetryKeys.PipelineTempateListCount);
-            this.inputs.pipelineParameters.pipelineTemplate = appropriatePipelines.find((pipeline) => {
+            this.inputs.pipelineParameters.template = appropriatePipelines.find((pipeline) => {
                 return pipeline.label === selectedOption.label;
             });
         }
         else {
-            this.inputs.pipelineParameters.pipelineTemplate = appropriatePipelines[0];
+            this.inputs.pipelineParameters.template = appropriatePipelines[0];
         }
 
-        telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineParameters.pipelineTemplate.label);
+        telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineParameters.template.label);
     }
 
     private async getAzureResourceDetails(): Promise<void> {
@@ -374,7 +376,7 @@ class Orchestrator {
         this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
 
         // show available resources and get the chosen one
-        switch(this.inputs.pipelineParameters.pipelineTemplate.targetType) {
+        switch (this.inputs.pipelineParameters.template.targetType) {
             case TargetResourceType.None:
                 break;
             case TargetResourceType.AKS:
@@ -384,7 +386,7 @@ class Orchestrator {
                     this.azureResourceClient.getResourceList(TargetResourceType.AKS, true)
                         .then((clusters) => clusters.map(x => { return { label: x.name, data: x }; })),
                     { placeHolder: Messages.selectTargetResource },
-                    TelemetryKeys.WebAppListCount)).data;
+                    TelemetryKeys.AksListCount)).data;
                 break;
             case TargetResourceType.WebApp:
             default:
@@ -392,7 +394,7 @@ class Orchestrator {
 
                 let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
                     Messages.selectTargetResource,
-                    this.appServiceClient.GetAppServices(this.inputs.pipelineParameters.pipelineTemplate.targetKind ? this.inputs.pipelineParameters.pipelineTemplate.targetKind : WebAppKind.WindowsApp)
+                    this.appServiceClient.GetAppServices(this.inputs.pipelineParameters.template.targetKind ? this.inputs.pipelineParameters.template.targetKind : WebAppKind.WindowsApp)
                         .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
                     { placeHolder: Messages.selectTargetResource },
                     TelemetryKeys.WebAppListCount);
@@ -406,13 +408,51 @@ class Orchestrator {
         }
     }
 
+    private async getRequiredParameters(): Promise<void> {
+        if (!!this.inputs.pipelineParameters.template.parameters && this.inputs.pipelineParameters.template.parameters.length > 0) {
+            this.inputs.pipelineParameters.template.parameters.forEach(async (parameter) => {
+                try {
+                    switch (parameter.type) {
+                        case ParameterType.TextBox:
+                                this.inputs.pipelineParameters.params[parameter.id] = await this.controlProvider.showInputBox(
+                                parameter.id,
+                                {
+                                    placeHolder: parameter.placeHolder
+                                }
+                            );
+                            break;
+                        case ParameterType.Acr:
+                            let selectedItem = await this.controlProvider.showQuickPick(
+                                parameter.id,
+                                this.azureResourceClient.getResourceList(parameter.type.toString())
+                                    .then((acrList) => acrList.map(x => { return { label: x.name, data: x }; })),
+                                { placeHolder: parameter.placeHolder },
+                                TelemetryKeys.AcrListCount);
+                            this.inputs.pipelineParameters.params[parameter.id] = selectedItem.data;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                catch (err) {
+                    if (!this.inputs.pipelineParameters.params[parameter.id] && !!parameter.defaultValue) {
+                        this.inputs.pipelineParameters.params[parameter.id] = parameter.defaultValue;
+                    }
+                    else {
+                        throw err;
+                    }
+                }
+            })
+        }
+    }
+
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
         try {
-            this.inputs.pipelineParameters.pipelineFilePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs);
+            this.inputs.pipelineParameters.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs);
             await this.localGitRepoHelper.addContentToFile(
-                await templateHelper.renderContent(this.inputs.pipelineParameters.pipelineTemplate.path, this.inputs),
-                this.inputs.pipelineParameters.pipelineFilePath);
-            await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineParameters.pipelineFilePath));
+                await templateHelper.renderContent(this.inputs.pipelineParameters.template.path, this.inputs),
+                this.inputs.pipelineParameters.filePath);
+            await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineParameters.filePath));
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.AddingContentToPipelineFileFailed, error);

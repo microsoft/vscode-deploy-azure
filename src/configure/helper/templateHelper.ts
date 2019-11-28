@@ -1,10 +1,11 @@
-import { PipelineTemplate, WizardInputs, RepositoryProvider, TargetResourceType, WebAppKind, extensionVariables } from '../model/models';
+import { PipelineTemplate, WizardInputs, RepositoryProvider, TargetResourceType, WebAppKind, extensionVariables, ParameterType } from '../model/models';
 import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
 import { Messages } from '../resources/messages';
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
+import { UniqueResourceNameSuffix } from '../configure';
 
 export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
     let analysisResult = await analyzeRepo(repoPath);
@@ -24,6 +25,11 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     let templateResult: PipelineTemplate[] = [];
     analysisResult.languages.forEach((language) => {
         switch (language) {
+            case SupportedLanguage.DOCKER:
+                if (templateList[SupportedLanguage.DOCKER] && templateList[SupportedLanguage.DOCKER].length > 0) {
+                    templateResult = templateResult.concat(templateList[SupportedLanguage.DOCKER]);
+                }
+                break;
             case SupportedLanguage.NODE:
                 if (templateList[SupportedLanguage.NODE] && templateList[SupportedLanguage.NODE].length > 0) {
                     templateResult = templateResult.concat(templateList[SupportedLanguage.NODE]);
@@ -92,10 +98,10 @@ async function analyzeRepo(repoPath: string): Promise<AnalysisResult> {
     fs.readdir(repoPath, (err, files: string[]) => {
         let result: AnalysisResult = new AnalysisResult();
         result.languages = [];
+        result.languages = isDockerApp(files) ? result.languages.concat(SupportedLanguage.DOCKER) : result.languages;
         result.languages = isNodeRepo(files) ? result.languages.concat(SupportedLanguage.NODE) : result.languages;
         result.languages = isPythonRepo(files) ? result.languages.concat(SupportedLanguage.PYTHON) : result.languages;
         result.languages = isDotnetCoreRepo(files) ? result.languages.concat(SupportedLanguage.DOTNETCORE) : result.languages;
-        result.languages = result.languages.concat(SupportedLanguage.NONE);
 
         result.isFunctionApp = err ? true : isFunctionApp(files),
 
@@ -124,6 +130,12 @@ function isPythonRepo(files: string[]): boolean {
     return files.some((file) => {
         let result = new RegExp(pythonRegex).test(file.toLowerCase());
         return result;
+    });
+}
+
+function isDockerApp(files: string[]): boolean {
+    return files.some((file) => {
+        return file.toLowerCase().endsWith("dockerfile");
     });
 }
 
@@ -292,9 +304,14 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: 'docker',
             targetType: TargetResourceType.AKS,
             targetKind: null,
-            enabled: false,
+            enabled: true,
             parameters: [
-                {}
+                {
+                    "id": "acr",
+                    "placeHolder": "Select Azure Container Registry to store docker image",
+                    "type": ParameterType.Acr,
+                    "defaultValue": "{{ targetResource.name }}" + UniqueResourceNameSuffix.toString()
+                }
             ]
         }
     ]

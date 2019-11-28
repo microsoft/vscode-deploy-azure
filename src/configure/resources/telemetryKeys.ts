@@ -32,5 +32,6 @@ export class TelemetryKeys {
     public static ProjectListCount = 'ProjectListCount';
     public static WebAppListCount = 'WebAppListCount';
     public static AksListCount = 'AksListCount';
+    public static AcrListCount = 'AcrListCount';
     public static PipelineTempateListCount = 'pipelineTempateListCount';
 }

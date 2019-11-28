@@ -67,9 +67,10 @@ export class AzureParameters {
 }
 
 export class PipelineParameters {
-    pipelineFilePath: string;
-    pipelineTemplate: PipelineTemplate;
+    filePath: string;
+    template: PipelineTemplate;
     workingDirectory: string;
+    params: {key: string, value: any}[]= [];
 }
 
 export interface GitRepositoryParameters {
@@ -98,15 +99,15 @@ export interface PipelineTemplate {
     targetType: TargetResourceType;
     targetKind: WebAppKind;
     enabled: boolean;
-    parameters?: Parameter[]
+    parameters?: Parameter[];
 }
 
 export interface Parameter {
-    name: string;
     id: string;
     placeHolder: string;
     type: ParameterType;
-    value: any;
+    defaultValue?: any;
+    condition?: string;
 }
 
 export enum ParameterType {
