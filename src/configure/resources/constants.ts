@@ -147,3 +147,4 @@ export const SelectRemoteForRepo = 'selectRemoteForRepo';
 export const VstsRmScmType = 'VSTSRM';
 export const DeploymentResourceAlreadyConfigured = 'DeploymentResourceAlreadyConfigured';
 export const BrowseNotAvailableConfigurePipeline =  'BrowseNotAvailableConfigurePipeline';
+export const DeploymentMessageType = 'CDDeploymentConfiguration';

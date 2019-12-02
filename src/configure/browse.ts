@@ -16,7 +16,7 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
             if (!!node && !!node.fullId) {
                 let parsedAzureResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(node.fullId);
                 let session: AzureSession = getSubscriptionSession(parsedAzureResourceId.subscriptionId);
-                let appServiceClient = new AppServiceClient(session.credentials, session.tenantId, session.environment.portalUrl, parsedAzureResourceId.subscriptionId);
+                let appServiceClient = new AppServiceClient(session.credentials, session.environment, session.tenantId, parsedAzureResourceId.subscriptionId);
                 let siteConfig = await appServiceClient.getAppServiceConfig(node.fullId);
                 telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType);
                 let controlProvider = new ControlProvider();
@@ -25,6 +25,9 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
                     let pipelineUrl = await appServiceClient.getAzurePipelineUrl(node.fullId);
                     vscode.env.openExternal(vscode.Uri.parse(pipelineUrl));
                     telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
+                }
+                else if(siteConfig.scmType.toLowerCase() === ScmType.GITHUBACTION.toLowerCase()) {
+                    await browseGitHubWorkflow(node.fullId, appServiceClient);
                 }
                 else if (siteConfig.scmType === '' || siteConfig.scmType.toLowerCase() === ScmType.NONE.toLowerCase()) {
                     let deployToAzureAction = 'Deploy to Azure';
@@ -39,9 +42,7 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
                     }
                 }
                 else {
-                    let deploymentCenterUrl: string = await appServiceClient.getDeploymentCenterUrl(node.fullId);
-                    await vscode.env.openExternal(vscode.Uri.parse(deploymentCenterUrl));
-                    telemetryHelper.setTelemetry(TelemetryKeys.BrowsedDeploymentCenter, 'true');
+                    await openDeploymentCenter(node.fullId, appServiceClient);
                 }
             }
             else {
@@ -59,4 +60,23 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
             }
         }
     }, TelemetryKeys.CommandExecutionDuration);
+}
+
+async function browseGitHubWorkflow(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
+    let webAppSourceControl = await appServiceClient.getSourceControl(resourceId);
+
+    if (!!webAppSourceControl && !!webAppSourceControl.properties && webAppSourceControl.properties.isGitHubAction) {
+        let url = `${webAppSourceControl.properties.repoUrl}/actions?query=branch=${webAppSourceControl.properties.branch}`;
+        await vscode.env.openExternal(vscode.Uri.parse(url));
+        telemetryHelper.setTelemetry(TelemetryKeys.BrowsedDeploymentCenter, 'true');
+    }
+    else {
+        await openDeploymentCenter(resourceId, appServiceClient);
+    }
+}
+
+async function openDeploymentCenter(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
+    let deploymentCenterUrl: string = await appServiceClient.getDeploymentCenterUrl(resourceId);
+    await vscode.env.openExternal(vscode.Uri.parse(deploymentCenterUrl));
+    telemetryHelper.setTelemetry(TelemetryKeys.BrowsedDeploymentCenter, 'true');
 }

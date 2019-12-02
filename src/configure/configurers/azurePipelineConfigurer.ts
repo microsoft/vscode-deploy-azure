@@ -14,7 +14,7 @@ import { GraphHelper } from '../helper/graphHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TracePoints } from '../resources/tracePoints';
 import { UniqueResourceNameSuffix } from '../configure';
-import { AppServiceClient } from '../clients/azure/appServiceClient';
+import { AppServiceClient, VSTSDeploymentMessage } from '../clients/azure/appServiceClient';
 import { AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { Build } from '../model/azureDevOps';
@@ -292,11 +292,16 @@ export class AzurePipelineConfigurer implements Configurer {
                 });
 
                 // send a deployment log with information about the setup pipeline and links.
+                let deploymentMessage: VSTSDeploymentMessage = {
+                    type: constants.DeploymentMessageType,
+                    message: Messages.deploymentLogMessage,
+                    VSTSRM_BuildDefinitionWebAccessUrl: `${buildDefinitionUrl}`,
+                    VSTSRM_ConfiguredCDEndPoint: '',
+                    VSTSRM_BuildWebAccessUrl: `${buildUrl}`,
+                };
+
                 let updateDeploymentLogPromise = (azureResourceClient as AppServiceClient).publishDeploymentToAppService(
-                    inputs.targetResource.resource.id,
-                    buildDefinitionUrl,
-                    buildDefinitionUrl,
-                    buildUrl);
+                    inputs.targetResource.resource.id, deploymentMessage);
 
                 Q.all([updateScmPromise, updateMetadataPromise, updateDeploymentLogPromise])
                     .then(() => {

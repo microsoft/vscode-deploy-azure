@@ -66,4 +66,5 @@ export class Messages {
     public static githubWorkflowSetupSuccessfully: string = 'GitHub workflow set up successfully !';
     public static copyAndCreateSecretMessage: string = 'To deploy to Azure App Service via GitHub workflow, create a new secret with name \'%s\' in your repository. Copy the below secret value to add the secret';
     public static browseWorkflow: string = 'Browse Workflow';
+    public static deploymentLogMessage: string = 'Successfully set up CI/CD pipeline from VS Code and triggered deployment to Azure.';
 }
