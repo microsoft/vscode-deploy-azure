@@ -380,9 +380,14 @@ class Orchestrator {
             default:
                 this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.tenantId, this.inputs.azureSession.environment.portalUrl, this.inputs.targetResource.subscriptionId);
 
+                let webAppKind = (
+                    this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.WindowsApp ||
+                    this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.LinuxApp) &&
+                    this.inputs.pipelineParameters.pipelineTemplate.label.toLowerCase().endsWith('to app service') ?
+                [WebAppKind.WindowsApp, WebAppKind.LinuxApp] : [this.inputs.pipelineParameters.pipelineTemplate.targetKind];
                 let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
                     Messages.selectTargetResource,
-                    this.appServiceClient.GetAppServices(this.inputs.pipelineParameters.pipelineTemplate.targetKind ? this.inputs.pipelineParameters.pipelineTemplate.targetKind : WebAppKind.WindowsApp)
+                    this.appServiceClient.GetAppServices(webAppKind)
                         .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
                     { placeHolder: Messages.selectTargetResource },
                     TelemetryKeys.WebAppListCount);
@@ -392,6 +397,11 @@ class Orchestrator {
                 }
                 else {
                     this.inputs.targetResource.resource = selectedResource.data;
+                    this.inputs.pipelineParameters.pipelineTemplate = templateHelper.getTemplate(
+                        this.inputs.sourceRepository.repositoryProvider,
+                        this.inputs.pipelineParameters.pipelineTemplate.language,
+                        TargetResourceType.WebApp,
+                        <WebAppKind>this.inputs.targetResource.resource.kind);
                 }
         }
     }
