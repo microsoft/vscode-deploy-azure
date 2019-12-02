@@ -40,7 +40,7 @@ class TelemetryHelper {
     }
 
     public setCurrentStep(stepName: string): void {
-        this.actionContext.telemetry.properties.cancelStep = stepName;
+        this.actionContext.telemetry.properties["currentStep"] = stepName;
     }
 
     public logError(layer: string, tracePoint: string, error: Error): void {

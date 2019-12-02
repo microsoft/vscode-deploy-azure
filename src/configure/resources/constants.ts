@@ -145,6 +145,8 @@ export const GitHubPat = 'gitHubPat';
 export const SelectFromMultipleWorkSpace = 'selectFromMultipleWorkSpace';
 export const SelectRemoteForRepo = 'selectRemoteForRepo';
 export const VstsRmScmType = 'VSTSRM';
-export const DeploymentResourceAlreadyConfigured = 'DeploymentResourceAlreadyConfigured';
 export const BrowseNotAvailableConfigurePipeline =  'BrowseNotAvailableConfigurePipeline';
 export const DeploymentMessageType = 'CDDeploymentConfiguration';
+export const SetupAlreadyExists =  'SetupAlreadyExists';
+export const Browse =  'Browse';
+

@@ -46,7 +46,7 @@ export class Messages {
     public static selectProject: string = 'Select an Azure DevOps project';
     public static selectRemoteForBranch: string = 'Select the remote repository where you want to track your current branch';
     public static selectSubscription: string = 'Select the target Azure Subscription to deploy to your application';
-    public static selectTargetResource: string = 'Select the target Azure Resouce to deploy your application';
+    public static selectTargetResource: string = 'Select the target Azure Resource to deploy your application';
     public static selectWorkspaceFolder: string = 'Select a folder from your workspace to deploy';
     public static signInLabel: string = 'Sign In';
     public static signUpLabel: string = 'Sign Up';
@@ -59,7 +59,7 @@ export class Messages {
     public static userCancelledExcecption = 'User cancelled the action';
     public static cannotFindPipelineUrlInMetaDataException = 'We were unable to find pipeline associated with the Azure Web App. Please click on "Browse Pipeline" to explore.';
     public static cannotFindOrganizationWithName = 'Unable to find organization with name: %s';
-    public static browseNotAvailableConfigurePipeline = 'Unable to find a pipeline for this Azure Web App. Please click on "Configure Pipeline" to setup.';
+    public static browseNotAvailableConfigurePipeline = 'No pipeline is configured for this Azure Web App. Please click on "Deploy to Azure" to setup.';
     public static didNotRecieveAzureResourceNodeToProcess = 'Unable to browse the pipeline for you. Please raise an issue in the [repo](https://github.com/Microsoft/azure-pipelines-vscode/issues).';
     public static copyAndOpenLabel: string = 'Copy & Open';
     public static nextLabel: string = 'Next';
@@ -67,4 +67,5 @@ export class Messages {
     public static copyAndCreateSecretMessage: string = 'To deploy to Azure App Service via GitHub workflow, create a new secret with name \'%s\' in your repository. Copy the below secret value to add the secret';
     public static browseWorkflow: string = 'Browse Workflow';
     public static deploymentLogMessage: string = 'Successfully set up CI/CD pipeline from VS Code and triggered deployment to Azure.';
+    public static setupAlreadyConfigured = 'Setup is already configured for your web app. Browse to know more about the existing setup.';
 }

@@ -13,4 +13,5 @@ export class TracePoints {
     public static GitHubServiceConnectionError = 'gitHubServiceConnectionError';
     public static PipelineFileCheckInFailed = 'PipelineFileCheckInFailed';
     public static PostDeploymentActionFailed = 'PostDeploymentActionFailed';
+    public static CorruptMetadataForVstsRmScmType = 'CorruptMetadataForVstsRmScmType';
 }

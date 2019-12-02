@@ -16,7 +16,7 @@ export async function activate(context: vscode.ExtensionContext) {
     extensionVariables.reporter = createTelemetryReporter(context);
     registerUiVariables(context);
 
-    await callWithTelemetryAndErrorHandling('azurePipelines.activate', async (activateContext: IActionContext) => {
+    await callWithTelemetryAndErrorHandling('azuredeploy.activate', async (activateContext: IActionContext) => {
         activateContext.telemetry.properties.isActivationEvent = 'true';
         telemetryHelper.initialize(activateContext, 'activate');
         await telemetryHelper.executeFunctionWithTimeTelemetry(

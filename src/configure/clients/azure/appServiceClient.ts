@@ -8,6 +8,8 @@ import { AzureResourceClient } from './azureResourceClient';
 import { WebAppKind, ParsedAzureResourceId, WebAppSourceControl } from '../../model/models';
 import {Messages} from '../../resources/messages';
 import { AzureEnvironment } from 'ms-rest-azure';
+import { telemetryHelper } from '../../helper/telemetryHelper';
+import { TelemetryKeys } from '../../resources/telemetryKeys';
 
 export class AppServiceClient extends AzureResourceClient {
 
@@ -28,25 +30,20 @@ export class AppServiceClient extends AzureResourceClient {
         return await this.webSiteManagementClient.webApps.get(parsedResourceId.resourceGroup, parsedResourceId.resourceName);
     }
 
-    public async GetAppServices(filterForResourceKind: WebAppKind): Promise<ResourceListResult> {
+    public async GetAppServices(filtersForResourceKind: WebAppKind[]): Promise<ResourceListResult> {
         let resourceList: ResourceListResult = await this.getResourceList(AppServiceClient.resourceType);
-        if (!!filterForResourceKind) {
+        if (!!filtersForResourceKind && filtersForResourceKind.length > 0) {
             let filteredResourceList: ResourceListResult = [];
 
-            if(filterForResourceKind === WebAppKind.FunctionAppLinux) {
+                if(WebAppKind.FunctionAppLinux in filtersForResourceKind) {
+                        filtersForResourceKind.concat(WebAppKind.FunctionAppLinuxContainer);
+                }
+
                 resourceList.forEach((resource) => {
-                    if(resource.kind === WebAppKind.FunctionAppLinux || resource.kind === WebAppKind.FunctionAppLinuxContainer) {
+                    if (filtersForResourceKind.some((kind) => resource.kind === kind)) {
                         filteredResourceList.push(resource);
                     }
                 });
-            }
-            else {
-                resourceList.forEach((resource) => {
-                    if (resource.kind === filterForResourceKind) {
-                        filteredResourceList.push(resource);
-                    }
-                });
-            }
 
             resourceList = filteredResourceList;
         }
@@ -147,6 +144,17 @@ export class AppServiceClient extends AzureResourceClient {
             serializationMapper: null,
             deserializationMapper: null
         });
+    }
+
+    public async isScmTypeSet(resourceId: string): Promise<boolean> {
+        // Check for SCM type, if its value is set then a pipeline is already setup.
+        let siteConfig = await this.getAppServiceConfig(resourceId);
+        if (!!siteConfig.scmType && siteConfig.scmType.toLowerCase() != ScmType.NONE.toLowerCase()) {
+            telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType.toLowerCase());
+            return true;
+        }
+
+        return false;
     }
 
     private createDeploymentObject(deploymentId: string, deploymentMessage: DeploymentMessage): Deployment {

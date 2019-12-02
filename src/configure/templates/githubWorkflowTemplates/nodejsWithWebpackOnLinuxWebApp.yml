@@ -1,0 +1,48 @@
+# Node.js with webpack on Linux Web App
+# Build a Node.js project using the webpack CLI and deploy it to Azure as a Linux web app.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+
+on:
+  push:
+    branches:
+      - {{{ sourceRepository.branch }}}
+
+name: Build and deploy Node app
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    # checkout the repo
+    - uses: actions/checkout@master
+
+    # login using publishing credentials
+    - uses: azure/login@v1
+      with:
+        creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
+    
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '10.x'
+
+    # install dependencies, build, and test
+    - name: npm install, build
+      run: |
+        npm install -g webpack webpack-cli --save-dev
+        npm install
+        npx webpack --config webpack.config.js
+    
+    - uses: azure/appservice-settings@v1
+      with:
+        app-name: {{{ targetResource.resource.name }}}
+        general-settings-json: '{"linuxFxVersion": "NODE|10.10"}' #'General configuration settings as Key Value pairs'
+
+    # deploy web app 
+    - uses: azure/webapps-deploy@v1
+      with:
+        app-name: {{{ targetResource.resource.name }}}
+
+    # Azure logout
+    - name: logout
+      run: |
+        az logout
