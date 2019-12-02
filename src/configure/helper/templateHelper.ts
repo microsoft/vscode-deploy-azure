@@ -69,31 +69,23 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     templateResult = targetResource && !!targetResource.type ? templateResult.filter((template) => !template.targetType || template.targetType.toLowerCase() === targetResource.type.toLowerCase()) : templateResult;
     templateResult = targetResource && !!targetResource.kind ? templateResult.filter((template) => !template.targetKind || template.targetKind.toLowerCase() === targetResource.kind.toLowerCase()) : templateResult;
     templateResult = templateResult.filter((pipelineTemplate) => pipelineTemplate.enabled);
-    // remove duplicate named template:
-    let templateMap: Map<string, PipelineTemplate> = new Map<string, PipelineTemplate>();
-    let tempList = templateResult;
-    templateResult = [];
-    tempList.forEach((template) => {
-        if (!templateMap[template.label]) {
-            templateMap[template.label] = template;
-            templateResult = templateResult.concat(template);
-        }
-    });
 
+    // remove duplicate named template:
+    templateResult = removeDuplicates(templateResult);
     return templateResult;
 }
 
-export function getTemplate(repositoryProvider: RepositoryProvider, language: string, targetType: TargetResourceType, targetKind?: WebAppKind): PipelineTemplate {
+export function getTemplate(repositoryProvider: RepositoryProvider, language: string, targetType: TargetResourceType, targetKind: WebAppKind): PipelineTemplate {
     let pipelineTemplates: PipelineTemplate[] = null;
     if (repositoryProvider === RepositoryProvider.AzureRepos || !extensionVariables.enableGitHubWorkflow) {
         pipelineTemplates = azurePipelineTemplates[language];
-        if (targetType === TargetResourceType.WebApp && (targetKind === WebAppKind.FunctionApp || targetKind === WebAppKind.FunctionAppLinux || targetKind === WebAppKind.FunctionAppLinuxContainer)) {
+        if (targetType === TargetResourceType.WebApp && isFunctionAppType(targetKind)) {
             pipelineTemplates = pipelineTemplates.concat(azurePipelineTargetBasedTemplates[`${targetType}-${targetKind}`]);
         }
     }
     else {
         pipelineTemplates = githubWorklowTemplates[language];
-        if (targetType === TargetResourceType.WebApp && (targetKind === WebAppKind.FunctionApp || targetKind === WebAppKind.FunctionAppLinux || targetKind === WebAppKind.FunctionAppLinuxContainer)) {
+        if (targetType === TargetResourceType.WebApp && isFunctionAppType(targetKind)) {
             pipelineTemplates = pipelineTemplates.concat(githubWorkflowTargetBasedTemplates[`${targetType}-${targetKind}`]);
         }
     }
@@ -162,6 +154,24 @@ function isFunctionApp(files: string[]): boolean {
     return files.some((file) => {
         return file.toLowerCase().endsWith("host.json");
     });
+}
+
+function isFunctionAppType(targetKind: WebAppKind): boolean {
+    return targetKind === WebAppKind.FunctionApp || targetKind === WebAppKind.FunctionAppLinux || targetKind === WebAppKind.FunctionAppLinuxContainer;
+}
+
+function removeDuplicates(templateList: PipelineTemplate[]): PipelineTemplate[] {
+    let templateMap: Map<string, PipelineTemplate> = new Map<string, PipelineTemplate>();
+    let tempList = templateList;
+    templateList = [];
+    tempList.forEach((template) => {
+        if (!templateMap[template.label]) {
+            templateMap[template.label] = template;
+            templateList.push(template);
+        }
+    });
+
+    return templateList;
 }
 
 export class AnalysisResult {
