@@ -37,7 +37,6 @@ jobs:
     # deploy web app using publish profile credentials
     - name: 'Run Azure Functions Action'
       uses: Azure/functions-action@v1
-      id: fa
       with:
         app-name: {{{ targetResource.resource.name }}}
         package: {{{ pipelineParameters.workingDirectory }}}

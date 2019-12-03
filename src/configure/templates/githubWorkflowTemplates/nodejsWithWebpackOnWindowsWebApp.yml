@@ -34,8 +34,7 @@ jobs:
         npx webpack --config webpack.config.js
     
     # deploy web app
-    - uses: azure/webapps-deploy@v1
-      working-directory: {{{ pipelineParameters.workingDirectory }}}
+    - uses: azure/webapps-deploy@v1s
       with:
         app-name: {{{ targetResource.resource.name }}}
 

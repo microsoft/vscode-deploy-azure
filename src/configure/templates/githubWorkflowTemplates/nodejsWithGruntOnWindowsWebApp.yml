@@ -34,7 +34,6 @@ jobs:
     
     # deploy web app 
     - uses: azure/webapps-deploy@v1
-      working-directory: {{{ pipelineParameters.workingDirectory }}}
       with:
         app-name: {{{ targetResource.resource.name }}}
 

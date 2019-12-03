@@ -35,10 +35,9 @@ jobs:
     # deploy web app using publish profile credentials
     - name: 'Run Azure Functions Action'
       uses: Azure/functions-action@v1
-      working-directory: {{{ pipelineParameters.workingDirectory }}}
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: .
+        package: {{{ pipelineParameters.workingDirectory }}}
 
     # Azure logout
     - name: logout
