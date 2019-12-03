@@ -25,6 +25,7 @@ jobs:
 
     # install dependencies
     - name: python install
+      working-directory: {{{ pipelineParameters.workingDirectory }}}
       run: |
         sudo apt install python3.7-venv
         python -m venv --copies antenv
@@ -44,6 +45,7 @@ jobs:
     
     # deploy web app
     - uses: azure/webapps-deploy@v1
+      working-directory: {{{ pipelineParameters.workingDirectory }}}
       with: 
         app-name: {{{ targetResource.resource.name }}} 
 

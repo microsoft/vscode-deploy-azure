@@ -27,12 +27,14 @@ jobs:
 
     # install dependencies, build, and test
     - name: npm install, build
+      working-directory: {{{ pipelineParameters.workingDirectory }}}
       run: |
         npm install
         gulp default --gulpfile gulpfile.js
     
     # deploy web app 
     - uses: azure/webapps-deploy@v1
+      working-directory: {{{ pipelineParameters.workingDirectory }}}
       with:
         app-name: {{{ targetResource.resource.name }}}
 

@@ -26,6 +26,7 @@ jobs:
 
     - name: 'Run npm'
       shell: bash
+      working-directory: {{{ pipelineParameters.workingDirectory }}}
       run: |
         npm install
         npm run build --if-present
@@ -37,7 +38,7 @@ jobs:
       id: fa
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: .
+        package: {{{ pipelineParameters.workingDirectory }}}
 
     # Azure logout
     - name: logout

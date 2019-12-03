@@ -22,6 +22,7 @@ jobs:
 
     - name: 'Run npm'
       shell: bash
+      working-directory: {{{ pipelineParameters.workingDirectory }}}
       run: |
         # If your function app project is not located in your repository's root
         # Please change your directory for npm in pushd
@@ -34,7 +35,7 @@ jobs:
     # deploy web app using publish profile credentials
     - name: 'Run Azure Functions Action'
       uses: Azure/functions-action@v1
-      id: fa
+      working-directory: {{{ pipelineParameters.workingDirectory }}}
       with:
         app-name: {{{ targetResource.resource.name }}}
         package: .
