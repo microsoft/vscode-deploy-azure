@@ -42,6 +42,7 @@ jobs:
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
+        package: {{{ pipelineParameters.workingDirectory }}}
 
     # Azure logout
     - name: logout
