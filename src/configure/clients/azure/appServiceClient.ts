@@ -106,7 +106,7 @@ export class AppServiceClient extends AzureResourceClient {
         return this.webSiteManagementClient.webApps.updateMetadata(parsedResourceId.resourceGroup, parsedResourceId.resourceName, metadata);
     }
 
-    public async publishDeploymentToAppService(resourceId: string, deploymentMessage: DeploymentMessage | VSTSDeploymentMessage): Promise<Deployment> {
+    public async publishDeploymentToAppService(resourceId: string, deploymentMessage: string): Promise<Deployment> {
         let parsedResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(resourceId);
 
         // create deployment object
@@ -115,7 +115,7 @@ export class AppServiceClient extends AzureResourceClient {
         return this.webSiteManagementClient.webApps.createDeployment(parsedResourceId.resourceGroup, parsedResourceId.resourceName, deploymentId, deployment);
     }
 
-    public async setGitHubActionSourceControl(resourceId: string, githubRepositoryUrl: string, githubBranch: string): Promise<void> {
+    public async setSourceControl(resourceId: string, properties: any): Promise<void> {
         await this.webSiteManagementClient.sendRequest<any>(<UrlBasedRequestPrepareOptions>{
             url: `${this.environment.resourceManagerEndpointUrl}${resourceId}/sourcecontrols/web`,
             method: "PUT",
@@ -123,11 +123,7 @@ export class AppServiceClient extends AzureResourceClient {
                 'api-version': '2018-11-01'
             },
             body: {
-                "properties": {
-                    "isGitHubAction": true,
-                    "repoUrl": githubRepositoryUrl,
-                    "branch": githubBranch,
-                }
+                "properties": properties
             },
             serializationMapper: null,
             deserializationMapper: null
@@ -149,7 +145,7 @@ export class AppServiceClient extends AzureResourceClient {
     public async isScmTypeSet(resourceId: string): Promise<boolean> {
         // Check for SCM type, if its value is set then a pipeline is already setup.
         let siteConfig = await this.getAppServiceConfig(resourceId);
-        if (!!siteConfig.scmType && siteConfig.scmType.toLowerCase() != ScmType.NONE.toLowerCase()) {
+        if (!!siteConfig.scmType && siteConfig.scmType.toLowerCase() !== ScmType.NONE.toLowerCase()) {
             telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType.toLowerCase());
             return true;
         }
@@ -157,13 +153,13 @@ export class AppServiceClient extends AzureResourceClient {
         return false;
     }
 
-    private createDeploymentObject(deploymentId: string, deploymentMessage: DeploymentMessage): Deployment {
+    private createDeploymentObject(deploymentId: string, deploymentMessage: string): Deployment {
         let deployment: Deployment = {
             id: deploymentId,
             status: 4,
             author: 'VSTS',
             deployer: 'VSTS',
-            message: JSON.stringify(deploymentMessage)
+            message: deploymentMessage
         };
 
         return deployment;

@@ -45,15 +45,7 @@ async function browsePipelineInternal(resourceId: string, appServiceClient: AppS
     telemetryHelper.setTelemetry(TelemetryKeys.ScmType, scmType);
 
     if (scmType === ScmType.VSTSRM.toLowerCase()) {
-        try {
-            let pipelineUrl = await appServiceClient.getAzurePipelineUrl(resourceId);
-            vscode.env.openExternal(vscode.Uri.parse(pipelineUrl));
-            telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
-        }
-        catch (ex) {
-            telemetryHelper.logError(Layer, TracePoints.CorruptMetadataForVstsRmScmType, ex);
-            throw ex;
-        }
+        await browseAzurePipeline(resourceId, appServiceClient);
     }
     else if(scmType === ScmType.GITHUBACTION.toLowerCase()) {
         await browseGitHubWorkflow(resourceId, appServiceClient);
@@ -76,13 +68,25 @@ async function browsePipelineInternal(resourceId: string, appServiceClient: AppS
     }
 }
 
+async function browseAzurePipeline(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
+    try {
+        let pipelineUrl = await appServiceClient.getAzurePipelineUrl(resourceId);
+        vscode.env.openExternal(vscode.Uri.parse(pipelineUrl));
+        telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
+    }
+    catch (ex) {
+        telemetryHelper.logError(Layer, TracePoints.CorruptMetadataForVstsRmScmType, ex);
+        await openDeploymentCenter(resourceId, appServiceClient);
+    }
+}
+
 async function browseGitHubWorkflow(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
     let webAppSourceControl = await appServiceClient.getSourceControl(resourceId);
 
     if (!!webAppSourceControl && !!webAppSourceControl.properties && webAppSourceControl.properties.isGitHubAction) {
         let url = `${webAppSourceControl.properties.repoUrl}/actions?query=branch=${webAppSourceControl.properties.branch}`;
         await vscode.env.openExternal(vscode.Uri.parse(url));
-        telemetryHelper.setTelemetry(TelemetryKeys.BrowsedDeploymentCenter, 'true');
+        telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
     }
     else {
         await openDeploymentCenter(resourceId, appServiceClient);

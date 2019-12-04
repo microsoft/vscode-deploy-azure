@@ -292,13 +292,13 @@ export class AzurePipelineConfigurer implements Configurer {
                 });
 
                 // send a deployment log with information about the setup pipeline and links.
-                let deploymentMessage: VSTSDeploymentMessage = {
+                let deploymentMessage = JSON.stringify(<VSTSDeploymentMessage>{
                     type: constants.DeploymentMessageType,
                     message: Messages.deploymentLogMessage,
                     VSTSRM_BuildDefinitionWebAccessUrl: `${buildDefinitionUrl}`,
                     VSTSRM_ConfiguredCDEndPoint: '',
                     VSTSRM_BuildWebAccessUrl: `${buildUrl}`,
-                };
+                });
 
                 let updateDeploymentLogPromise = (azureResourceClient as AppServiceClient).publishDeploymentToAppService(
                     inputs.targetResource.resource.id, deploymentMessage);
@@ -306,10 +306,6 @@ export class AzurePipelineConfigurer implements Configurer {
                 Q.all([updateScmPromise, updateMetadataPromise, updateDeploymentLogPromise])
                     .then(() => {
                         telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
-                    })
-                    .catch((error) => {
-                        telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'false');
-                        throw error;
                     });
             }
             catch (error) {

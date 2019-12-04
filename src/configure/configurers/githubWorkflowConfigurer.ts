@@ -138,7 +138,12 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 let appServiceClient = azureResourceClient as AppServiceClient;
                 
                 // Update web app sourceControls as GitHubAction
-                await appServiceClient.setGitHubActionSourceControl(inputs.targetResource.resource.id, `https://github.com/${inputs.sourceRepository.repositoryId}`, inputs.sourceRepository.branch);
+                let sourceControlProperties = {
+                    "isGitHubAction": true,
+                    "repoUrl": `https://github.com/${inputs.sourceRepository.repositoryId}`,
+                    "branch": inputs.sourceRepository.branch,
+                };
+                await appServiceClient.setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
                 
                 // Update web app metadata
                 let updateMetadataPromise = new Promise<void>(async (resolve) => {
@@ -154,20 +159,16 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 });
 
                 // send a deployment log with information about the setup pipeline and links.
-                let deploymentMessage: DeploymentMessage = {
+                let deploymentMessage = JSON.stringify(<DeploymentMessage>{
                     type: constants.DeploymentMessageType,
                     message: Messages.deploymentLogMessage
-                };
+                });
 
                 let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage);
 
                 Q.all([updateMetadataPromise, updateDeploymentLogPromise])
                     .then(() => {
                         telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
-                    })
-                    .catch((error) => {
-                        telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'false');
-                        throw error;
                     });
             }
             catch (error) {
