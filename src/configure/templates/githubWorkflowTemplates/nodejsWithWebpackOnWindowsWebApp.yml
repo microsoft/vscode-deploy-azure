@@ -34,7 +34,7 @@ jobs:
         npx webpack --config webpack.config.js
     
     # deploy web app
-    - uses: azure/webapps-deploy@v1s
+    - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
 
