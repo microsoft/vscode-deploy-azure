@@ -2,11 +2,12 @@ const uuid = require('uuid/v4');
 import { ResourceListResult, GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { WebSiteManagementClient } from 'azure-arm-website';
 import { SiteConfigResource, StringDictionary, Deployment } from 'azure-arm-website/lib/models';
-import { ServiceClientCredentials } from 'ms-rest';
+import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from 'ms-rest';
 
 import { AzureResourceClient } from './azureResourceClient';
-import { WebAppKind, ParsedAzureResourceId } from '../../model/models';
-import { Messages } from '../../resources/messages';
+import { WebAppKind, ParsedAzureResourceId, WebAppSourceControl } from '../../model/models';
+import {Messages} from '../../resources/messages';
+import { AzureEnvironment } from 'ms-rest-azure';
 import { telemetryHelper } from '../../helper/telemetryHelper';
 import { TelemetryKeys } from '../../resources/telemetryKeys';
 
@@ -15,13 +16,13 @@ export class AppServiceClient extends AzureResourceClient {
     private static resourceType = 'Microsoft.Web/sites';
     private webSiteManagementClient: WebSiteManagementClient;
     private tenantId: string;
-    private portalUrl: string;
+    private environment: AzureEnvironment;
 
-    constructor(credentials: ServiceClientCredentials, tenantId: string, portalUrl: string, subscriptionId: string) {
+    constructor(credentials: ServiceClientCredentials, environment: AzureEnvironment, tenantId: string, subscriptionId: string) {
         super(credentials, subscriptionId);
         this.webSiteManagementClient = new WebSiteManagementClient(credentials, subscriptionId);
         this.tenantId = tenantId;
-        this.portalUrl = portalUrl;
+        this.environment = environment;
     }
 
     public async getAppServiceResource(resourceId: string): Promise<GenericResource> {
@@ -71,7 +72,7 @@ export class AppServiceClient extends AzureResourceClient {
     }
 
     public async getDeploymentCenterUrl(resourceId: string): Promise<string> {
-        return `${this.portalUrl}/#@${this.tenantId}/resource/${resourceId}/vstscd`;
+        return `${this.environment.portalUrl}/#@${this.tenantId}/resource/${resourceId}/vstscd`;
     }
 
     public async getAzurePipelineUrl(resourceId: string): Promise<string> {
@@ -105,19 +106,46 @@ export class AppServiceClient extends AzureResourceClient {
         return this.webSiteManagementClient.webApps.updateMetadata(parsedResourceId.resourceGroup, parsedResourceId.resourceName, metadata);
     }
 
-    public async publishDeploymentToAppService(resourceId: string, buildDefinitionUrl: string, releaseDefinitionUrl: string, triggeredBuildUrl: string): Promise<Deployment> {
+    public async publishDeploymentToAppService(resourceId: string, deploymentMessage: string): Promise<Deployment> {
         let parsedResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(resourceId);
 
         // create deployment object
         let deploymentId = uuid();
-        let deployment = this.createDeploymentObject(deploymentId, buildDefinitionUrl, releaseDefinitionUrl, triggeredBuildUrl);
+        let deployment = this.createDeploymentObject(deploymentId, deploymentMessage);
         return this.webSiteManagementClient.webApps.createDeployment(parsedResourceId.resourceGroup, parsedResourceId.resourceName, deploymentId, deployment);
+    }
+
+    public async setSourceControl(resourceId: string, properties: any): Promise<void> {
+        await this.webSiteManagementClient.sendRequest<any>(<UrlBasedRequestPrepareOptions>{
+            url: `${this.environment.resourceManagerEndpointUrl}${resourceId}/sourcecontrols/web`,
+            method: "PUT",
+            queryParameters: {
+                'api-version': '2018-11-01'
+            },
+            body: {
+                "properties": properties
+            },
+            serializationMapper: null,
+            deserializationMapper: null
+        });
+    }
+
+    public async getSourceControl(resourceId: string): Promise<WebAppSourceControl> {
+        return this.webSiteManagementClient.sendRequest<WebAppSourceControl>(<UrlBasedRequestPrepareOptions>{
+            url: `${this.environment.resourceManagerEndpointUrl}${resourceId}/sourcecontrols/web`,
+            method: "GET",
+            queryParameters: {
+                'api-version': '2018-11-01'
+            },
+            serializationMapper: null,
+            deserializationMapper: null
+        });
     }
 
     public async isScmTypeSet(resourceId: string): Promise<boolean> {
         // Check for SCM type, if its value is set then a pipeline is already setup.
         let siteConfig = await this.getAppServiceConfig(resourceId);
-        if (!!siteConfig.scmType && siteConfig.scmType.toLowerCase() != ScmType.NONE.toLowerCase()) {
+        if (!!siteConfig.scmType && siteConfig.scmType.toLowerCase() !== ScmType.NONE.toLowerCase()) {
             telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType.toLowerCase());
             return true;
         }
@@ -125,35 +153,32 @@ export class AppServiceClient extends AzureResourceClient {
         return false;
     }
 
-    private createDeploymentObject(deploymentId: string, buildDefinitionUrl: string, releaseDefinitionUrl: string, triggeredBuildUrl: string): Deployment {
+    private createDeploymentObject(deploymentId: string, deploymentMessage: string): Deployment {
         let deployment: Deployment = {
             id: deploymentId,
             status: 4,
             author: 'VSTS',
-            deployer: 'VSTS'
+            deployer: 'VSTS',
+            message: deploymentMessage
         };
 
-        let deploymentMessage: DeploymentMessage = {
-            type: "CDDeploymentConfiguration",
-            message: "Successfully set up continuous delivery from VS Code and triggered deployment to Azure Web App.",
-            VSTSRM_BuildDefinitionWebAccessUrl: `${buildDefinitionUrl}`,
-            VSTSRM_ConfiguredCDEndPoint: '',
-            VSTSRM_BuildWebAccessUrl: `${triggeredBuildUrl}`,
-        };
-        deployment.message = JSON.stringify(deploymentMessage);
         return deployment;
     }
 }
 
 export enum ScmType {
     VSTSRM = 'VSTSRM',
-    NONE = 'NONE'
+    NONE = 'NONE',
+    GITHUBACTION = 'GITHUBACTION'
 }
 
-interface DeploymentMessage {
+export interface DeploymentMessage {
     type: string;
     message: string;
-    VSTSRM_BuildDefinitionWebAccessUrl: string;
+}
+
+export interface VSTSDeploymentMessage extends DeploymentMessage {
+    VSTSRM_BuildDefinitionWebAccessUrl?: string;
     VSTSRM_ConfiguredCDEndPoint: string;
     VSTSRM_BuildWebAccessUrl: string;
 }
