@@ -136,7 +136,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
         if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
             try {
                 let appServiceClient = azureResourceClient as AppServiceClient;
-                
+
                 // Update web app sourceControls as GitHubAction
                 let sourceControlProperties = {
                     "isGitHubAction": true,
@@ -144,14 +144,14 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     "branch": inputs.sourceRepository.branch,
                 };
                 await appServiceClient.setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
-                
+
                 // Update web app metadata
                 let updateMetadataPromise = new Promise<void>(async (resolve) => {
                     let metadata = await appServiceClient.getAppServiceMetadata(inputs.targetResource.resource.id);
                     metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
 
                     let repositoryPath = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getGitRootDirectory();
-                    let configPath = path.relative(repositoryPath, inputs.pipelineParameters.pipelineFilePath);
+                    let configPath = path.relative(repositoryPath, inputs.pipelineParameters.filePath);
                     metadata["properties"]["configPath"] = `${configPath}`;
 
                     await appServiceClient.updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
