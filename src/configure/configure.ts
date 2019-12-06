@@ -206,6 +206,10 @@ class Orchestrator {
             let gitRootDir = await this.localGitRepoHelper.getGitRootDirectory();
             this.inputs.pipelineParameters.workingDirectory = path.relative(gitRootDir, this.workspacePath).split(path.sep).join('/'); 
 
+            if(this.inputs.pipelineParameters.workingDirectory == "") {
+                this.inputs.pipelineParameters.workingDirectory = ".";
+            }
+
             this.inputs.sourceRepository = this.inputs.sourceRepository ? this.inputs.sourceRepository : await this.getGitRepositoryParameters(gitBranchDetails);
         }
         else {
@@ -216,7 +220,7 @@ class Orchestrator {
     }
 
     private setDefaultRepositoryDetails(): void {
-        this.inputs.pipelineParameters.workingDirectory = '';
+        this.inputs.pipelineParameters.workingDirectory = '.';
             this.inputs.sourceRepository = {
                 branch: 'master',
                 commitId: '',
