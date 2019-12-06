@@ -23,9 +23,9 @@ export class AzureResourceClient {
                 switch (resource.kind ? resource.kind.toLowerCase() : '') {
                     case WebAppKind.LinuxApp:
                     case WebAppKind.FunctionAppLinux:
+                    case WebAppKind.WindowsApp:
                         return;
                     case WebAppKind.LinuxContainerApp:
-                    case WebAppKind.WindowsApp:
                     case WebAppKind.FunctionApp:
                     default:
                         throw new Error(utils.format(Messages.appKindIsNotSupported, resource.kind));

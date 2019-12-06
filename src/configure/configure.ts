@@ -71,6 +71,7 @@ class Orchestrator {
     private appServiceClient: AppServiceClient;
     private workspacePath: string;
     private controlProvider: ControlProvider;
+    private continueOrchestration: boolean = true;
 
     public constructor() {
         this.inputs = new WizardInputs();
@@ -81,33 +82,39 @@ class Orchestrator {
     public async configure(node: any) {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
         await this.getInputs(node);
-        let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.targetResource.subscriptionId);
-        await pipelineConfigurer.getInputs(this.inputs);
 
-        telemetryHelper.setCurrentStep('CreatePreRequisites');
-        await pipelineConfigurer.createPreRequisites(this.inputs);
+        if (this.continueOrchestration) {
+            let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.targetResource.subscriptionId);
+            await pipelineConfigurer.getInputs(this.inputs);
 
-        telemetryHelper.setCurrentStep('CheckInPipeline');
-        await this.checkInPipelineFileToRepository(pipelineConfigurer);
+            telemetryHelper.setCurrentStep('CreatePreRequisites');
+            await pipelineConfigurer.createPreRequisites(this.inputs);
 
-        telemetryHelper.setCurrentStep('CreateAndRunPipeline');
-        await pipelineConfigurer.createAndQueuePipeline(this.inputs);
+            telemetryHelper.setCurrentStep('CheckInPipeline');
+            await this.checkInPipelineFileToRepository(pipelineConfigurer);
 
-        telemetryHelper.setCurrentStep('PostPipelineCreation');
-        // This step should be determined by the resoruce target provider (azure app service, function app, aks) type and pipelineProvider(azure pipeline vs github)
-        pipelineConfigurer.executePostPipelineCreationSteps(this.inputs, this.appServiceClient);
+            telemetryHelper.setCurrentStep('CreateAndRunPipeline');
+            await pipelineConfigurer.createAndQueuePipeline(this.inputs);
 
-        telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
-        pipelineConfigurer.browseQueuedPipeline();
+            telemetryHelper.setCurrentStep('PostPipelineCreation');
+            // This step should be determined by the resoruce target provider (azure app service, function app, aks) type and pipelineProvider(azure pipeline vs github)
+            pipelineConfigurer.executePostPipelineCreationSteps(this.inputs, this.appServiceClient);
+
+            telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
+            pipelineConfigurer.browseQueuedPipeline();
+        }
     }
 
-    private async getInputs(node: any) {
+    private async getInputs(node: any): Promise<void> {
         await this.analyzeNode(node);
-        await this.getSourceRepositoryDetails();
-        await this.getSelectedPipeline();
 
-        if (!this.inputs.targetResource.resource) {
-            await this.getAzureResourceDetails();
+        if (this.continueOrchestration) {
+            await this.getSourceRepositoryDetails();
+            await this.getSelectedPipeline();
+
+            if (!this.inputs.targetResource.resource) {
+                await this.getAzureResourceDetails();
+            }
         }
     }
 
@@ -204,7 +211,7 @@ class Orchestrator {
 
             // Set working directory relative to repository root
             let gitRootDir = await this.localGitRepoHelper.getGitRootDirectory();
-            this.inputs.pipelineParameters.workingDirectory = path.relative(gitRootDir, this.workspacePath).split(path.sep).join('/'); 
+            this.inputs.pipelineParameters.workingDirectory = path.relative(gitRootDir, this.workspacePath).split(path.sep).join('/');
 
             if(this.inputs.pipelineParameters.workingDirectory == "") {
                 this.inputs.pipelineParameters.workingDirectory = ".";
@@ -221,16 +228,16 @@ class Orchestrator {
 
     private setDefaultRepositoryDetails(): void {
         this.inputs.pipelineParameters.workingDirectory = '.';
-            this.inputs.sourceRepository = {
-                branch: 'master',
-                commitId: '',
-                localPath: this.workspacePath,
-                remoteName: 'origin',
-                remoteUrl: '',
-                repositoryId: '',
-                repositoryName: '',
-                repositoryProvider: RepositoryProvider.AzureRepos
-            };
+        this.inputs.sourceRepository = {
+            branch: 'master',
+            commitId: '',
+            localPath: this.workspacePath,
+            remoteName: 'origin',
+            remoteUrl: '',
+            repositoryId: '',
+            repositoryName: '',
+            repositoryProvider: RepositoryProvider.AzureRepos
+        };
     }
 
     private async getGitRepositoryParameters(gitRepositoryDetails: GitBranchDetails): Promise<GitRepositoryParameters> {
@@ -281,22 +288,52 @@ class Orchestrator {
         }
     }
 
-    private async extractAzureResourceFromNode(node: any): Promise<void> {
+    private async extractAzureResourceFromNode(node: AzureTreeItem): Promise<void> {
         this.inputs.targetResource.subscriptionId = node.root.subscriptionId;
         this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
-        this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.tenantId, this.inputs.azureSession.environment.portalUrl, this.inputs.targetResource.subscriptionId);
+        this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
 
         try {
-            let azureResource: GenericResource = await this.appServiceClient.getAppServiceResource((<AzureTreeItem>node).fullId);
+            let azureResource: GenericResource = await this.appServiceClient.getAppServiceResource(node.fullId);
             telemetryHelper.setTelemetry(TelemetryKeys.resourceType, azureResource.type);
             telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, azureResource.kind);
             AzureResourceClient.validateTargetResourceType(azureResource);
+            if (azureResource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
+                if (await this.appServiceClient.isScmTypeSet(node.fullId)) {
+                    await this.openBrowseExperience(node.fullId);
+                }
+            }
+
             this.inputs.targetResource.resource = azureResource;
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.ExtractAzureResourceFromNodeFailed, error);
             throw error;
         }
+    }
+
+    private async openBrowseExperience(resourceId: string): Promise<void> {
+        try {
+            // if pipeline is already setup, the ask the user if we should continue.
+            telemetryHelper.setTelemetry(TelemetryKeys.PipelineAlreadyConfigured, 'true');
+
+            let browsePipelineAction = await this.controlProvider.showInformationBox(
+            constants.SetupAlreadyExists,
+            Messages.setupAlreadyConfigured,
+            constants.Browse);
+
+            if (browsePipelineAction) {
+                vscode.commands.executeCommand('browse-cicd-pipeline', { fullId: resourceId });
+            }
+        }
+        catch (err) {
+            if (!(err instanceof UserCancelledError)) {
+                throw err;
+            }
+        }
+
+        this.continueOrchestration = false;
+        telemetryHelper.setResult(Result.Succeeded);
     }
 
     private async getSelectedPipeline(): Promise<void> {
@@ -345,15 +382,31 @@ class Orchestrator {
                 break;
             case TargetResourceType.WebApp:
             default:
-                this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.tenantId, this.inputs.azureSession.environment.portalUrl, this.inputs.targetResource.subscriptionId);
+                this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
 
+                let webAppKind = (
+                    this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.WindowsApp ||
+                    this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.LinuxApp) &&
+                    this.inputs.pipelineParameters.pipelineTemplate.label.toLowerCase().endsWith('to app service') ?
+                [WebAppKind.WindowsApp, WebAppKind.LinuxApp] : [this.inputs.pipelineParameters.pipelineTemplate.targetKind];
                 let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
                     Messages.selectTargetResource,
-                    this.appServiceClient.GetAppServices(this.inputs.pipelineParameters.pipelineTemplate.targetKind ? this.inputs.pipelineParameters.pipelineTemplate.targetKind : WebAppKind.WindowsApp)
+                    this.appServiceClient.GetAppServices(webAppKind)
                         .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
                     { placeHolder: Messages.selectTargetResource },
                     TelemetryKeys.WebAppListCount);
-                this.inputs.targetResource.resource = selectedResource.data;
+
+                if (await this.appServiceClient.isScmTypeSet((<GenericResource>selectedResource.data).id)) {
+                    await this.openBrowseExperience((<GenericResource>selectedResource.data).id);
+                }
+                else {
+                    this.inputs.targetResource.resource = selectedResource.data;
+                    this.inputs.pipelineParameters.pipelineTemplate = templateHelper.getTemplate(
+                        this.inputs.sourceRepository.repositoryProvider,
+                        this.inputs.pipelineParameters.pipelineTemplate.language,
+                        TargetResourceType.WebApp,
+                        <WebAppKind>this.inputs.targetResource.resource.kind);
+                }
         }
     }
 
