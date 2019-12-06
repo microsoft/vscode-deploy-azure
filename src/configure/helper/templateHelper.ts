@@ -304,7 +304,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: 'python',
             targetType: TargetResourceType.None,
             targetKind: null,
-            enabled: true
+            enabled: false
         }
     ],
     'dotnetcore': [
