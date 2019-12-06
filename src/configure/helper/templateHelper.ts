@@ -75,7 +75,30 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     templateResult = targetResource && !!targetResource.type ? templateResult.filter((template) => !template.targetType || template.targetType.toLowerCase() === targetResource.type.toLowerCase()) : templateResult;
     templateResult = targetResource && !!targetResource.kind ? templateResult.filter((template) => !template.targetKind || template.targetKind.toLowerCase() === targetResource.kind.toLowerCase()) : templateResult;
     templateResult = templateResult.filter((pipelineTemplate) => pipelineTemplate.enabled);
+
+    // remove duplicate named template:
+    templateResult = removeDuplicates(templateResult);
     return templateResult;
+}
+
+export function getTemplate(repositoryProvider: RepositoryProvider, language: string, targetType: TargetResourceType, targetKind: WebAppKind): PipelineTemplate {
+    let pipelineTemplates: PipelineTemplate[] = null;
+    if (repositoryProvider === RepositoryProvider.AzureRepos || !extensionVariables.enableGitHubWorkflow) {
+        pipelineTemplates = azurePipelineTemplates[language];
+        if (targetType === TargetResourceType.WebApp && isFunctionAppType(targetKind)) {
+            pipelineTemplates = pipelineTemplates.concat(azurePipelineTargetBasedTemplates[`${targetType}-${targetKind}`]);
+        }
+    }
+    else {
+        pipelineTemplates = githubWorklowTemplates[language];
+        if (targetType === TargetResourceType.WebApp && isFunctionAppType(targetKind)) {
+            pipelineTemplates = pipelineTemplates.concat(githubWorkflowTargetBasedTemplates[`${targetType}-${targetKind}`]);
+        }
+    }
+
+    return pipelineTemplates.find((template) => {
+        return template.language === language && template.targetType === targetType && template.targetKind === targetKind  && template.enabled === true;
+    });
 }
 
 export async function renderContent(templateFilePath: string, context: WizardInputs): Promise<string> {
@@ -145,6 +168,24 @@ function isFunctionApp(files: string[]): boolean {
     });
 }
 
+function isFunctionAppType(targetKind: WebAppKind): boolean {
+    return targetKind === WebAppKind.FunctionApp || targetKind === WebAppKind.FunctionAppLinux || targetKind === WebAppKind.FunctionAppLinuxContainer;
+}
+
+function removeDuplicates(templateList: PipelineTemplate[]): PipelineTemplate[] {
+    let templateMap: Map<string, PipelineTemplate> = new Map<string, PipelineTemplate>();
+    let tempList = templateList;
+    templateList = [];
+    tempList.forEach((template) => {
+        if (!templateMap[template.label]) {
+            templateMap[template.label] = template;
+            templateList.push(template);
+        }
+    });
+
+    return templateList;
+}
+
 export class AnalysisResult {
     public languages: SupportedLanguage[];
     public isFunctionApp: boolean;
@@ -163,15 +204,15 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
 {
     'none': [
         {
-            label: 'Simple application to Windows Web App',
+            label: 'Simple application to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/simpleWebApp.yml'),
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Simple application to Linux Web App',
+            label: 'Simple application to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/simpleLinuxWebApp.yml'),
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
@@ -181,47 +222,47 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
     ],
     'node': [
         {
-            label: 'Node.js with npm to Windows Web App',
+            label: 'Node.js with npm to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejs.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Node.js with Gulp to Windows Web App',
+            label: 'Node.js with Gulp to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGulp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Node.js with Grunt to Windows Web App',
+            label: 'Node.js with Grunt to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGrunt.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Node.js with Angular to Windows Web App',
+            label: 'Node.js with Angular to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithAngular.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Node.js with Webpack to Windows Web App',
+            label: 'Node.js with Webpack to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithWebpack.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Node.js with npm to Linux Web App',
+            label: 'Node.js with npm to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
@@ -229,7 +270,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Node.js with Gulp to Linux Web App',
+            label: 'Node.js with Gulp to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGulpLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
@@ -237,7 +278,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Node.js with Grunt to Linux Web App',
+            label: 'Node.js with Grunt to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGruntLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
@@ -245,7 +286,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Node.js with Angular to Linux Web App',
+            label: 'Node.js with Angular to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithAngularLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
@@ -253,7 +294,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Node.js with Webpack to Linux Web App',
+            label: 'Node.js with Webpack to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithWebpackLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
@@ -281,15 +322,15 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
     ],
     'dotnetcore': [
         {
-            label: '.NET Core Web App to Windows on Azure',
+            label: '.NET Core Web App to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreWindowsWebApp.yml'),
             language: 'dotnetcore',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: '.NET Core Web App to Linux on Azure',
+            label: '.NET Core Web App to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreLinuxWebApp.yml'),
             language: 'dotnetcore',
             targetType: TargetResourceType.WebApp,
@@ -320,15 +361,15 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
 let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } = {
     'node': [
         {
-            label: 'Node.js with npm to Windows Web App',
+            label: 'Node.js with npm to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnWindows.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Node.js with npm to Linux Web App',
+            label: 'Node.js with npm to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnLinux.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
@@ -336,15 +377,15 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Node.js with Gulp to Windows Web App',
+            label: 'Node.js with Gulp to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Node.js with Gulp to Linux Web App',
+            label: 'Node.js with Gulp to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
@@ -352,15 +393,15 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Node.js with Grunt to Windows Web App',
+            label: 'Node.js with Grunt to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Node.js with Grunt to Linux Web App',
+            label: 'Node.js with Grunt to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
@@ -368,15 +409,15 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Node.js with Angular to Windows Web App',
+            label: 'Node.js with Angular to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Node.js with Angular to Linux Web App',
+            label: 'Node.js with Angular to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
@@ -384,15 +425,15 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Node.js with Webpack to Windows Web App',
+            label: 'Node.js with Webpack to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: false
+            enabled: true
         },
         {
-            label: 'Node.js with Webpack to Linux Web App',
+            label: 'Node.js with Webpack to App Service',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
@@ -424,7 +465,7 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             language: 'node',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionApp,
-            enabled: false
+            enabled: true
         },
         {
             label: 'Node.js Function App to Linux Azure Function',
@@ -470,7 +511,7 @@ const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } 
             language: 'node',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionApp,
-            enabled: false
+            enabled: true
         },
         {
             label: 'Node.js Function App to Linux Azure Function',

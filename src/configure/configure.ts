@@ -317,6 +317,8 @@ class Orchestrator {
             this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
             this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.targetResource.subscriptionId);
             let cluster = await this.azureResourceClient.getResource(node.value.armId, '2019-08-01');
+            telemetryHelper.setTelemetry(TelemetryKeys.resourceType, cluster.type);
+            telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, cluster.kind);
             AzureResourceClient.validateTargetResourceType(cluster);
             this.inputs.targetResource.resource = cluster;
             this.inputs.targetResource.parsedResourceId = new ParsedAzureResourceId(this.inputs.targetResource.resource.id);
@@ -402,11 +404,16 @@ class Orchestrator {
                 break;
             case TargetResourceType.WebApp:
             default:
-                this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.tenantId, this.inputs.azureSession.environment.portalUrl, this.inputs.targetResource.subscriptionId);
+                this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
 
+                let webAppKind = (
+                    this.inputs.pipelineParameters.template.targetKind === WebAppKind.WindowsApp ||
+                    this.inputs.pipelineParameters.template.targetKind === WebAppKind.LinuxApp) &&
+                    this.inputs.pipelineParameters.template.label.toLowerCase().endsWith('to app service') ?
+                [WebAppKind.WindowsApp, WebAppKind.LinuxApp] : [this.inputs.pipelineParameters.template.targetKind];
                 let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
                     Messages.selectTargetResource,
-                    this.appServiceClient.GetAppServices(this.inputs.pipelineParameters.template.targetKind ? this.inputs.pipelineParameters.template.targetKind : WebAppKind.WindowsApp)
+                    this.appServiceClient.GetAppServices(webAppKind)
                         .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
                     { placeHolder: Messages.selectTargetResource },
                     TelemetryKeys.WebAppListCount);
@@ -416,6 +423,11 @@ class Orchestrator {
                 }
                 else {
                     this.inputs.targetResource.resource = selectedResource.data;
+                    this.inputs.pipelineParameters.template = templateHelper.getTemplate(
+                        this.inputs.sourceRepository.repositoryProvider,
+                        this.inputs.pipelineParameters.template.language,
+                        TargetResourceType.WebApp,
+                        <WebAppKind>this.inputs.targetResource.resource.kind);
                 }
         }
 

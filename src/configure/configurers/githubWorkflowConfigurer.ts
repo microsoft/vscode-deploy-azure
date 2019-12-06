@@ -12,6 +12,10 @@ import { TelemetryKeys } from '../resources/telemetryKeys';
 import { ControlProvider } from '../helper/controlProvider';
 import { GraphHelper } from '../helper/graphHelper';
 import { TracePoints } from '../resources/tracePoints';
+import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
+import { AzureResourceClient } from '../clients/azure/azureResourceClient';
+import * as Q from 'q';
+import * as constants from '../resources/constants';
 
 const Layer = 'GitHubWorkflowConfigurer';
 
@@ -128,8 +132,49 @@ export class GitHubWorkflowConfigurer implements Configurer {
         return this.queuedPipelineUrl;
     }
 
-    public async executePostPipelineCreationSteps(): Promise<void> {
-        return;
+    public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
+        if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
+            try {
+                let appServiceClient = azureResourceClient as AppServiceClient;
+                
+                // Update web app sourceControls as GitHubAction
+                let sourceControlProperties = {
+                    "isGitHubAction": true,
+                    "repoUrl": `https://github.com/${inputs.sourceRepository.repositoryId}`,
+                    "branch": inputs.sourceRepository.branch,
+                };
+                await appServiceClient.setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
+                
+                // Update web app metadata
+                let updateMetadataPromise = new Promise<void>(async (resolve) => {
+                    let metadata = await appServiceClient.getAppServiceMetadata(inputs.targetResource.resource.id);
+                    metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
+
+                    let repositoryPath = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getGitRootDirectory();
+                    let configPath = path.relative(repositoryPath, inputs.pipelineParameters.pipelineFilePath);
+                    metadata["properties"]["configPath"] = `${configPath}`;
+
+                    await appServiceClient.updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
+                    resolve();
+                });
+
+                // send a deployment log with information about the setup pipeline and links.
+                let deploymentMessage = JSON.stringify(<DeploymentMessage>{
+                    type: constants.DeploymentMessageType,
+                    message: Messages.deploymentLogMessage
+                });
+
+                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage);
+
+                Q.all([updateMetadataPromise, updateDeploymentLogPromise])
+                    .then(() => {
+                        telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
+                    });
+            }
+            catch (error) {
+                telemetryHelper.logError(Layer, TracePoints.PostDeploymentActionFailed, error);
+            }
+        }
     }
 
     public async browseQueuedPipeline(): Promise<void> {

@@ -19,7 +19,7 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
             if (!!node && !!node.fullId) {
                 let parsedAzureResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(node.fullId);
                 let session: AzureSession = getSubscriptionSession(parsedAzureResourceId.subscriptionId);
-                let appServiceClient = new AppServiceClient(session.credentials, session.tenantId, session.environment.portalUrl, parsedAzureResourceId.subscriptionId);
+                let appServiceClient = new AppServiceClient(session.credentials, session.environment, session.environment.portalUrl, parsedAzureResourceId.subscriptionId);
                 await browsePipelineInternal(node.fullId, appServiceClient);
             }
             else {
@@ -41,20 +41,16 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
 
 async function browsePipelineInternal(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
     let siteConfig = await appServiceClient.getAppServiceConfig(resourceId);
-    telemetryHelper.setTelemetry(TelemetryKeys.ScmType, siteConfig.scmType);
+    let scmType = !!siteConfig && !!siteConfig.scmType && siteConfig.scmType.toLowerCase();
+    telemetryHelper.setTelemetry(TelemetryKeys.ScmType, scmType);
 
-    if (siteConfig.scmType.toLowerCase() === ScmType.VSTSRM.toLowerCase()) {
-        try {
-            let pipelineUrl = await appServiceClient.getAzurePipelineUrl(resourceId);
-            vscode.env.openExternal(vscode.Uri.parse(pipelineUrl));
-            telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
-        }
-        catch (ex) {
-            telemetryHelper.logError(Layer, TracePoints.CorruptMetadataForVstsRmScmType, ex);
-            throw ex;
-        }
+    if (scmType === ScmType.VSTSRM.toLowerCase()) {
+        await browseAzurePipeline(resourceId, appServiceClient);
     }
-    else if (siteConfig.scmType === '' || siteConfig.scmType.toLowerCase() === ScmType.NONE.toLowerCase()) {
+    else if(scmType === ScmType.GITHUBACTION.toLowerCase()) {
+        await browseGitHubWorkflow(resourceId, appServiceClient);
+    }
+    else if (scmType === '' || scmType === ScmType.NONE.toLowerCase()) {
         let deployToAzureAction = 'Deploy to Azure';
         let controlProvider = new ControlProvider();
         let result = await controlProvider.showInformationBox(
@@ -68,8 +64,37 @@ async function browsePipelineInternal(resourceId: string, appServiceClient: AppS
         }
     }
     else {
-        let deploymentCenterUrl: string = await appServiceClient.getDeploymentCenterUrl(resourceId);
-        await vscode.env.openExternal(vscode.Uri.parse(deploymentCenterUrl));
-        telemetryHelper.setTelemetry(TelemetryKeys.BrowsedDeploymentCenter, 'true');
+        await openDeploymentCenter(resourceId, appServiceClient);
     }
+}
+
+async function browseAzurePipeline(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
+    try {
+        let pipelineUrl = await appServiceClient.getAzurePipelineUrl(resourceId);
+        vscode.env.openExternal(vscode.Uri.parse(pipelineUrl));
+        telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
+    }
+    catch (ex) {
+        telemetryHelper.logError(Layer, TracePoints.CorruptMetadataForVstsRmScmType, ex);
+        await openDeploymentCenter(resourceId, appServiceClient);
+    }
+}
+
+async function browseGitHubWorkflow(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
+    let webAppSourceControl = await appServiceClient.getSourceControl(resourceId);
+
+    if (!!webAppSourceControl && !!webAppSourceControl.properties && webAppSourceControl.properties.isGitHubAction) {
+        let url = `${webAppSourceControl.properties.repoUrl}/actions?query=branch=${webAppSourceControl.properties.branch}`;
+        await vscode.env.openExternal(vscode.Uri.parse(url));
+        telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
+    }
+    else {
+        await openDeploymentCenter(resourceId, appServiceClient);
+    }
+}
+
+async function openDeploymentCenter(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
+    let deploymentCenterUrl: string = await appServiceClient.getDeploymentCenterUrl(resourceId);
+    await vscode.env.openExternal(vscode.Uri.parse(deploymentCenterUrl));
+    telemetryHelper.setTelemetry(TelemetryKeys.BrowsedDeploymentCenter, 'true');
 }

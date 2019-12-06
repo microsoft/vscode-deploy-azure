@@ -146,6 +146,7 @@ export const SelectFromMultipleWorkSpace = 'selectFromMultipleWorkSpace';
 export const SelectRemoteForRepo = 'selectRemoteForRepo';
 export const VstsRmScmType = 'VSTSRM';
 export const BrowseNotAvailableConfigurePipeline =  'BrowseNotAvailableConfigurePipeline';
+export const DeploymentMessageType = 'CDDeploymentConfiguration';
 export const SetupAlreadyExists =  'SetupAlreadyExists';
 export const Browse =  'Browse';
 

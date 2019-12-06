@@ -216,3 +216,13 @@ export interface GitBranchDetails {
     remoteName: string;
     branch: string;
 }
+
+export interface WebAppSourceControl {
+    id: string;
+    name: string;
+    properties: {
+        repoUrl: string;
+        isGitHubAction: boolean;
+        branch: string;
+    };
+}

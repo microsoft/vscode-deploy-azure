@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). Versionin
 - Enable CI/CD for AKS with existing ACR.
 - Contributed `Configure CI/CD pipeline` in AKS extension.
 
+## 1.0.1
+### Added
+- Merged template view for Windows and Linux WebApps.
+
 ## 1.0.0
 ### Added
 - Initial release
