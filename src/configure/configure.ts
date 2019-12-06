@@ -122,7 +122,7 @@ class Orchestrator {
     }
 
     private async analyzeNode(node: any): Promise<void> {
-        if (!!node && !!node.fullId) {
+        if (!!node && (node.value.nodeType.toLowerCase() === 'cluster' || !!node.fullId)) {
             await this.extractAzureResourceFromNode(node);
         }
         else if (node && node.fsPath) {
@@ -287,28 +287,39 @@ class Orchestrator {
         }
     }
 
-    private async extractAzureResourceFromNode(node: AzureTreeItem): Promise<void> {
-        this.inputs.targetResource.subscriptionId = node.root.subscriptionId;
-        this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
-        this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.tenantId, this.inputs.azureSession.environment.portalUrl, this.inputs.targetResource.subscriptionId);
+    private async extractAzureResourceFromNode(node: AzureTreeItem|any): Promise<void> {
+        if (!!node.fullId) {
+            this.inputs.targetResource.subscriptionId = node.root.subscriptionId;
+            this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
+            this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.tenantId, this.inputs.azureSession.environment.portalUrl, this.inputs.targetResource.subscriptionId);
 
-        try {
-            let azureResource: GenericResource = await this.appServiceClient.getAppServiceResource(node.fullId);
-            telemetryHelper.setTelemetry(TelemetryKeys.resourceType, azureResource.type);
-            telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, azureResource.kind);
-            AzureResourceClient.validateTargetResourceType(azureResource);
-            if (azureResource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
-                if (await this.appServiceClient.isScmTypeSet(node.fullId)) {
-                    await this.openBrowseExperience(node.fullId);
+            try {
+                let azureResource: GenericResource = await this.appServiceClient.getAppServiceResource(node.fullId);
+                telemetryHelper.setTelemetry(TelemetryKeys.resourceType, azureResource.type);
+                telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, azureResource.kind);
+                AzureResourceClient.validateTargetResourceType(azureResource);
+                if (azureResource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
+                    if (await this.appServiceClient.isScmTypeSet(node.fullId)) {
+                        await this.openBrowseExperience(node.fullId);
+                    }
                 }
-            }
 
-            this.inputs.targetResource.resource = azureResource;
-            this.inputs.targetResource.parsedResourceId = new ParsedAzureResourceId(this.inputs.targetResource.resource.id);
+                this.inputs.targetResource.resource = azureResource;
+                this.inputs.targetResource.parsedResourceId = new ParsedAzureResourceId(this.inputs.targetResource.resource.id);
+            }
+            catch (error) {
+                telemetryHelper.logError(Layer, TracePoints.ExtractAzureResourceFromNodeFailed, error);
+                throw error;
+            }
         }
-        catch (error) {
-            telemetryHelper.logError(Layer, TracePoints.ExtractAzureResourceFromNodeFailed, error);
-            throw error;
+        else if (!!node.value && node.value.nodeType === 'cluster') {
+            this.inputs.targetResource.subscriptionId = node.value.subscription.subscriptionId;
+            this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
+            this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.targetResource.subscriptionId);
+            let cluster = await this.azureResourceClient.getResource(node.value.armId, '2019-08-01');
+            AzureResourceClient.validateTargetResourceType(cluster);
+            this.inputs.targetResource.resource = cluster;
+            this.inputs.targetResource.parsedResourceId = new ParsedAzureResourceId(this.inputs.targetResource.resource.id);
         }
     }
 

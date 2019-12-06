@@ -30,6 +30,8 @@ export class AzureResourceClient {
                     default:
                         throw new Error(utils.format(Messages.appKindIsNotSupported, resource.kind));
                 }
+            case TargetResourceType.AKS.toLowerCase():
+                return;
             default:
                 throw new Error(utils.format(Messages.resourceTypeIsNotSupported, resource.type));
         }
