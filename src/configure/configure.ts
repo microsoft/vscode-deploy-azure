@@ -5,7 +5,7 @@ import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
 import { Messages } from './resources/messages';
-import { SourceOptions, RepositoryProvider, extensionVariables, WizardInputs, WebAppKind, PipelineTemplate, QuickPickItemWithData, GitRepositoryParameters, GitBranchDetails, TargetResourceType, ParameterType } from './model/models';
+import { SourceOptions, RepositoryProvider, extensionVariables, WizardInputs, WebAppKind, PipelineTemplate, QuickPickItemWithData, GitRepositoryParameters, GitBranchDetails, TargetResourceType, ParameterType, ParsedAzureResourceId } from './model/models';
 import { TracePoints } from './resources/tracePoints';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import * as constants from './resources/constants';
@@ -304,6 +304,7 @@ class Orchestrator {
             }
 
             this.inputs.targetResource.resource = azureResource;
+            this.inputs.targetResource.parsedResourceId = new ParsedAzureResourceId(this.inputs.targetResource.resource.id);
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.ExtractAzureResourceFromNodeFailed, error);
@@ -406,11 +407,14 @@ class Orchestrator {
                     this.inputs.targetResource.resource = selectedResource.data;
                 }
         }
+
+        this.inputs.targetResource.parsedResourceId = new ParsedAzureResourceId(this.inputs.targetResource.resource.id);
     }
 
     private async getRequiredParameters(): Promise<void> {
         if (!!this.inputs.pipelineParameters.template.parameters && this.inputs.pipelineParameters.template.parameters.length > 0) {
-            this.inputs.pipelineParameters.template.parameters.forEach(async (parameter) => {
+            for (let index = 0; index < this.inputs.pipelineParameters.template.parameters.length; index++) {
+                let parameter = this.inputs.pipelineParameters.template.parameters[index];
                 try {
                     switch (parameter.type) {
                         case ParameterType.TextBox:
@@ -424,7 +428,7 @@ class Orchestrator {
                         case ParameterType.Acr:
                             let selectedItem = await this.controlProvider.showQuickPick(
                                 parameter.id,
-                                this.azureResourceClient.getResourceList(parameter.type.toString())
+                                this.azureResourceClient.getResourceList(parameter.type.toString(), true)
                                     .then((acrList) => acrList.map(x => { return { label: x.name, data: x }; })),
                                 { placeHolder: parameter.placeHolder },
                                 TelemetryKeys.AcrListCount);
@@ -442,7 +446,7 @@ class Orchestrator {
                         throw err;
                     }
                 }
-            })
+            }
         }
     }
 

@@ -310,7 +310,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "acr",
                     "placeHolder": "Select Azure Container Registry to store docker image",
                     "type": ParameterType.Acr,
-                    "defaultValue": "{{ targetResource.name }}" + UniqueResourceNameSuffix.toString()
+                    "defaultValue": `{{ targetResource.name }}${UniqueResourceNameSuffix}`
                 }
             ]
         }
@@ -459,7 +459,7 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             enabled: true
         },
     ]
-}
+};
 
 const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
 {
@@ -489,4 +489,4 @@ const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } 
             enabled: true
         }
     ]
-}
+};

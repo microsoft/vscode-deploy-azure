@@ -63,6 +63,7 @@ export class AzureSession {
 export class AzureParameters {
     subscriptionId: string;
     resource: GenericResource;
+    parsedResourceId: ParsedAzureResourceId;
     serviceConnectionId: string;
 }
 

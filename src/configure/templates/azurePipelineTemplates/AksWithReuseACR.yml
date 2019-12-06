@@ -14,13 +14,13 @@ variables:
   # ========================================================================
 
   # Update Azure.ResourceGroupName value with Azure resource group name.
-  Azure.ResourceGroupName: '{{ targetResource.resource.resourceGroup }}'
+  Azure.ResourceGroupName: '{{ targetResource.parsedResourceId.resourceGroup }}'
 
   # Update Azure.ServiceConnectionId value with AzureRm service endpoint.
   Azure.ServiceConnectionId: '{{ targetResource.serviceConnectionId }}'
 
     # Update ACR.Name value with ACR name. Please note ACR names should be all lower-case and alphanumeric only.
-  ACR.Name: '{{ pipelineParameters.acr.name }}'
+  ACR.Name: '{{ pipelineParameters.params.acr.name }}'
 
   # Update AKS.ClusterName value Azure kubernetes cluster name.
   AKS.ClusterName: '{{ targetResource.resource.name }}'
