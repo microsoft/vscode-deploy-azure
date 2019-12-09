@@ -59,7 +59,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
                 templateResult = templateResult.concat(azurePipelineTargetBasedTemplates['Microsoft.Web/sites-functionapp']);
                 break;
             case RepositoryProvider.Github:
-                templateResult = extensionVariables.enableGitHubWorkflow ? templateResult.concat(azurePipelineTargetBasedTemplates['Microsoft.Web/sites-functionapp']) : templateResult.concat(githubWorkflowTargetBasedTemplates['Microsoft.Web/sites-functionapp']);
+                templateResult = extensionVariables.enableGitHubWorkflow ? templateResult.concat(githubWorkflowTargetBasedTemplates['Microsoft.Web/sites-functionapp']) : templateResult.concat(azurePipelineTargetBasedTemplates['Microsoft.Web/sites-functionapp']);
                 break;
             default:
                 break;
@@ -304,7 +304,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: 'python',
             targetType: TargetResourceType.None,
             targetKind: null,
-            enabled: true
+            enabled: false
         }
     ],
     'dotnetcore': [

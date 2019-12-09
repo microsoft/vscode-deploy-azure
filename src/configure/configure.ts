@@ -213,6 +213,10 @@ class Orchestrator {
             let gitRootDir = await this.localGitRepoHelper.getGitRootDirectory();
             this.inputs.pipelineParameters.workingDirectory = path.relative(gitRootDir, this.workspacePath).split(path.sep).join('/');
 
+            if(this.inputs.pipelineParameters.workingDirectory == "") {
+                this.inputs.pipelineParameters.workingDirectory = ".";
+            }
+
             this.inputs.sourceRepository = this.inputs.sourceRepository ? this.inputs.sourceRepository : await this.getGitRepositoryParameters(gitBranchDetails);
         }
         else {
@@ -223,7 +227,7 @@ class Orchestrator {
     }
 
     private setDefaultRepositoryDetails(): void {
-        this.inputs.pipelineParameters.workingDirectory = '';
+        this.inputs.pipelineParameters.workingDirectory = '.';
         this.inputs.sourceRepository = {
             branch: 'master',
             commitId: '',
@@ -408,7 +412,7 @@ class Orchestrator {
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
         try {
-            this.inputs.pipelineParameters.pipelineFilePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs);
+            this.inputs.pipelineParameters.pipelineFilePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
             await this.localGitRepoHelper.addContentToFile(
                 await templateHelper.renderContent(this.inputs.pipelineParameters.pipelineTemplate.path, this.inputs),
                 this.inputs.pipelineParameters.pipelineFilePath);
