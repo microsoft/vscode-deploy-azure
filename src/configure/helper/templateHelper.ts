@@ -410,7 +410,24 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: true
         }
     ],
-    'none': [],
+    'none': [
+        {
+            label: 'Simple application to App Service',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/simpleWebApp.yml'),
+            language: SupportedLanguage.NONE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.WindowsApp,
+            enabled: true
+        },
+        {
+            label: 'Simple application to App Service',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/simpleWebApp.yml'),
+            language: SupportedLanguage.NONE,
+            targetType: TargetResourceType.WebApp,
+            targetKind: WebAppKind.LinuxApp,
+            enabled: true
+        }
+    ],
     'python': [
         {
             label: 'Python to Linux Web App on Azure',

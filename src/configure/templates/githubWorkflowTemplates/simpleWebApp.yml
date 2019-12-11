@@ -3,30 +3,18 @@ on:
     branches:
       - {{{ sourceRepository.branch }}}
 
-name: Build and deploy Node app
+name: Package and deploy simple web app
 
 jobs:
   build-and-deploy:
-    runs-on: windows-2019
+    runs-on: ubuntu-latest
     steps:
     # checkout the repo
     - uses: actions/checkout@master
-
-    - uses: actions/setup-node@v1
-      with:
-        node-version: '10.x'
     
     - uses: azure/login@v1
       with:
         creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
-
-    # install dependencies, build, and test
-    - name: npm install, build, and test
-      working-directory: {{{ pipelineParameters.workingDirectory }}}
-      run: |
-        npm install
-        npm run build --if-present
-        npm run test --if-present
 
     # deploy web app using publish profile credentials
     - uses: azure/webapps-deploy@v1
