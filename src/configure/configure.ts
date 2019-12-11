@@ -213,7 +213,7 @@ class Orchestrator {
             let gitRootDir = await this.localGitRepoHelper.getGitRootDirectory();
             this.inputs.pipelineParameters.workingDirectory = path.relative(gitRootDir, this.workspacePath).split(path.sep).join('/');
 
-            if(this.inputs.pipelineParameters.workingDirectory == "") {
+            if(this.inputs.pipelineParameters.workingDirectory === "") {
                 this.inputs.pipelineParameters.workingDirectory = ".";
             }
 
@@ -372,7 +372,7 @@ class Orchestrator {
                 description: `${<string>subscriptionObject.subscription.subscriptionId}`
             };
         });
-        let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription });
+        let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
         this.inputs.targetResource.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
         this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
 
@@ -394,7 +394,7 @@ class Orchestrator {
                     this.appServiceClient.GetAppServices(webAppKind)
                         .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
                     { placeHolder: Messages.selectTargetResource },
-                    TelemetryKeys.WebAppListCount);
+                    TelemetryKeys.AzureResourceListCount);
 
                 if (await this.appServiceClient.isScmTypeSet((<GenericResource>selectedResource.data).id)) {
                     await this.openBrowseExperience((<GenericResource>selectedResource.data).id);
