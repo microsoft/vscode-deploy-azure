@@ -13,20 +13,27 @@ variables:
   #                          Mandatory variables
   # ========================================================================
 
-  # Update Azure.ResourceGroupName value with Azure resource group name.
-  Azure.ResourceGroupName: '{{ targetResource.parsedResourceId.resourceGroup }}'
-
   # Update Azure.ServiceConnectionId value with AzureRm service endpoint.
   Azure.ServiceConnectionId: '{{ targetResource.serviceConnectionId }}'
 
-    # Update ACR.Name value with ACR name. Please note ACR names should be all lower-case and alphanumeric only.
+  dockerRegistryServiceConnection: '{{ pipelineParameters.params.containerRegistryConnection.Id }}'
+
+  containerRegistry: '{{ pipelineParameters.params.containerRegistryConnection.Authorization.Parameters.loginServer }}'
+
+  imageRepository: '{{=<% %>=}}{{#toAlphaNumericString imageRepository 50}}{{/toAlphaNumericString}}<%={{ }}=%>'
+
+  tag: '$(Build.BuildId)'
+
+  # Update ACR.Name value with ACR name. Please note ACR names should be all lower-case and alphanumeric only.
   ACR.Name: '{{ pipelineParameters.params.acr.name }}'
 
   # Update AKS.ClusterName value Azure kubernetes cluster name.
-  AKS.ClusterName: '{{ targetResource.resource.name }}'
+  AKS.ClusterName: '{{ pipelineParameters.params.targetResource.name }}'
 
   # Docker Container port
   Container.Port: 5000
+
+  imagePullSecret: '{{=<% %>=}}{{#toAlphaNumericString pipelineParameters.params.acr.name 50}}{{/toAlphaNumericString}}{{#shortGuid}}{{/shortGuid}}-auth<%={{ }}=%>'
 
   # ========================================================================
   #                           Optional variables
@@ -115,11 +122,21 @@ jobs:
     displayName: 'Generate kubernetes deployment yaml'
     condition: and(succeeded(), eq(variables['AKS.KubeDeploymentYamlExists'], 'False'))
 
-  - task: Kubernetes@1
-    displayName: 'kubectl apply'
-    inputs:
-      azureSubscriptionEndpoint: '$(Azure.ServiceConnectionId)'
-      azureResourceGroup: '$(Azure.ResourceGroupName)'
-      kubernetesCluster: '$(AKS.ClusterName)'
-      arguments: '-f $(AKS.KubeDeploymentYaml)'
-      command: 'apply'
+
+  - task: KubernetesManifest@0
+            displayName: Create imagePullSecret
+            inputs:
+              action: createSecret
+              secretName: $(imagePullSecret)
+              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+
+  - task: KubernetesManifest@0
+            displayName: Deploy to Kubernetes cluster
+            inputs:
+              action: deploy
+              manifests: |
+                $(AKS.KubeDeploymentYaml)
+              imagePullSecrets: |
+                $(imagePullSecret)
+              containers: |
+                $(containerRegistry)/$(imageRepository):$(tag)

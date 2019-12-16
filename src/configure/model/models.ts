@@ -34,7 +34,7 @@ export class WizardInputs {
     project: DevOpsProject;
     isNewOrganization: boolean;
     sourceRepository: GitRepositoryParameters;
-    targetResource: AzureParameters = new AzureParameters();
+    azureParameters: AzureParameters = new AzureParameters();
     pipelineParameters: PipelineParameters = new PipelineParameters();
     azureSession: AzureSession;
     githubPATToken?: string;
@@ -62,8 +62,6 @@ export class AzureSession {
 
 export class AzureParameters {
     subscriptionId: string;
-    resource: GenericResource;
-    parsedResourceId: ParsedAzureResourceId;
     serviceConnectionId: string;
 }
 
@@ -71,7 +69,7 @@ export class PipelineParameters {
     filePath: string;
     template: PipelineTemplate;
     workingDirectory: string;
-    params: {key: string, value: any}[]= [];
+    params: { [key: string]: any } = {};
 }
 
 export interface GitRepositoryParameters {
@@ -93,6 +91,15 @@ export enum TargetResourceType {
     ACR = 'Microsoft.ContainerRegistry/registries'
 }
 
+export enum WebAppKind {
+    WindowsApp = 'app',
+    FunctionApp = 'functionapp',
+    FunctionAppLinux = 'functionapp,linux',
+    FunctionAppLinuxContainer = 'functionapp,linux,container',
+    LinuxApp = 'app,linux',
+    LinuxContainerApp = 'app,linux,container'
+}
+
 export interface PipelineTemplate {
     path: string;
     label: string;
@@ -100,20 +107,30 @@ export interface PipelineTemplate {
     targetType: TargetResourceType;
     targetKind: WebAppKind;
     enabled: boolean;
-    parameters?: Parameter[];
+    parameters: PipelineParameter[];
 }
 
-export interface Parameter {
-    id: string;
-    placeHolder: string;
-    type: ParameterType;
+export interface PipelineParameter {
+    name: string;
+    displayName: string;
+    type: PipelineParameterType;
     defaultValue?: any;
-    condition?: string;
 }
 
-export enum ParameterType {
+export enum ServiceConnectionType {
+    AzureARM = "AzureARM"
+}
+
+export enum PipelineParameterType {
     TextBox,
-    Acr = TargetResourceType.ACR
+    ACR = TargetResourceType.ACR,
+    AKS = TargetResourceType.AKS,
+    WindowsApp = TargetResourceType.WebApp + "-" + WebAppKind.WindowsApp,
+    LinuxApp = TargetResourceType.WebApp + "-" + WebAppKind.LinuxApp,
+    FunctionApp = TargetResourceType.WebApp + "-" + WebAppKind.FunctionApp,
+    LinuxFunctionApp = TargetResourceType.WebApp + "-" + WebAppKind.FunctionAppLinux,
+    LinuxContainerApp = TargetResourceType.WebApp + "-" + WebAppKind.LinuxContainerApp,
+    AzureARM = ServiceConnectionType.AzureARM
 }
 
 export enum SourceOptions {
@@ -130,15 +147,6 @@ export enum RepositoryProvider {
 export enum ServiceConnectionType {
     GitHub = 'github',
     AzureRM = 'azurerm'
-}
-
-export enum WebAppKind {
-    WindowsApp = 'app',
-    FunctionApp = 'functionapp',
-    FunctionAppLinux = 'functionapp,linux',
-    FunctionAppLinuxContainer = 'functionapp,linux,container',
-    LinuxApp = 'app,linux',
-    LinuxContainerApp = 'app,linux,container'
 }
 
 export class QuickPickItemWithData implements QuickPickItem {

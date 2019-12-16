@@ -15,7 +15,6 @@ import { telemetryHelper } from '../helper/telemetryHelper';
 import { TracePoints } from '../resources/tracePoints';
 import { UniqueResourceNameSuffix } from '../configure';
 import { AppServiceClient, VSTSDeploymentMessage } from '../clients/azure/appServiceClient';
-import { AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { Build } from '../model/azureDevOps';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
@@ -142,7 +141,7 @@ export class AzurePipelineConfigurer implements Configurer {
                 });
         }
 
-        if(!inputs.targetResource.resource) {
+        if(!inputs.pipelineParameters.params["targetResource"]) {
             return;
         }
 
@@ -167,20 +166,26 @@ export class AzurePipelineConfigurer implements Configurer {
                 });
         }
 
-        // TODO: show notification while setup is being done.
-        // ?? should SPN created be scoped to resource group of target azure resource.
-        inputs.targetResource.serviceConnectionId = await vscode.window.withProgress(
+        this.createServiceConnection(inputs, serviceConnectionHelper);
+    }
+
+    public async createServiceConnection(inputs: WizardInputs, serviceConnectionHelper?: ServiceConnectionHelper) {
+        if (!serviceConnectionHelper) {
+            serviceConnectionHelper = new ServiceConnectionHelper(inputs.organizationName, inputs.project.name, this.azureDevOpsClient);
+        }
+
+        inputs.azureParameters.serviceConnectionId = await vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
-                title: utils.format(Messages.creatingAzureServiceConnection, inputs.targetResource.subscriptionId)
+                title: utils.format(Messages.creatingAzureServiceConnection, inputs.azureParameters.subscriptionId)
             },
             async () => {
                 try {
-                    let scope = inputs.targetResource.resource.id;
+                    let scope = inputs.pipelineParameters.params["targetResource"].id;
                     let aadAppName = GraphHelper.generateAadApplicationName(inputs.organizationName, inputs.project.name);
                     let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
-                    let serviceConnectionName = `${inputs.targetResource.resource.name}-${UniqueResourceNameSuffix}`;
-                    return await serviceConnectionHelper.createAzureServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId, scope, aadApp);
+                    let serviceConnectionName = `${inputs.pipelineParameters.params["targetResource"].name}-${UniqueResourceNameSuffix}`;
+                    return await serviceConnectionHelper.createAzureServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.azureParameters.subscriptionId, scope, aadApp);
                 }
                 catch (error) {
                     telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -255,7 +260,7 @@ export class AzurePipelineConfigurer implements Configurer {
     public async createAndQueuePipeline(inputs: WizardInputs): Promise<string> {
         this.queuedPipeline = await vscode.window.withProgress<Build>({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
             try {
-                let pipelineName = `${(inputs.targetResource.resource ? inputs.targetResource.resource.name : inputs.pipelineParameters.template.label)}-${UniqueResourceNameSuffix}`;
+                let pipelineName = `${(inputs.pipelineParameters.params["targetResource"] ? inputs.pipelineParameters.params["targetResource"].name : inputs.pipelineParameters.template.label)}-${UniqueResourceNameSuffix}`;
                 return await this.azureDevOpsHelper.createAndRunPipeline(pipelineName, inputs);
             }
             catch (error) {
@@ -267,18 +272,19 @@ export class AzurePipelineConfigurer implements Configurer {
         return this.queuedPipeline._links.web.href;
     }
 
-    public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
-        if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
+    public async executePostPipelineCreationSteps(inputs: WizardInputs): Promise<void> {
+        if (inputs.pipelineParameters.params["targetResource"].type === TargetResourceType.WebApp) {
             try {
+                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.azureParameters.subscriptionId);
                 // update SCM type
-                let updateScmPromise = (azureResourceClient as AppServiceClient).updateScmType(inputs.targetResource.resource.id);
+                let updateScmPromise = appServiceClient.updateScmType(inputs.pipelineParameters.params["targetResource"].id);
 
                 let buildDefinitionUrl = this.azureDevOpsClient.getOldFormatBuildDefinitionUrl(inputs.organizationName, inputs.project.id, this.queuedPipeline.definition.id);
                 let buildUrl = this.azureDevOpsClient.getOldFormatBuildUrl(inputs.organizationName, inputs.project.id, this.queuedPipeline.id);
 
                 // update metadata of app service to store information about the pipeline deploying to web app.
                 let updateMetadataPromise = new Promise<void>(async (resolve) => {
-                    let metadata = await (azureResourceClient as AppServiceClient).getAppServiceMetadata(inputs.targetResource.resource.id);
+                    let metadata = await appServiceClient.getAppServiceMetadata(inputs.pipelineParameters.params["targetResource"].id);
                     metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
                     metadata["properties"]["VSTSRM_ProjectId"] = `${inputs.project.id}`;
                     metadata["properties"]["VSTSRM_AccountId"] = await this.azureDevOpsClient.getOrganizationIdFromName(inputs.organizationName);
@@ -287,7 +293,7 @@ export class AzurePipelineConfigurer implements Configurer {
                     metadata["properties"]["VSTSRM_ConfiguredCDEndPoint"] = '';
                     metadata["properties"]["VSTSRM_ReleaseDefinitionId"] = '';
 
-                    (azureResourceClient as AppServiceClient).updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
+                    appServiceClient.updateAppServiceMetadata(inputs.pipelineParameters.params["targetResource"].id, metadata);
                     resolve();
                 });
 
@@ -300,8 +306,8 @@ export class AzurePipelineConfigurer implements Configurer {
                     VSTSRM_BuildWebAccessUrl: `${buildUrl}`,
                 });
 
-                let updateDeploymentLogPromise = (azureResourceClient as AppServiceClient).publishDeploymentToAppService(
-                    inputs.targetResource.resource.id, deploymentMessage);
+                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(
+                    inputs.pipelineParameters.params["targetResource"].id, deploymentMessage);
 
                 Q.all([updateScmPromise, updateMetadataPromise, updateDeploymentLogPromise])
                     .then(() => {

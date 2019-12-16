@@ -5,7 +5,7 @@ import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
 import { Messages } from './resources/messages';
-import { SourceOptions, RepositoryProvider, extensionVariables, WizardInputs, WebAppKind, PipelineTemplate, QuickPickItemWithData, GitRepositoryParameters, GitBranchDetails, TargetResourceType, ParameterType, ParsedAzureResourceId } from './model/models';
+import { SourceOptions, RepositoryProvider, extensionVariables, WizardInputs, WebAppKind, PipelineTemplate, QuickPickItemWithData, GitRepositoryParameters, GitBranchDetails, TargetResourceType, PipelineParameterType, ParsedAzureResourceId, PipelineParameter } from './model/models';
 import { TracePoints } from './resources/tracePoints';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import * as constants from './resources/constants';
@@ -69,7 +69,6 @@ class Orchestrator {
     private inputs: WizardInputs;
     private localGitRepoHelper: LocalGitRepoHelper;
     private azureResourceClient: AzureResourceClient;
-    private appServiceClient: AppServiceClient;
     private workspacePath: string;
     private controlProvider: ControlProvider;
     private continueOrchestration: boolean = true;
@@ -85,7 +84,7 @@ class Orchestrator {
         await this.getInputs(node);
 
         if (this.continueOrchestration) {
-            let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.targetResource.subscriptionId);
+            let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.azureParameters.subscriptionId);
             await pipelineConfigurer.getInputs(this.inputs);
 
             telemetryHelper.setCurrentStep('CreatePreRequisites');
@@ -99,7 +98,7 @@ class Orchestrator {
 
             telemetryHelper.setCurrentStep('PostPipelineCreation');
             // This step should be determined by the resoruce target provider (azure app service, function app, aks) type and pipelineProvider(azure pipeline vs github)
-            pipelineConfigurer.executePostPipelineCreationSteps(this.inputs, this.appServiceClient);
+            pipelineConfigurer.executePostPipelineCreationSteps(this.inputs);
 
             telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
             pipelineConfigurer.browseQueuedPipeline();
@@ -113,11 +112,11 @@ class Orchestrator {
             await this.getSourceRepositoryDetails();
             await this.getSelectedPipeline();
 
-            if (!this.inputs.targetResource.resource) {
+            if (!this.inputs.pipelineParameters.params[constants.TargetResource]) {
                 await this.getAzureResourceDetails();
             }
 
-            await this.getRequiredParameters();
+            await this.getParameters();
         }
     }
 
@@ -287,25 +286,25 @@ class Orchestrator {
         }
     }
 
-    private async extractAzureResourceFromNode(node: AzureTreeItem|any): Promise<void> {
+    private async extractAzureResourceFromNode(node: AzureTreeItem | any): Promise<void> {
         if (!!node.fullId) {
-            this.inputs.targetResource.subscriptionId = node.root.subscriptionId;
-            this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
-            this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
+            this.inputs.azureParameters.subscriptionId = node.root.subscriptionId;
+            this.inputs.azureSession = getSubscriptionSession(this.inputs.azureParameters.subscriptionId);
+            let appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.azureParameters.subscriptionId);
 
             try {
-                let azureResource: GenericResource = await this.appServiceClient.getAppServiceResource(node.fullId);
+                let azureResource: GenericResource = await appServiceClient.getAppServiceResource(node.fullId);
                 telemetryHelper.setTelemetry(TelemetryKeys.resourceType, azureResource.type);
                 telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, azureResource.kind);
                 AzureResourceClient.validateTargetResourceType(azureResource);
                 if (azureResource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
-                    if (await this.appServiceClient.isScmTypeSet(node.fullId)) {
+                    if (await appServiceClient.isScmTypeSet(node.fullId)) {
                         await this.openBrowseExperience(node.fullId);
                     }
                 }
 
-                this.inputs.targetResource.resource = azureResource;
-                this.inputs.targetResource.parsedResourceId = new ParsedAzureResourceId(this.inputs.targetResource.resource.id);
+                this.inputs.pipelineParameters.params[constants.TargetResource] = azureResource;
+                this.inputs.pipelineParameters.params[constants.TargetResource]["parsedResourceId"] = new ParsedAzureResourceId(this.inputs.pipelineParameters.params[constants.TargetResource].id);
             }
             catch (error) {
                 telemetryHelper.logError(Layer, TracePoints.ExtractAzureResourceFromNodeFailed, error);
@@ -313,15 +312,15 @@ class Orchestrator {
             }
         }
         else if (!!node.value && node.value.nodeType === 'cluster') {
-            this.inputs.targetResource.subscriptionId = node.value.subscription.subscriptionId;
-            this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
-            this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.targetResource.subscriptionId);
+            this.inputs.azureParameters.subscriptionId = node.value.subscription.subscriptionId;
+            this.inputs.azureSession = getSubscriptionSession(this.inputs.azureParameters.subscriptionId);
+            this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.azureParameters.subscriptionId);
             let cluster = await this.azureResourceClient.getResource(node.value.armId, '2019-08-01');
             telemetryHelper.setTelemetry(TelemetryKeys.resourceType, cluster.type);
             telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, cluster.kind);
             AzureResourceClient.validateTargetResourceType(cluster);
-            this.inputs.targetResource.resource = cluster;
-            this.inputs.targetResource.parsedResourceId = new ParsedAzureResourceId(this.inputs.targetResource.resource.id);
+            cluster["parsedResourceId"] = new ParsedAzureResourceId(cluster.id);
+            this.inputs.pipelineParameters.params[constants.TargetResource] = cluster;
         }
     }
 
@@ -355,7 +354,7 @@ class Orchestrator {
             () => templateHelper.analyzeRepoAndListAppropriatePipeline(
                 this.inputs.sourceRepository.localPath,
                 this.inputs.sourceRepository.repositoryProvider,
-                this.inputs.targetResource.resource)
+                this.inputs.pipelineParameters.params[constants.TargetResource])
         );
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
@@ -386,90 +385,149 @@ class Orchestrator {
             };
         });
         let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription });
-        this.inputs.targetResource.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
-        this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
+        this.inputs.azureParameters.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
+        this.inputs.azureSession = getSubscriptionSession(this.inputs.azureParameters.subscriptionId);
 
-        // show available resources and get the chosen one
-        switch (this.inputs.pipelineParameters.template.targetType) {
-            case TargetResourceType.None:
-                break;
-            case TargetResourceType.AKS:
-                this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.targetResource.subscriptionId);
-                this.inputs.targetResource.resource = (await this.controlProvider.showQuickPick(
-                    Messages.selectTargetResource,
-                    this.azureResourceClient.getResourceList(TargetResourceType.AKS, true)
-                        .then((clusters) => clusters.map(x => { return { label: x.name, data: x }; })),
-                    { placeHolder: Messages.selectTargetResource },
-                    TelemetryKeys.AksListCount)).data;
-                break;
-            case TargetResourceType.WebApp:
-            default:
-                this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
-
-                let webAppKind = (
-                    this.inputs.pipelineParameters.template.targetKind === WebAppKind.WindowsApp ||
-                    this.inputs.pipelineParameters.template.targetKind === WebAppKind.LinuxApp) &&
-                    this.inputs.pipelineParameters.template.label.toLowerCase().endsWith('to app service') ?
-                [WebAppKind.WindowsApp, WebAppKind.LinuxApp] : [this.inputs.pipelineParameters.template.targetKind];
-                let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
-                    Messages.selectTargetResource,
-                    this.appServiceClient.GetAppServices(webAppKind)
-                        .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
-                    { placeHolder: Messages.selectTargetResource },
-                    TelemetryKeys.WebAppListCount);
-
-                if (await this.appServiceClient.isScmTypeSet((<GenericResource>selectedResource.data).id)) {
-                    await this.openBrowseExperience((<GenericResource>selectedResource.data).id);
-                }
-                else {
-                    this.inputs.targetResource.resource = selectedResource.data;
-                    this.inputs.pipelineParameters.template = templateHelper.getTemplate(
-                        this.inputs.sourceRepository.repositoryProvider,
-                        this.inputs.pipelineParameters.template.language,
-                        TargetResourceType.WebApp,
-                        <WebAppKind>this.inputs.targetResource.resource.kind);
-                }
-        }
-
-        this.inputs.targetResource.parsedResourceId = new ParsedAzureResourceId(this.inputs.targetResource.resource.id);
+        await this.getParameterValue(this.generateTargetResourceParameter(this.inputs.pipelineParameters.template.targetType, this.inputs.pipelineParameters.template.targetKind));
     }
 
-    private async getRequiredParameters(): Promise<void> {
+    private async getParameters(): Promise<void> {
         if (!!this.inputs.pipelineParameters.template.parameters && this.inputs.pipelineParameters.template.parameters.length > 0) {
             for (let index = 0; index < this.inputs.pipelineParameters.template.parameters.length; index++) {
                 let parameter = this.inputs.pipelineParameters.template.parameters[index];
                 try {
-                    switch (parameter.type) {
-                        case ParameterType.TextBox:
-                                this.inputs.pipelineParameters.params[parameter.id] = await this.controlProvider.showInputBox(
-                                parameter.id,
-                                {
-                                    placeHolder: parameter.placeHolder
-                                }
-                            );
-                            break;
-                        case ParameterType.Acr:
-                            let selectedItem = await this.controlProvider.showQuickPick(
-                                parameter.id,
-                                this.azureResourceClient.getResourceList(parameter.type.toString(), true)
-                                    .then((acrList) => acrList.map(x => { return { label: x.name, data: x }; })),
-                                { placeHolder: parameter.placeHolder },
-                                TelemetryKeys.AcrListCount);
-                            this.inputs.pipelineParameters.params[parameter.id] = selectedItem.data;
-                            break;
-                        default:
-                            break;
-                    }
+                    await this.getParameterValue(parameter);
                 }
                 catch (err) {
-                    if (!this.inputs.pipelineParameters.params[parameter.id] && !!parameter.defaultValue) {
-                        this.inputs.pipelineParameters.params[parameter.id] = parameter.defaultValue;
+                    if (!this.inputs.pipelineParameters.params[parameter.name] && !!parameter.defaultValue) {
+                        this.inputs.pipelineParameters.params[parameter.name] = parameter.defaultValue;
                     }
                     else {
                         throw err;
                     }
                 }
             }
+        }
+    }
+
+    private async getParameterValue(parameter: PipelineParameter): Promise<void> {
+        if (!!parameter) {
+            switch (parameter.type) {
+                case PipelineParameterType.TextBox:
+                    this.inputs.pipelineParameters.params[parameter.name] = await this.controlProvider.showInputBox(
+                        parameter.name,
+                        {
+                            placeHolder: parameter.displayName
+                        }
+                    );
+                    break;
+                case PipelineParameterType.ACR:
+                    if (!this.azureResourceClient) {
+                        this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.azureParameters.subscriptionId);
+                    }
+
+                    let selectedAcr = await this.controlProvider.showQuickPick(
+                        parameter.name,
+                        this.azureResourceClient.getResourceList(parameter.type.toString(), true)
+                            .then((acrList) => acrList.map(x => { return { label: x.name, data: x }; })),
+                        { placeHolder: parameter.displayName },
+                        TelemetryKeys.AcrListCount);
+                    this.inputs.pipelineParameters.params[parameter.name] = selectedAcr.data;
+                    break;
+                case PipelineParameterType.AKS:
+                    if (!this.azureResourceClient) {
+                        this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.azureParameters.subscriptionId);
+                    }
+
+                    let selectedAks = await this.controlProvider.showQuickPick(
+                        parameter.name,
+                        this.azureResourceClient.getResourceList(parameter.type.toString(), true)
+                            .then((acrList) => acrList.map(x => { return { label: x.name, data: x }; })),
+                        { placeHolder: parameter.displayName },
+                        TelemetryKeys.AcrListCount);
+                    this.inputs.pipelineParameters.params[parameter.name] = selectedAks.data;
+                    break;
+                case PipelineParameterType.WindowsApp:
+                case PipelineParameterType.LinuxApp:
+                case PipelineParameterType.FunctionApp:
+                case PipelineParameterType.LinuxFunctionApp:
+                    let parameterAppKind = parameter.type.toString().split("-")[1];
+                    let webAppKind = (
+                        parameterAppKind === WebAppKind.WindowsApp ||
+                        parameterAppKind === WebAppKind.LinuxApp) &&
+                        this.inputs.pipelineParameters.template.label.toLowerCase().endsWith('to app service') ?
+                        [WebAppKind.WindowsApp, WebAppKind.LinuxApp] : [parameterAppKind];
+
+                    let appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.azureParameters.subscriptionId);
+                    let selectedApp: QuickPickItemWithData = await this.controlProvider.showQuickPick(
+                        Messages.selectTargetResource,
+                        appServiceClient.GetAppServices(<WebAppKind[]>webAppKind)
+                            .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
+                        { placeHolder: Messages.selectTargetResource },
+                        TelemetryKeys.WebAppListCount);
+
+                    if (await appServiceClient.isScmTypeSet((<GenericResource>selectedApp.data).id)) {
+                        await this.openBrowseExperience((<GenericResource>selectedApp.data).id);
+                    }
+                    else {
+                        this.inputs.pipelineParameters.params[constants.TargetResource] = selectedApp.data;
+                        this.inputs.pipelineParameters.template = templateHelper.getTemplate(
+                            this.inputs.sourceRepository.repositoryProvider,
+                            this.inputs.pipelineParameters.template.language,
+                            TargetResourceType.WebApp,
+                            <WebAppKind>this.inputs.pipelineParameters.params[constants.TargetResource].kind);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    private generateTargetResourceParameter(resourceType: TargetResourceType, resourceKind?: WebAppKind): PipelineParameter {
+        if (!!this.inputs.pipelineParameters.template.parameters[constants.TargetResource]) {
+            return this.inputs.pipelineParameters.template.parameters[constants.TargetResource];
+        }
+
+        let pipelineParameterType: PipelineParameterType = null;
+        switch (resourceType) {
+            case TargetResourceType.WebApp:
+                switch (resourceKind) {
+                    case WebAppKind.WindowsApp:
+                    case WebAppKind.LinuxApp:
+                        pipelineParameterType = PipelineParameterType.WindowsApp;
+                        break;
+                    case WebAppKind.FunctionApp:
+                        pipelineParameterType = PipelineParameterType.FunctionApp;
+                        break;
+                    case WebAppKind.FunctionAppLinux:
+                    case WebAppKind.FunctionAppLinuxContainer:
+                        pipelineParameterType = PipelineParameterType.LinuxFunctionApp;
+                        break;
+                    case WebAppKind.LinuxContainerApp:
+                        pipelineParameterType = PipelineParameterType.LinuxContainerApp;
+                        break;
+                    default:
+                        pipelineParameterType = PipelineParameterType.WindowsApp;
+                        break;
+                }
+                break;
+            case TargetResourceType.ACR:
+                pipelineParameterType = PipelineParameterType.ACR;
+                break;
+            case TargetResourceType.AKS:
+                pipelineParameterType =  PipelineParameterType.AKS;
+                break;
+            case TargetResourceType.None:
+                pipelineParameterType =  null;
+                break;
+        }
+
+        return <PipelineParameter>{
+            name: constants.TargetResource,
+            displayName: Messages.selectTargetResource,
+            type: pipelineParameterType,
+            value: null
         }
     }
 
