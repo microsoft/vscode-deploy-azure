@@ -384,11 +384,17 @@ class Orchestrator {
             default:
                 this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
 
-                let webAppKind = (
-                    this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.WindowsApp ||
-                    this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.LinuxApp) &&
-                    this.inputs.pipelineParameters.pipelineTemplate.label.toLowerCase().endsWith('to app service') ?
-                [WebAppKind.WindowsApp, WebAppKind.LinuxApp] : [this.inputs.pipelineParameters.pipelineTemplate.targetKind];
+                let webAppKind = [];
+                if (this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.WindowsApp || this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.LinuxApp) {
+                    webAppKind.push(WebAppKind.WindowsApp, WebAppKind.LinuxApp);
+                }
+                else if (this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.FunctionApp) {
+                    webAppKind.push(WebAppKind.FunctionApp, WebAppKind.FunctionAppLinux, WebAppKind.FunctionAppLinuxContainer);
+                }
+                else {
+                    webAppKind.push(this.inputs.pipelineParameters.pipelineTemplate.targetKind);
+                }
+
                 let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
                     Messages.selectTargetResource,
                     this.appServiceClient.GetAppServices(webAppKind)

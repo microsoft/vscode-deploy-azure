@@ -56,10 +56,10 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     if(analysisResult.isFunctionApp) {
         switch(repositoryProvider) {
             case RepositoryProvider.AzureRepos:
-                templateResult = templateResult.concat(azurePipelineTargetBasedTemplates['Microsoft.Web/sites-functionapp']);
+                templateResult = azurePipelineTargetBasedTemplates['Microsoft.Web/sites-functionapp'].concat(templateResult);
                 break;
             case RepositoryProvider.Github:
-                templateResult = extensionVariables.enableGitHubWorkflow ? templateResult.concat(githubWorkflowTargetBasedTemplates['Microsoft.Web/sites-functionapp']) : templateResult.concat(azurePipelineTargetBasedTemplates['Microsoft.Web/sites-functionapp']);
+                templateResult = extensionVariables.enableGitHubWorkflow ? githubWorkflowTargetBasedTemplates['Microsoft.Web/sites-functionapp'].concat(templateResult) : azurePipelineTargetBasedTemplates['Microsoft.Web/sites-functionapp'].concat(templateResult);
                 break;
             default:
                 break;
@@ -445,7 +445,7 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
 {
     'Microsoft.Web/sites-functionapp': [
         {
-            label: 'Node.js Function App to Windows Azure Function',
+            label: 'Node.js Function App to Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWindowsFunctionApp.yml'),
             language: 'node',
             targetType: TargetResourceType.WebApp,
@@ -453,7 +453,7 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Node.js Function App to Linux Azure Function',
+            label: 'Node.js Function App to Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsLinuxFunctionApp.yml'),
             language: 'node',
             targetType: TargetResourceType.WebApp,
@@ -461,7 +461,7 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: '.NET Core Function App to Windows Azure Function',
+            label: '.NET Core Function App to Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreWindowsFunctionApp.yml'),
             language: 'dotnet',
             targetType: TargetResourceType.WebApp,
@@ -469,7 +469,7 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: '.NET Core Function App to Linux Azure Function',
+            label: '.NET Core Function App to Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreLinuxFunctionApp.yml'),
             language: 'dotnet',
             targetType: TargetResourceType.WebApp,
@@ -477,7 +477,7 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             enabled: true
         },
         {
-            label: 'Python Function App to Linux Azure Function',
+            label: 'Python Function App to Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonLinuxFunctionApp.yml'),
             language: 'python',
             targetType: TargetResourceType.WebApp,
@@ -491,7 +491,7 @@ const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } 
 {
     'Microsoft.Web/sites-functionapp': [
         {
-            label: 'Node.js Function App to Windows Azure Function',
+            label: 'Node.js Function App to Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWindowsFunctionApp.yml'),
             language: 'node',
             targetType: TargetResourceType.WebApp,
@@ -499,7 +499,7 @@ const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } 
             enabled: true
         },
         {
-            label: 'Node.js Function App to Linux Azure Function',
+            label: 'Node.js Function App to Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsLinuxFunctionApp.yml'),
             language: 'node',
             targetType: TargetResourceType.WebApp,
@@ -507,7 +507,7 @@ const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } 
             enabled: true
         },
         {
-            label: 'Python Function App to Linux Azure Function',
+            label: 'Python Function App to Azure Function',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/pythonLinuxFunctionApp.yml'),
             language: 'python',
             targetType: TargetResourceType.WebApp,
