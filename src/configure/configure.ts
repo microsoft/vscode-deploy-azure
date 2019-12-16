@@ -385,10 +385,10 @@ class Orchestrator {
                 this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
 
                 let webAppKind = [];
-                if (this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.WindowsApp || this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.LinuxApp) {
+                if ((this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.WindowsApp || this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.LinuxApp) && this.inputs.pipelineParameters.pipelineTemplate.label.toLowerCase().endsWith('to app service')) {
                     webAppKind.push(WebAppKind.WindowsApp, WebAppKind.LinuxApp);
                 }
-                else if (this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.FunctionApp) {
+                else if ((this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.FunctionApp || this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.FunctionAppLinux) && this.inputs.pipelineParameters.pipelineTemplate.label.toLowerCase().endsWith('to Azure Function')) {
                     webAppKind.push(WebAppKind.FunctionApp, WebAppKind.FunctionAppLinux, WebAppKind.FunctionAppLinuxContainer);
                 }
                 else {
