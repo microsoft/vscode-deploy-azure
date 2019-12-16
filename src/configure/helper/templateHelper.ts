@@ -80,13 +80,13 @@ export function getTemplate(repositoryProvider: RepositoryProvider, language: st
     if (repositoryProvider === RepositoryProvider.AzureRepos || !extensionVariables.enableGitHubWorkflow) {
         pipelineTemplates = azurePipelineTemplates[language];
         if (targetType === TargetResourceType.WebApp && isFunctionAppType(targetKind)) {
-            pipelineTemplates = pipelineTemplates.concat(azurePipelineTargetBasedTemplates[`${targetType}-${targetKind}`]);
+            pipelineTemplates = pipelineTemplates.concat(azurePipelineTargetBasedTemplates['Microsoft.Web/sites-functionapp']);
         }
     }
     else {
         pipelineTemplates = githubWorklowTemplates[language];
         if (targetType === TargetResourceType.WebApp && isFunctionAppType(targetKind)) {
-            pipelineTemplates = pipelineTemplates.concat(githubWorkflowTargetBasedTemplates[`${targetType}-${targetKind}`]);
+            pipelineTemplates = pipelineTemplates.concat(githubWorkflowTargetBasedTemplates['Microsoft.Web/sites-functionapp']);
         }
     }
 
