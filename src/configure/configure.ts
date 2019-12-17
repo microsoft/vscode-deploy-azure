@@ -383,12 +383,11 @@ class Orchestrator {
             case TargetResourceType.WebApp:
             default:
                 this.appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
+                let selectedPipelineTemplate = this.inputs.pipelineParameters.pipelineTemplate;
+                let matchingPipelineTemplates = templateHelper.getPipelineTemplatesForAllWebAppKind(this.inputs.sourceRepository.repositoryProvider,
+                    selectedPipelineTemplate.label, selectedPipelineTemplate.language, selectedPipelineTemplate.targetKind);
 
-                let webAppKind = (
-                    this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.WindowsApp ||
-                    this.inputs.pipelineParameters.pipelineTemplate.targetKind === WebAppKind.LinuxApp) &&
-                    this.inputs.pipelineParameters.pipelineTemplate.label.toLowerCase().endsWith('to app service') ?
-                [WebAppKind.WindowsApp, WebAppKind.LinuxApp] : [this.inputs.pipelineParameters.pipelineTemplate.targetKind];
+                let webAppKind = matchingPipelineTemplates.map((template) => template.targetKind);
                 let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
                     Messages.selectTargetResource,
                     this.appServiceClient.GetAppServices(webAppKind)
@@ -401,11 +400,7 @@ class Orchestrator {
                 }
                 else {
                     this.inputs.targetResource.resource = selectedResource.data;
-                    this.inputs.pipelineParameters.pipelineTemplate = templateHelper.getTemplate(
-                        this.inputs.sourceRepository.repositoryProvider,
-                        this.inputs.pipelineParameters.pipelineTemplate.language,
-                        TargetResourceType.WebApp,
-                        <WebAppKind>this.inputs.targetResource.resource.kind);
+                    this.inputs.pipelineParameters.pipelineTemplate = matchingPipelineTemplates.find((template) => template.targetKind === <WebAppKind>this.inputs.targetResource.resource.kind);
                 }
         }
     }

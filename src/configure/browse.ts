@@ -19,7 +19,7 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
             if (!!node && !!node.fullId) {
                 let parsedAzureResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(node.fullId);
                 let session: AzureSession = getSubscriptionSession(parsedAzureResourceId.subscriptionId);
-                let appServiceClient = new AppServiceClient(session.credentials, session.environment, session.environment.portalUrl, parsedAzureResourceId.subscriptionId);
+                let appServiceClient = new AppServiceClient(session.credentials, session.environment, session.tenantId, parsedAzureResourceId.subscriptionId);
                 await browsePipelineInternal(node.fullId, appServiceClient);
             }
             else {
