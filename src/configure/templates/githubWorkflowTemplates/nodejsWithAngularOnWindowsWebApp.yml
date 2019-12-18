@@ -16,11 +16,6 @@ jobs:
     # checkout the repo
     - uses: actions/checkout@master
     
-    # login using publishing credentials
-    - uses: azure/login@v1
-      with:
-        creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
-    
     - uses: actions/setup-node@v1
       with:
         node-version: '10.x'
@@ -38,8 +33,4 @@ jobs:
       with:
         app-name: {{{ targetResource.resource.name }}}
         package: {{{ pipelineParameters.workingDirectory }}}
-
-    # Azure logout
-    - name: logout
-      run: |
-        az logout
+        publish-profile: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>

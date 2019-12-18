@@ -1,4 +1,4 @@
-import { PipelineTemplate, WizardInputs, RepositoryProvider, TargetResourceType, WebAppKind, extensionVariables } from '../model/models';
+import { PipelineTemplate, WizardInputs, RepositoryProvider, TargetResourceType, WebAppKind, extensionVariables, AzureConnectionType } from '../model/models';
 import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
@@ -196,7 +196,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Simple application to App Service',
@@ -204,7 +205,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ],
     'node': [
@@ -214,7 +216,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Node.js with Gulp to App Service',
@@ -222,7 +225,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Node.js with Grunt to App Service',
@@ -230,7 +234,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Node.js with Angular to App Service',
@@ -238,7 +243,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Node.js with Webpack to App Service',
@@ -246,7 +252,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Node.js with npm to App Service',
@@ -254,7 +261,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Node.js with Gulp to App Service',
@@ -262,7 +270,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Node.js with Grunt to App Service',
@@ -270,7 +279,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Node.js with Angular to App Service',
@@ -278,7 +288,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Node.js with Webpack to App Service',
@@ -286,7 +297,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ],
     'python': [
@@ -296,7 +308,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: 'python',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Build and Test Python Django App',
@@ -304,7 +317,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: 'python',
             targetType: TargetResourceType.None,
             targetKind: null,
-            enabled: false
+            enabled: false,
+            azureConnectionType: AzureConnectionType.None
         }
     ],
     'dotnetcore': [
@@ -314,7 +328,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: 'dotnetcore',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: '.NET Core Web App to App Service',
@@ -322,7 +337,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: 'dotnetcore',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ]
 };
@@ -335,7 +351,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Node.js with npm to App Service',
@@ -343,7 +360,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Node.js with Gulp to App Service',
@@ -351,7 +369,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Node.js with Gulp to App Service',
@@ -359,7 +378,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Node.js with Grunt to App Service',
@@ -367,7 +387,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Node.js with Grunt to App Service',
@@ -375,7 +396,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Node.js with Angular to App Service',
@@ -383,7 +405,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Node.js with Angular to App Service',
@@ -391,7 +414,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Node.js with Webpack to App Service',
@@ -399,7 +423,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Node.js with Webpack to App Service',
@@ -407,7 +432,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ],
     'none': [
@@ -417,7 +443,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: 'Simple application to App Service',
@@ -425,7 +452,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ],
     'python': [
@@ -435,7 +463,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: 'python',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
     ],
     'dotnetcore': []
@@ -450,7 +479,8 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             language: 'node',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Node.js Function App to Linux Azure Function',
@@ -458,7 +488,8 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             language: 'node',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionAppLinux,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: '.NET Core Function App to Windows Azure Function',
@@ -466,7 +497,8 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             language: 'dotnet',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: '.NET Core Function App to Linux Azure Function',
@@ -474,7 +506,8 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             language: 'dotnet',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionAppLinux,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Python Function App to Linux Azure Function',
@@ -482,7 +515,8 @@ const azurePipelineTargetBasedTemplates: { [key: string]: PipelineTemplate[] } =
             language: 'python',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionAppLinux,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
     ]
 };
@@ -496,7 +530,8 @@ const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } 
             language: 'node',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionApp,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Node.js Function App to Linux Azure Function',
@@ -504,7 +539,8 @@ const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } 
             language: 'node',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionAppLinux,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Python Function App to Linux Azure Function',
@@ -512,7 +548,8 @@ const githubWorkflowTargetBasedTemplates: { [key: string]: PipelineTemplate[] } 
             language: 'python',
             targetType: TargetResourceType.WebApp,
             targetKind: WebAppKind.FunctionAppLinux,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ]
 };

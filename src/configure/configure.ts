@@ -88,7 +88,7 @@ class Orchestrator {
             await pipelineConfigurer.getInputs(this.inputs);
 
             telemetryHelper.setCurrentStep('CreatePreRequisites');
-            await pipelineConfigurer.createPreRequisites(this.inputs);
+            await pipelineConfigurer.createPreRequisites(this.inputs, this.appServiceClient);
 
             telemetryHelper.setCurrentStep('CheckInPipeline');
             await this.checkInPipelineFileToRepository(pipelineConfigurer);

@@ -15,7 +15,7 @@ class ExtensionVariables implements UIExtensionVariables {
     public enableGitHubWorkflow: boolean;
 
     constructor() {
-        this.enableGitHubWorkflow = false;
+        this.enableGitHubWorkflow = true;
     }
 }
 
@@ -91,6 +91,7 @@ export interface PipelineTemplate {
     targetType: TargetResourceType;
     targetKind: WebAppKind;
     enabled: boolean;
+    azureConnectionType: AzureConnectionType; 
 }
 
 export enum SourceOptions {
@@ -121,6 +122,12 @@ export enum WebAppKind {
     FunctionAppLinuxContainer = 'functionapp,linux,container',
     LinuxApp = 'app,linux',
     LinuxContainerApp = 'app,linux,container'
+}
+
+export enum AzureConnectionType {
+    None,
+    AzureRMServicePrincipal,
+    AzureRMPublishProfile
 }
 
 export class QuickPickItemWithData implements QuickPickItem {
