@@ -387,10 +387,10 @@ class Orchestrator {
                 let matchingPipelineTemplates = templateHelper.getPipelineTemplatesForAllWebAppKind(this.inputs.sourceRepository.repositoryProvider,
                     selectedPipelineTemplate.label, selectedPipelineTemplate.language, selectedPipelineTemplate.targetKind);
 
-                let webAppKind = matchingPipelineTemplates.map((template) => template.targetKind);
+                let webAppKinds = matchingPipelineTemplates.map((template) => template.targetKind);
                 let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
                     Messages.selectTargetResource,
-                    this.appServiceClient.GetAppServices(webAppKind)
+                    this.appServiceClient.GetAppServices(webAppKinds)
                         .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
                     { placeHolder: Messages.selectTargetResource },
                     TelemetryKeys.AzureResourceListCount);
