@@ -1,5 +1,4 @@
 import { AzureEnvironment } from 'ms-rest-azure';
-import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { OutputChannel, ExtensionContext, QuickPickItem } from 'vscode';
 import { ServiceClientCredentials } from 'ms-rest';
 import { SubscriptionModels } from 'azure-arm-resource';
@@ -34,7 +33,6 @@ export class WizardInputs {
     project: DevOpsProject;
     isNewOrganization: boolean;
     sourceRepository: GitRepositoryParameters;
-    targetResource: AzureParameters = new AzureParameters();
     pipelineParameters: PipelineParameters = new PipelineParameters();
     azureSession: AzureSession;
     githubPATToken?: string;
@@ -58,18 +56,14 @@ export class AzureSession {
     userId: string;
     tenantId: string;
     credentials: ServiceClientCredentials;
-}
-
-export class AzureParameters {
     subscriptionId: string;
-    resource: GenericResource;
-    serviceConnectionId: string;
 }
 
 export class PipelineParameters {
-    pipelineFilePath: string;
-    pipelineTemplate: PipelineTemplate;
+    filePath: string;
+    template: PipelineTemplate;
     workingDirectory: string;
+    params: { [key: string]: any } = {};
 }
 
 export interface GitRepositoryParameters {
@@ -84,6 +78,22 @@ export interface GitRepositoryParameters {
     serviceConnectionId?: string; // Id of the service connection in Azure DevOps
 }
 
+export enum TargetResourceType {
+    None = 'none',
+    WebApp = 'Microsoft.Web/sites',
+    AKS = 'Microsoft.ContainerService/ManagedClusters',
+    ACR = 'Microsoft.ContainerRegistry/registries'
+}
+
+export enum WebAppKind {
+    WindowsApp = 'app',
+    FunctionApp = 'functionapp',
+    FunctionAppLinux = 'functionapp,linux',
+    FunctionAppLinuxContainer = 'functionapp,linux,container',
+    LinuxApp = 'app,linux',
+    LinuxContainerApp = 'app,linux,container'
+}
+
 export interface PipelineTemplate {
     path: string;
     label: string;
@@ -91,6 +101,37 @@ export interface PipelineTemplate {
     targetType: TargetResourceType;
     targetKind: WebAppKind;
     enabled: boolean;
+    parameters: TemplateParameter[];
+}
+
+export interface TemplateParameter {
+    name: string;
+    displayName: string;
+    type: TemplateParameterType;
+    defaultValue?: any;
+}
+
+export enum ServiceConnectionType {
+    GitHub = 'github',
+    AzureRM = 'azurerm',
+    ACR = "containerRegistery",
+    AKS = 'azureKubernetes'
+}
+
+export enum TemplateParameterType {
+    TextBox,
+
+    ACR = "resource:" + TargetResourceType.ACR,
+    AKS = "resource:" + TargetResourceType.AKS,
+    FunctionApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.FunctionApp,
+    LinuxApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.LinuxApp,
+    LinuxContainerApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.LinuxContainerApp,
+    LinuxFunctionApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.FunctionAppLinux,
+    WindowsApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.WindowsApp,
+
+    AzureARM = "endpoint:" + ServiceConnectionType.AzureRM,
+    ACRServiceConnection = "endpoint:" + ServiceConnectionType.ACR,
+    AKSServiceConnection = "endpoint:" + ServiceConnectionType.AKS
 }
 
 export enum SourceOptions {
@@ -102,25 +143,6 @@ export enum SourceOptions {
 export enum RepositoryProvider {
     Github = 'github',
     AzureRepos = 'tfsgit'
-}
-
-export enum TargetResourceType {
-    None = 'none',
-    WebApp = 'Microsoft.Web/sites'
-}
-
-export enum ServiceConnectionType {
-    GitHub = 'github',
-    AzureRM = 'azurerm'
-}
-
-export enum WebAppKind {
-    WindowsApp = 'app',
-    FunctionApp = 'functionapp',
-    FunctionAppLinux = 'functionapp,linux',
-    FunctionAppLinuxContainer = 'functionapp,linux,container',
-    LinuxApp = 'app,linux',
-    LinuxContainerApp = 'app,linux,container'
 }
 
 export class QuickPickItemWithData implements QuickPickItem {
