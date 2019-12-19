@@ -35,6 +35,7 @@ export class WizardInputs {
     sourceRepository: GitRepositoryParameters;
     pipelineParameters: PipelineParameters = new PipelineParameters();
     azureSession: AzureSession;
+    subscriptionId: string;
     githubPATToken?: string;
 }
 
@@ -56,7 +57,6 @@ export class AzureSession {
     userId: string;
     tenantId: string;
     credentials: ServiceClientCredentials;
-    subscriptionId: string;
 }
 
 export class PipelineParameters {
