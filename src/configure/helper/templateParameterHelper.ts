@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as utils from 'util';
 import * as templateHelper from '../helper/templateHelper';
 import * as constants from '../resources/constants';
-import { WizardInputs, TemplateParameter, WebAppKind, QuickPickItemWithData, TargetResourceType, TemplateParameterType } from "../model/models";
+import { WizardInputs, TemplateParameter, WebAppKind, QuickPickItemWithData, TargetResourceType, TemplateParameterType, InputModeType } from "../model/models";
 import { ControlProvider } from "./controlProvider";
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { TelemetryKeys } from "../resources/telemetryKeys";
@@ -12,7 +12,7 @@ import { GenericResource } from "azure-arm-resource/lib/resource/models";
 import { Configurer } from '../configurers/configurerBase';
 import { AzurePipelineConfigurer } from '../configurers/azurePipelineConfigurer';
 import { GraphHelper } from './graphHelper';
-import { UniqueResourceNameSuffix } from '../configure';
+import { UniqueResourceNameSuffix, openBrowseExperience } from '../configure';
 import { telemetryHelper } from './telemetryHelper';
 import { TracePoints } from '../resources/tracePoints';
 
@@ -21,23 +21,43 @@ const Layer = "TemplateParameterHelper";
 export class TemplateParameterHelper {
     private azureResourceClient: AzureResourceClient;
 
-    public async getParameters(parameters: TemplateParameter[], inputs: WizardInputs, pipelineConfigurer: Configurer): Promise<void> {
-        if (!!inputs.pipelineParameters.template.parameters && inputs.pipelineParameters.template.parameters.length > 0) {
-            for (let index = 0; index < parameters.length; index++) {
-                let parameter = inputs.pipelineParameters.template.parameters[index];
-                try {
-                    await this.getParameterValue(parameter, inputs, pipelineConfigurer);
-                }
-                catch (err) {
-                    if (!inputs.pipelineParameters.params[parameter.name] && !!parameter.defaultValue) {
-                        inputs.pipelineParameters.params[parameter.name] = parameter.defaultValue;
-                    }
-                    else {
-                        throw err;
-                    }
-                }
-            }
+    public static getMatchingAzureResourceTemplateParameter(resource: GenericResource, templateParameters: TemplateParameter[]): { key: string, value: any } {
+        if (!resource || !templateParameters) {
+            return null;
         }
+
+        let resourceTargetType = TemplateParameterHelper.convertToAzureResourceType(<TargetResourceType>resource.type, <WebAppKind>resource.kind);
+        let matchedParam = templateParameters.find((templateParameter) => { return templateParameter.type.toString().toLowerCase() === resourceTargetType.toLowerCase(); });
+
+        if (matchedParam) {
+            return { key: matchedParam.name, value: resource };
+        }
+
+        return null;
+    }
+
+    public async setParameters(parameters: TemplateParameter[], inputs: WizardInputs, pipelineConfigurer: Configurer): Promise<void> {
+        if (!!parameters && parameters.length > 0) {
+            parameters.forEach(async (parameter) => {
+                if (!inputs.pipelineParameters.params[parameter.name]) {
+                    try {
+                        await this.getParameterValue(parameter, inputs, pipelineConfigurer);
+                    }
+                    catch (err) {
+                        if (!inputs.pipelineParameters.params[parameter.name] && !!parameter.defaultValue) {
+                            inputs.pipelineParameters.params[parameter.name] = parameter.defaultValue;
+                        }
+                        else {
+                            throw err;
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    private static convertToAzureResourceType(targetType: TargetResourceType, targetKind: WebAppKind): string {
+        return targetKind ? "resource:" + targetType + ":" + targetKind : "resource:" + targetType;
     }
 
     private async getParameterValue(parameter: TemplateParameter, inputs: WizardInputs, configurer: Configurer): Promise<void> {
@@ -54,7 +74,7 @@ export class TemplateParameterHelper {
                     this.getConnectedServiceParameter(parameter, inputs, configurer);
                     break;
                 default:
-                    throw 'parameter of type: ' + parameterCategory + ' not supported.';
+                    throw new Error(utils.format(Messages.parameterOfTypeNotSupported, parameter.type));
             }
         }
     }
@@ -66,7 +86,7 @@ export class TemplateParameterHelper {
             switch (parameter.type) {
                 case TemplateParameterType.ACR:
                     if (!this.azureResourceClient) {
-                        this.azureResourceClient = new AzureResourceClient(inputs.azureSession.credentials, inputs.azureSession.subscriptionId);
+                        this.azureResourceClient = new AzureResourceClient(inputs.azureSession.credentials, inputs.subscriptionId);
                     }
 
                     let selectedAcr = await controlProvider.showQuickPick(
@@ -79,7 +99,7 @@ export class TemplateParameterHelper {
                     break;
                 case TemplateParameterType.AKS:
                     if (!this.azureResourceClient) {
-                        this.azureResourceClient = new AzureResourceClient(inputs.azureSession.credentials, inputs.azureSession.subscriptionId);
+                        this.azureResourceClient = new AzureResourceClient(inputs.azureSession.credentials, inputs.subscriptionId);
                     }
 
                     let selectedAks = await controlProvider.showQuickPick(
@@ -101,7 +121,7 @@ export class TemplateParameterHelper {
                         inputs.pipelineParameters.template.label.toLowerCase().endsWith('to app service') ?
                         [WebAppKind.WindowsApp, WebAppKind.LinuxApp] : [parameterAppKind];
 
-                    let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.azureSession.subscriptionId);
+                    let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
                     let selectedApp: QuickPickItemWithData = await controlProvider.showQuickPick(
                         Messages.selectTargetResource,
                         appServiceClient.GetAppServices(<WebAppKind[]>webAppKind)
@@ -110,7 +130,8 @@ export class TemplateParameterHelper {
                         TelemetryKeys.WebAppListCount);
 
                     if (await appServiceClient.isScmTypeSet((<GenericResource>selectedApp.data).id)) {
-                        throw new Error(constants.SetupAlreadyExists);
+                        await openBrowseExperience((<GenericResource>selectedApp.data).id);
+                        throw Error(Messages.setupAlreadyConfigured);
                     }
                     else {
                         inputs.pipelineParameters.params[constants.TargetResource] = selectedApp.data;
@@ -122,7 +143,7 @@ export class TemplateParameterHelper {
                     }
                     break;
                 default:
-                    break;
+                    throw new Error(utils.format(Messages.parameterOfTypeNotSupported, parameter.type));
             }
         }
     }
@@ -132,16 +153,29 @@ export class TemplateParameterHelper {
 
         if (!!parameter) {
             switch (parameter.type) {
-                case TemplateParameterType.TextBox:
-                    inputs.pipelineParameters.params[parameter.name] = await controlProvider.showInputBox(
-                        parameter.name,
-                        {
-                            placeHolder: parameter.displayName
-                        }
-                    );
+                case TemplateParameterType.String:
+                    switch (parameter.inputMode) {
+                        case InputModeType.PickList:
+                            inputs.pipelineParameters.params[parameter.name] = await controlProvider.showQuickPick(
+                                parameter.name,
+                                parameter.options ? parameter.options.map(x => { return { label: x.key, data: x.value }; }) : [],
+                                { placeHolder: parameter.displayName },
+                                utils.format(TelemetryKeys.pickListCount, parameter.name));
+                            break;
+                        case InputModeType.TextBox:
+                        case InputModeType.None:
+                        default:
+                            inputs.pipelineParameters.params[parameter.name] = await controlProvider.showInputBox(
+                                parameter.name,
+                                {
+                                    placeHolder: parameter.displayName
+                                }
+                            );
+                            break;
+                    }
                     break;
                 default:
-                    break;
+                    throw new Error(utils.format(Messages.parameterOfTypeNotSupported, parameter.type));
             }
         }
     }
@@ -153,7 +187,7 @@ export class TemplateParameterHelper {
                     inputs.pipelineParameters.params[parameter.name] = await vscode.window.withProgress(
                         {
                             location: vscode.ProgressLocation.Notification,
-                            title: utils.format(Messages.creatingAzureServiceConnection, inputs.azureSession.subscriptionId)
+                            title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
                         },
                         async () => {
                             try {
@@ -171,8 +205,8 @@ export class TemplateParameterHelper {
                     break;
                 // uses azure resource client to get the required details, and then calls into configurer.createServiceConnection(serviceConnectionType, properties: property bag with all the required information that are needed/available to create service connection.)
                 case TemplateParameterType.ACRServiceConnection:
-                case TemplateParameterType.AKSServiceConnection:
-                    throw "Connection type: " + parameter.type + " is not supported yet.";
+                case TemplateParameterType.AKSServiceConnectionKubeConfig:
+                    throw new Error(utils.format(Messages.parameterOfTypeNotSupported, parameter.type));
                     break;
                 default:
                     break;
