@@ -98,6 +98,7 @@ export interface PipelineTemplate {
     path: string;
     label: string;
     language: string;
+    framework?: string;
     targetType: TargetResourceType;
     targetKind: WebAppKind;
     enabled: boolean;
@@ -108,18 +109,23 @@ export interface TemplateParameter {
     name: string;
     displayName: string;
     type: TemplateParameterType;
+    inputMode?: InputModeType;
     defaultValue?: any;
 }
 
 export enum ServiceConnectionType {
     GitHub = 'github',
-    AzureRM = 'azurerm',
+    AzureRM = 'arm',
     ACR = "containerRegistery",
     AKS = 'azureKubernetes'
 }
 
+export enum GitHubSecretType {
+    AzureRM = 'arm',
+}
+
 export enum TemplateParameterType {
-    TextBox,
+    String,
 
     ACR = "resource:" + TargetResourceType.ACR,
     AKS = "resource:" + TargetResourceType.AKS,
@@ -130,8 +136,16 @@ export enum TemplateParameterType {
     WindowsApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.WindowsApp,
 
     AzureARM = "endpoint:" + ServiceConnectionType.AzureRM,
+    AzureARMPublishProfile = "endpoint:" + ServiceConnectionType.AzureRM + ":publishProfile",
     ACRServiceConnection = "endpoint:" + ServiceConnectionType.ACR,
-    AKSServiceConnection = "endpoint:" + ServiceConnectionType.AKS
+    AKSServiceConnection = "endpoint:" + ServiceConnectionType.AKS,
+
+    GitHubARM = "secret" + GitHubSecretType.AzureRM
+}
+
+export enum InputModeType {
+    TextBox,
+    PickList
 }
 
 export enum SourceOptions {
