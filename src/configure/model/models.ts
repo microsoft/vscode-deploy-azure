@@ -138,12 +138,13 @@ export enum TemplateParameterType {
     AzureARM = "endpoint:" + ServiceConnectionType.AzureRM,
     AzureARMPublishProfile = "endpoint:" + ServiceConnectionType.AzureRM + ":publishProfile",
     ACRServiceConnection = "endpoint:" + ServiceConnectionType.ACR,
-    AKSServiceConnection = "endpoint:" + ServiceConnectionType.AKS,
+    AKSServiceConnectionKubeConfig = "endpoint:" + ServiceConnectionType.AKS + ":kubeconfig",
 
     GitHubARM = "secret" + GitHubSecretType.AzureRM
 }
 
 export enum InputModeType {
+    None,
     TextBox,
     PickList
 }
