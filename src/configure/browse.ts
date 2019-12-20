@@ -47,7 +47,7 @@ async function browsePipelineInternal(resourceId: string, appServiceClient: AppS
     if (scmType === ScmType.VSTSRM.toLowerCase()) {
         await browseAzurePipeline(resourceId, appServiceClient);
     }
-    else if(scmType === ScmType.GITHUBACTION.toLowerCase()) {
+    else if(scmType === ScmType.GITHUBACTION.toLowerCase() && extensionVariables.enableGitHubWorkflow) {
         await browseGitHubWorkflow(resourceId, appServiceClient);
     }
     else if (scmType === '' || scmType === ScmType.NONE.toLowerCase()) {
