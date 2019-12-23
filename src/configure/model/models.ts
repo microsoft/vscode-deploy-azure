@@ -187,7 +187,9 @@ export enum RepositoryProvider {
 
 export enum TargetResourceType {
     None = 'none',
-    WebApp = 'Microsoft.Web/sites'
+    WebApp = 'Microsoft.Web/sites',
+    AKS = 'Microsoft.ContainerService/ManagedClusters',
+    ACR = 'Microsoft.ContainerRegistry/registries'
 }
 
 export enum ServiceConnectionType {
@@ -195,7 +197,7 @@ export enum ServiceConnectionType {
     AzureRM = 'azurerm'
 }
 
-export enum WebAppKind {
+export enum TargetKind {
     WindowsApp = 'app',
     FunctionApp = 'functionapp',
     FunctionAppLinux = 'functionapp,linux',

@@ -1,4 +1,4 @@
-import { TargetResourceType, TargetKind } from "./models";
+import { TargetKind, TargetResourceType } from "./models";
 
 export interface PipelineTemplate {
     path: string;
@@ -60,5 +60,6 @@ export enum PreDefinedDataSourceIds {
     LinuxApp = TargetResourceType.WebApp + ":" + TargetKind.LinuxApp,
     LinuxContainerApp = TargetResourceType.WebApp + ":" + TargetKind.LinuxContainerApp,
     LinuxFunctionApp = TargetResourceType.WebApp + ":" + TargetKind.FunctionAppLinux,
+    LinuxContainerFunctionApp = TargetResourceType.WebApp + ":" + TargetKind.FunctionAppLinuxContainer,
     WindowsApp = TargetResourceType.WebApp + ":" + TargetKind.WindowsApp
 }

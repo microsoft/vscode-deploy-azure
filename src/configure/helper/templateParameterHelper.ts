@@ -1,16 +1,16 @@
-import * as utils from 'util';
-import * as templateHelper from '../helper/templateHelper';
-import * as constants from '../resources/constants';
-import { WizardInputs, TargetKind, QuickPickItemWithData, TargetResourceType } from "../model/models";
-import { ControlProvider } from "./controlProvider";
-import { AzureResourceClient } from "../clients/azure/azureResourceClient";
-import { TelemetryKeys } from "../resources/telemetryKeys";
-import { AppServiceClient } from "../clients/azure/appServiceClient";
-import { Messages } from "../resources/messages";
 import { GenericResource } from "azure-arm-resource/lib/resource/models";
-import { Configurer } from '../configurers/configurerBase';
+import * as utils from 'util';
+import { AppServiceClient } from "../clients/azure/appServiceClient";
+import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { openBrowseExperience } from '../configure';
+import { Configurer } from '../configurers/configurerBase';
+import * as templateHelper from '../helper/templateHelper';
+import { QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs } from "../model/models";
 import { PreDefinedDataSourceIds, TemplateParameter, TemplateParameterType } from '../model/templateModels';
+import * as constants from '../resources/constants';
+import { Messages } from "../resources/messages";
+import { TelemetryKeys } from "../resources/telemetryKeys";
+import { ControlProvider } from "./controlProvider";
 
 const Layer = "TemplateParameterHelper";
 
@@ -108,32 +108,27 @@ export class TemplateParameterHelper {
                 case PreDefinedDataSourceIds.LinuxApp.toString():
                 case PreDefinedDataSourceIds.FunctionApp.toString():
                 case PreDefinedDataSourceIds.LinuxFunctionApp.toString():
-                    let parameterAppKind = parameter.type.toString().split("-")[1];
-                    let webAppKind = (
-                        parameterAppKind === TargetKind.WindowsApp ||
-                        parameterAppKind === TargetKind.LinuxApp) &&
-                        inputs.pipelineParameters.template.label.toLowerCase().endsWith('to app service') ?
-                        [TargetKind.WindowsApp, TargetKind.LinuxApp] : [parameterAppKind];
+                    let selectedPipelineTemplate = inputs.pipelineParameters.template;
+                    let matchingPipelineTemplates = templateHelper.getPipelineTemplatesForAllWebAppKind(inputs.sourceRepository.repositoryProvider,
+                        selectedPipelineTemplate.label, selectedPipelineTemplate.language, selectedPipelineTemplate.targetKind);
 
                     let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
-                    let selectedApp: QuickPickItemWithData = await controlProvider.showQuickPick(
+
+                    let webAppKinds = matchingPipelineTemplates.map((template) => template.targetKind);
+                    let selectedResource: QuickPickItemWithData = await controlProvider.showQuickPick(
                         Messages.selectTargetResource,
-                        appServiceClient.GetAppServices(<TargetKind[]>webAppKind)
+                        appServiceClient.GetAppServices(webAppKinds)
                             .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
                         { placeHolder: Messages.selectTargetResource },
-                        TelemetryKeys.WebAppListCount);
+                        TelemetryKeys.AzureResourceListCount);
 
-                    if (await appServiceClient.isScmTypeSet((<GenericResource>selectedApp.data).id)) {
-                        await openBrowseExperience((<GenericResource>selectedApp.data).id);
+                    if (await appServiceClient.isScmTypeSet((<GenericResource>selectedResource.data).id)) {
+                        await openBrowseExperience((<GenericResource>selectedResource.data).id);
                         throw Error(Messages.setupAlreadyConfigured);
                     }
                     else {
-                        inputs.pipelineParameters.params[constants.TargetResource] = selectedApp.data;
-                        inputs.pipelineParameters.template = templateHelper.getTemplate(
-                            inputs.sourceRepository.repositoryProvider,
-                            inputs.pipelineParameters.template.language,
-                            TargetResourceType.WebApp,
-                            <TargetKind>inputs.pipelineParameters.params[constants.TargetResource].kind);
+                        inputs.pipelineParameters.params[constants.TargetResource] = selectedResource.data;
+                        inputs.pipelineParameters.template = matchingPipelineTemplates.find((template) => template.targetKind === <TargetKind>inputs.targetResource.resource.kind);
                     }
                     break;
                 default:

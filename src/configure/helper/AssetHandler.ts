@@ -1,13 +1,14 @@
 import * as utils from 'util';
 import * as vscode from 'vscode';
-import { TemplateAsset, WizardInputs, TemplateAssetType } from "../model/models";
-import { Configurer } from "../configurers/configurerBase";
-import { GraphHelper } from './graphHelper';
-import { Messages } from '../resources/messages';
-import { AzurePipelineConfigurer } from '../configurers/azurePipelineConfigurer';
 import { UniqueResourceNameSuffix } from '../configure';
-import { telemetryHelper } from './telemetryHelper';
+import { AzurePipelineConfigurer } from '../configurers/azurePipelineConfigurer';
+import { Configurer } from "../configurers/configurerBase";
+import { WizardInputs } from "../model/models";
+import { TemplateAsset, TemplateAssetType } from '../model/templateModels';
+import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
+import { GraphHelper } from './graphHelper';
+import { telemetryHelper } from './telemetryHelper';
 
 const Layer = "AssetCreationHandler";
 
