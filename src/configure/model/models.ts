@@ -4,6 +4,8 @@ import { ServiceClientCredentials } from 'ms-rest';
 import { SubscriptionModels } from 'azure-arm-resource';
 import { UIExtensionVariables, IAzureUserInput, ITelemetryReporter } from 'vscode-azureextensionui';
 import { Messages } from '../resources/messages';
+import { GenericResource } from 'azure-arm-resource/lib/resource/models';
+import { PipelineTemplate } from './templateModels';
 
 class ExtensionVariables implements UIExtensionVariables {
     public azureAccountExtensionApi: AzureAccountExtensionExports;
@@ -33,10 +35,17 @@ export class WizardInputs {
     project: DevOpsProject;
     isNewOrganization: boolean;
     sourceRepository: GitRepositoryParameters;
+    targetResource: AzureParameters = new AzureParameters();
     pipelineParameters: PipelineParameters = new PipelineParameters();
     azureSession: AzureSession;
     subscriptionId: string;
     githubPATToken?: string;
+}
+
+export class AzureParameters {
+    subscriptionId: string;
+    resource: GenericResource;
+    serviceConnectionId: string;
 }
 
 export interface DevOpsProject {
@@ -64,6 +73,7 @@ export class PipelineParameters {
     template: PipelineTemplate;
     workingDirectory: string;
     params: { [key: string]: any } = {};
+    assets: { [key: string]: any } = {};
 }
 
 export interface GitRepositoryParameters {
@@ -85,68 +95,13 @@ export enum TargetResourceType {
     ACR = 'Microsoft.ContainerRegistry/registries'
 }
 
-export enum WebAppKind {
+export enum TargetKind {
     WindowsApp = 'app',
     FunctionApp = 'functionapp',
     FunctionAppLinux = 'functionapp,linux',
     FunctionAppLinuxContainer = 'functionapp,linux,container',
     LinuxApp = 'app,linux',
     LinuxContainerApp = 'app,linux,container'
-}
-
-export interface PipelineTemplate {
-    path: string;
-    label: string;
-    language: string;
-    framework?: string;
-    targetType: TargetResourceType;
-    targetKind: WebAppKind;
-    enabled: boolean;
-    parameters: TemplateParameter[];
-}
-
-export interface TemplateParameter {
-    name: string;
-    displayName: string;
-    type: TemplateParameterType;
-    inputMode?: InputModeType;
-    defaultValue?: any;
-}
-
-export enum ServiceConnectionType {
-    GitHub = 'github',
-    AzureRM = 'arm',
-    ACR = "containerRegistery",
-    AKS = 'azureKubernetes'
-}
-
-export enum GitHubSecretType {
-    AzureRM = 'arm',
-}
-
-export enum TemplateParameterType {
-    String,
-
-    ACR = "resource:" + TargetResourceType.ACR,
-    AKS = "resource:" + TargetResourceType.AKS,
-    FunctionApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.FunctionApp,
-    LinuxApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.LinuxApp,
-    LinuxContainerApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.LinuxContainerApp,
-    LinuxFunctionApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.FunctionAppLinux,
-    WindowsApp = "resource:" + TargetResourceType.WebApp + "-" + WebAppKind.WindowsApp,
-
-    AzureARM = "endpoint:" + ServiceConnectionType.AzureRM,
-    AzureARMPublishProfile = "endpoint:" + ServiceConnectionType.AzureRM + ":publishProfile",
-    ACRServiceConnection = "endpoint:" + ServiceConnectionType.ACR,
-    AKSServiceConnectionKubeConfig = "endpoint:" + ServiceConnectionType.AKS + ":kubeconfig",
-
-    GitHubARM = "secret" + GitHubSecretType.AzureRM
-}
-
-export enum InputModeType {
-    None,
-    TextBox,
-    PickList
 }
 
 export enum SourceOptions {
