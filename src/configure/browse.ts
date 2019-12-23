@@ -19,7 +19,7 @@ export async function browsePipeline(node: AzureTreeItem): Promise<void> {
             if (!!node && !!node.fullId) {
                 let parsedAzureResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(node.fullId);
                 let session: AzureSession = getSubscriptionSession(parsedAzureResourceId.subscriptionId);
-                let appServiceClient = new AppServiceClient(session.credentials, session.environment, session.environment.portalUrl, parsedAzureResourceId.subscriptionId);
+                let appServiceClient = new AppServiceClient(session.credentials, session.environment, session.tenantId, parsedAzureResourceId.subscriptionId);
                 await browsePipelineInternal(node.fullId, appServiceClient);
             }
             else {
@@ -47,7 +47,7 @@ async function browsePipelineInternal(resourceId: string, appServiceClient: AppS
     if (scmType === ScmType.VSTSRM.toLowerCase()) {
         await browseAzurePipeline(resourceId, appServiceClient);
     }
-    else if(scmType === ScmType.GITHUBACTION.toLowerCase()) {
+    else if(scmType === ScmType.GITHUBACTION.toLowerCase() && extensionVariables.enableGitHubWorkflow) {
         await browseGitHubWorkflow(resourceId, appServiceClient);
     }
     else if (scmType === '' || scmType === ScmType.NONE.toLowerCase()) {

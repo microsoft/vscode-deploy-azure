@@ -35,15 +35,11 @@ export class AppServiceClient extends AzureResourceClient {
         if (!!filtersForResourceKind && filtersForResourceKind.length > 0) {
             let filteredResourceList: ResourceListResult = [];
 
-                if(WebAppKind.FunctionAppLinux in filtersForResourceKind) {
-                        filtersForResourceKind.concat(WebAppKind.FunctionAppLinuxContainer);
+            resourceList.forEach((resource) => {
+                if (filtersForResourceKind.some((kind) => resource.kind === kind)) {
+                    filteredResourceList.push(resource);
                 }
-
-                resourceList.forEach((resource) => {
-                    if (filtersForResourceKind.some((kind) => resource.kind === kind)) {
-                        filteredResourceList.push(resource);
-                    }
-                });
+            });
 
             resourceList = filteredResourceList;
         }
