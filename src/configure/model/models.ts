@@ -194,7 +194,9 @@ export enum TargetResourceType {
 
 export enum ServiceConnectionType {
     GitHub = 'github',
-    AzureRM = 'azurerm'
+    AzureRM = 'arm',
+    ACR = "containerRegistery",
+    AKS = 'azureKubernetes'
 }
 
 export enum TargetKind {

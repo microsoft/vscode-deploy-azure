@@ -161,5 +161,6 @@ export const VstsRmScmType = 'VSTSRM';
 export const BrowseNotAvailableConfigurePipeline =  'BrowseNotAvailableConfigurePipeline';
 export const DeploymentMessageType = 'CDDeploymentConfiguration';
 export const SetupAlreadyExists =  'SetupAlreadyExists';
-export const Browse =  'Browse';
+export const Browse = 'Browse';
+export const TargetResource = 'targetResource'
 

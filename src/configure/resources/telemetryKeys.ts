@@ -31,6 +31,10 @@ export class TelemetryKeys {
     public static OrganizationListCount = 'OrganizationListCount';
     public static ProjectListCount = 'ProjectListCount';
     public static AzureResourceListCount = 'AzureResourceListCount';
+    public static WebAppListCount = 'WebAppListCount';
+    public static AksListCount = 'AksListCount';
+    public static AcrListCount = 'AcrListCount';
     public static PipelineTempateListCount = 'pipelineTempateListCount';
     public static SubscriptionListCount = 'SubscriptionListCount';
+    public static pickListCount = 'pickList%sCount';
 }

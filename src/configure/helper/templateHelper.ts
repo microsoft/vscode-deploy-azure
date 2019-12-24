@@ -1,11 +1,12 @@
-import { PipelineTemplate, WizardInputs, RepositoryProvider, TargetResourceType, WebAppKind, extensionVariables } from '../model/models';
+import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
-import { Messages } from '../resources/messages';
-import { GenericResource } from 'azure-arm-resource/lib/resource/models';
+import {  extensionVariables, RepositoryProvider, TargetKind, TargetResourceType, WizardInputs } from '../model/models';
+import { PipelineTemplate, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { PipelineTemplateLabels } from '../resources/constants';
+import { Messages } from '../resources/messages';
 
 export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
     let analysisResult = await analyzeRepo(repoPath);
@@ -25,6 +26,11 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     let templateResult: PipelineTemplate[] = [];
     analysisResult.languages.forEach((language) => {
         switch (language) {
+            case SupportedLanguage.DOCKER:
+                if (templateList[SupportedLanguage.DOCKER] && templateList[SupportedLanguage.DOCKER].length > 0) {
+                    templateResult = templateResult.concat(templateList[SupportedLanguage.DOCKER]);
+                }
+                break;
             case SupportedLanguage.NODE:
                 if (templateList[SupportedLanguage.NODE] && templateList[SupportedLanguage.NODE].length > 0) {
                     templateResult = templateResult.concat(templateList[SupportedLanguage.NODE]);
@@ -76,7 +82,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     return templateResult;
 }
 
-export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: WebAppKind): PipelineTemplate[] {
+export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: TargetKind): PipelineTemplate[] {
     let pipelineTemplates: PipelineTemplate[] = [];
 
     if (repositoryProvider === RepositoryProvider.Github && extensionVariables.enableGitHubWorkflow) {
@@ -117,10 +123,10 @@ async function analyzeRepo(repoPath: string): Promise<AnalysisResult> {
     fs.readdir(repoPath, (err, files: string[]) => {
         let result: AnalysisResult = new AnalysisResult();
         result.languages = [];
+        result.languages = isDockerApp(files) ? result.languages.concat(SupportedLanguage.DOCKER) : result.languages;
         result.languages = isNodeRepo(files) ? result.languages.concat(SupportedLanguage.NODE) : result.languages;
         result.languages = isPythonRepo(files) ? result.languages.concat(SupportedLanguage.PYTHON) : result.languages;
         result.languages = isDotnetCoreRepo(files) ? result.languages.concat(SupportedLanguage.DOTNETCORE) : result.languages;
-        result.languages = result.languages.concat(SupportedLanguage.NONE);
 
         result.isFunctionApp = err ? true : isFunctionApp(files),
 
@@ -152,14 +158,20 @@ function isPythonRepo(files: string[]): boolean {
     });
 }
 
+function isDockerApp(files: string[]): boolean {
+    return files.some((file) => {
+        return file.toLowerCase().endsWith("dockerfile");
+    });
+}
+
 function isFunctionApp(files: string[]): boolean {
     return files.some((file) => {
         return file.toLowerCase().endsWith("host.json");
     });
 }
 
-function isFunctionAppType(targetKind: WebAppKind): boolean {
-    return targetKind === WebAppKind.FunctionApp || targetKind === WebAppKind.FunctionAppLinux || targetKind === WebAppKind.FunctionAppLinuxContainer;
+function isFunctionAppType(targetKind: TargetKind): boolean {
+    return targetKind === TargetKind.FunctionApp || targetKind === TargetKind.FunctionAppLinux || targetKind === TargetKind.FunctionAppLinuxContainer;
 }
 
 function removeDuplicates(templateList: PipelineTemplate[]): PipelineTemplate[] {
@@ -186,7 +198,8 @@ export enum SupportedLanguage {
     NONE = 'none',
     NODE = 'node',
     PYTHON = 'python',
-    DOTNETCORE = 'dotnetcore'
+    DOTNETCORE = 'dotnetcore',
+    DOCKER = 'docker'
 }
 
 export enum AzureTarget {
@@ -201,16 +214,44 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/simpleWebApp.yml'),
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.SimpleApplicationToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/simpleLinuxWebApp.yml'),
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         }
     ],
     'node': [
@@ -219,80 +260,220 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejs.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGulp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGrunt.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithAngular.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithWebpack.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithNpmToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGulpLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithGruntLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithAngularLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWithWebpackLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         }
     ],
     'python': [
@@ -301,8 +482,22 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonLinuxWebApp.yml'),
             language: SupportedLanguage.PYTHON,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: 'Build and Test Python Django App',
@@ -310,7 +505,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.PYTHON,
             targetType: TargetResourceType.None,
             targetKind: null,
-            enabled: false
+            enabled: true,
+            parameters: []
         }
     ],
     'dotnetcore': [
@@ -319,16 +515,78 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreWindowsWebApp.yml'),
             language: SupportedLanguage.DOTNETCORE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.DotNetCoreWebAppToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreLinuxWebApp.yml'),
             language: SupportedLanguage.DOTNETCORE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
+        }
+    ],
+    'docker': [
+        {
+            label: 'Containerized application to AKS',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/AksWithReuseACR.yml'),
+            language: 'docker',
+            targetType: TargetResourceType.AKS,
+            targetKind: null,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "cluster",
+                    "displayName": "Select Azure Kubernetes cluster to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.AKS.toString()
+                },
+                {
+                    "name": "acr",
+                    "displayName": "Select Azure Container Registry to store docker image",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.ACR.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AKSServiceConnectionKubeConfig
+                },
+                {
+                    "id": "",
+                    "type": TemplateAssetType.ACRServiceConnection
+                }
+            ]
         }
     ]
 };
@@ -340,80 +598,220 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnWindows.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithNpmToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsOnLinux.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGulpOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithGruntOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithAngularOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnWindowsWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWithWebpackOnLinuxWebApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         }
     ],
     'none': [
@@ -422,16 +820,44 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/simpleWebApp.yml'),
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.WindowsApp,
-            enabled: true
+            targetKind: TargetKind.WindowsApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.SimpleApplicationToAppService,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/simpleWebApp.yml'),
             language: SupportedLanguage.NONE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         }
     ],
     'python': [
@@ -440,11 +866,26 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/pythonLinuxWebApp.yml'),
             language: SupportedLanguage.PYTHON,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.LinuxApp,
-            enabled: true
+            targetKind: TargetKind.LinuxApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure webapp to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
     ],
-    'dotnetcore': []
+    'dotnetcore': [],
+    'docker': []
 };
 
 const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplate[] } =
@@ -455,23 +896,51 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsWindowsFunctionApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionApp,
-            enabled: true
+            targetKind: TargetKind.FunctionApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure Function to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.FunctionApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsLinuxFunctionApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinux,
-            enabled: true
+            targetKind: TargetKind.FunctionAppLinux,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure Function to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/nodejsLinuxFunctionApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinuxContainer,
+            targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true
         },
         {
@@ -479,23 +948,51 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreWindowsFunctionApp.yml'),
             language: SupportedLanguage.DOTNETCORE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionApp,
-            enabled: true
+            targetKind: TargetKind.FunctionApp,
+            enabled: false,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure Function to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.FunctionApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.DotNetCoreFunctionAppToAzureFunction,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreLinuxFunctionApp.yml'),
             language: SupportedLanguage.DOTNETCORE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinux,
-            enabled: true
+            targetKind: TargetKind.FunctionAppLinux,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure Function to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.DotNetCoreFunctionAppToAzureFunction,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/dotnetcoreLinuxFunctionApp.yml'),
             language: SupportedLanguage.DOTNETCORE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinuxContainer,
+            targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true
         },
         {
@@ -503,15 +1000,29 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonLinuxFunctionApp.yml'),
             language: SupportedLanguage.PYTHON,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinux,
-            enabled: true
+            targetKind: TargetKind.FunctionAppLinux,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure Function to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.PythonFunctionAppToLinuxAzureFunction,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/pythonLinuxFunctionApp.yml'),
             language: SupportedLanguage.PYTHON,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinuxContainer,
+            targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true
         },
     ]
@@ -525,23 +1036,51 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsWindowsFunctionApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionApp,
-            enabled: true
+            targetKind: TargetKind.FunctionApp,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure Function to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.FunctionApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsLinuxFunctionApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinux,
-            enabled: true
+            targetKind: TargetKind.FunctionAppLinux,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure Function to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/nodejsLinuxFunctionApp.yml'),
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinuxContainer,
+            targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true
         },
         {
@@ -549,16 +1088,44 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/pythonLinuxFunctionApp.yml'),
             language: SupportedLanguage.PYTHON,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinux,
-            enabled: true
+            targetKind: TargetKind.FunctionAppLinux,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure Function to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         },
         {
             label: PipelineTemplateLabels.PythonFunctionAppToLinuxAzureFunction,
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/pythonLinuxFunctionApp.yml'),
             language: SupportedLanguage.PYTHON,
             targetType: TargetResourceType.WebApp,
-            targetKind: WebAppKind.FunctionAppLinuxContainer,
-            enabled: true
+            targetKind: TargetKind.FunctionAppLinuxContainer,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "webapp",
+                    "displayName": "Select the target Azure Function to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxContainerFunctionApp.toString()
+                }
+            ],
+            assets: [
+                {
+                    "id": "",
+                    "type": TemplateAssetType.AzureARM
+                }
+            ]
         }
     ]
 };

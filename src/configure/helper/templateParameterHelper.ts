@@ -3,7 +3,6 @@ import * as utils from 'util';
 import { AppServiceClient } from "../clients/azure/appServiceClient";
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { openBrowseExperience } from '../configure';
-import { Configurer } from '../configurers/configurerBase';
 import * as templateHelper from '../helper/templateHelper';
 import { QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs } from "../model/models";
 import { PreDefinedDataSourceIds, TemplateParameter, TemplateParameterType } from '../model/templateModels';
@@ -12,10 +11,12 @@ import { Messages } from "../resources/messages";
 import { TelemetryKeys } from "../resources/telemetryKeys";
 import { ControlProvider } from "./controlProvider";
 
-const Layer = "TemplateParameterHelper";
-
 export class TemplateParameterHelper {
     private azureResourceClient: AzureResourceClient;
+
+    public static getParameterForTargetResourceType(parameters: TemplateParameter[], targetResourceType: TargetResourceType) : TemplateParameter {
+        return parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(targetResourceType)); });
+    }
 
     public static getMatchingAzureResourceTemplateParameter(resource: GenericResource, templateParameters: TemplateParameter[]): { key: string, value: any } {
         if (!resource || !templateParameters) {
@@ -32,12 +33,12 @@ export class TemplateParameterHelper {
         return null;
     }
 
-    public async setParameters(parameters: TemplateParameter[], inputs: WizardInputs, pipelineConfigurer: Configurer): Promise<void> {
+    public async setParameters(parameters: TemplateParameter[], inputs: WizardInputs): Promise<void> {
         if (!!parameters && parameters.length > 0) {
             parameters.forEach(async (parameter) => {
                 if (!inputs.pipelineParameters.params[parameter.name]) {
                     try {
-                        await this.getParameterValue(parameter, inputs, pipelineConfigurer);
+                        await this.getParameterValue(parameter, inputs);
                     }
                     catch (err) {
                         if (!inputs.pipelineParameters.params[parameter.name] && !!parameter.defaultValue) {
@@ -56,7 +57,7 @@ export class TemplateParameterHelper {
         return targetKind ? "resource:" + targetType + ":" + targetKind : "resource:" + targetType;
     }
 
-    private async getParameterValue(parameter: TemplateParameter, inputs: WizardInputs, configurer: Configurer): Promise<void> {
+    private async getParameterValue(parameter: TemplateParameter, inputs: WizardInputs): Promise<void> {
         if (!!parameter) {
             switch (parameter.type) {
                 case TemplateParameterType.String:

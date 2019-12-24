@@ -68,4 +68,7 @@ export class Messages {
     public static browseWorkflow: string = 'Browse Workflow';
     public static deploymentLogMessage: string = 'Configured from VS Code';
     public static setupAlreadyConfigured = 'Setup is already configured for your web app. Browse to know more about the existing setup.';
+    public static parameterOfTypeNotSupported = 'Parameter of type %s is not supported.';
+    public static assetOfTypeNotSupported = 'Asset of type %s is not supported.';
+    public static couldNotFindTargetResourceValueInParams = 'Could not find corresponding parameter value for template\'s target resource type: %s.';
 }

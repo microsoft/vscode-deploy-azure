@@ -5,7 +5,7 @@ import { SiteConfigResource, StringDictionary, Deployment } from 'azure-arm-webs
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from 'ms-rest';
 
 import { AzureResourceClient } from './azureResourceClient';
-import { WebAppKind, ParsedAzureResourceId, WebAppSourceControl } from '../../model/models';
+import { TargetKind, ParsedAzureResourceId, WebAppSourceControl } from '../../model/models';
 import {Messages} from '../../resources/messages';
 import { AzureEnvironment } from 'ms-rest-azure';
 import { telemetryHelper } from '../../helper/telemetryHelper';
@@ -30,7 +30,7 @@ export class AppServiceClient extends AzureResourceClient {
         return await this.webSiteManagementClient.webApps.get(parsedResourceId.resourceGroup, parsedResourceId.resourceName);
     }
 
-    public async GetAppServices(filtersForResourceKind: WebAppKind[]): Promise<ResourceListResult> {
+    public async GetAppServices(filtersForResourceKind: TargetKind[]): Promise<ResourceListResult> {
         let resourceList: ResourceListResult = await this.getResourceList(AppServiceClient.resourceType);
         if (!!filtersForResourceKind && filtersForResourceKind.length > 0) {
             let filteredResourceList: ResourceListResult = [];

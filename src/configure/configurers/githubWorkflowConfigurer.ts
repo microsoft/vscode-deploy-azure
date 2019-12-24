@@ -1,21 +1,20 @@
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
+import * as Q from 'q';
 import * as utils from 'util';
 import * as vscode from 'vscode';
-import { Configurer } from "./configurerBase";
-import { WizardInputs, AzureSession, TargetResourceType } from "../model/models";
-import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
-import { Messages } from '../resources/messages';
 import { UserCancelledError } from 'vscode-azureextensionui';
-import { telemetryHelper } from '../helper/telemetryHelper';
-import { TelemetryKeys } from '../resources/telemetryKeys';
+import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
 import { ControlProvider } from '../helper/controlProvider';
 import { GraphHelper } from '../helper/graphHelper';
-import { TracePoints } from '../resources/tracePoints';
-import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
-import { AzureResourceClient } from '../clients/azure/azureResourceClient';
-import * as Q from 'q';
+import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
+import { telemetryHelper } from '../helper/telemetryHelper';
+import { AzureSession, ServiceConnectionType, TargetResourceType, WizardInputs } from "../model/models";
 import * as constants from '../resources/constants';
+import { Messages } from '../resources/messages';
+import { TelemetryKeys } from '../resources/telemetryKeys';
+import { TracePoints } from '../resources/tracePoints';
+import { Configurer } from "./configurerBase";
 
 const Layer = 'GitHubWorkflowConfigurer';
 
@@ -34,21 +33,21 @@ export class GitHubWorkflowConfigurer implements Configurer {
     }
 
     public async createPreRequisites(inputs: WizardInputs): Promise<void> {
-        if (inputs.targetResource.resource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
+        if (inputs.targetResource.resource && inputs.targetResource.resource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
             let azureConnectionSecret = await vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
-                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.targetResource.subscriptionId)
+                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
                 },
                 async () => {
                     try {
-                        let scope = inputs.targetResource.resource.id;
+                        let scope = inputs.pipelineParameters.params["targetResource"].id;
                         let aadAppName = GraphHelper.generateAadApplicationName(inputs.sourceRepository.remoteName, 'github');
                         let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
                         return {
                             "clientId": `${aadApp.appId}`,
                             "clientSecret": `${aadApp.secret}`,
-                            "subscriptionId": `${inputs.targetResource.subscriptionId}`,
+                            "subscriptionId": `${inputs.subscriptionId}`,
                             "tenantId": `${inputs.azureSession.tenantId}`,
                         };
                     }
@@ -57,12 +56,12 @@ export class GitHubWorkflowConfigurer implements Configurer {
                         throw error;
                     }
                 });
-            inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS';
+
             let showCopyAndOpenNotificationFunction = (nextLabel = false) => {
                 return this.showCopyAndOpenNotification(
                     JSON.stringify(azureConnectionSecret),
                     `https://github.com/${inputs.sourceRepository.repositoryId}/settings/secrets`,
-                    utils.format(Messages.copyAndCreateSecretMessage, inputs.targetResource.serviceConnectionId),
+                    utils.format(Messages.copyAndCreateSecretMessage, 'AZURE_CREDENTIALS'),
                     'copyAzureCredentials',
                     nextLabel);
             };
@@ -79,6 +78,54 @@ export class GitHubWorkflowConfigurer implements Configurer {
             }
         }
     }
+
+    public async createSecretOrServiceConnection(
+        name: string,
+        type: ServiceConnectionType,
+        data: any,
+        inputs: WizardInputs): Promise<string> {
+            let secret = null;
+            switch (type) {
+                case ServiceConnectionType.AzureRM:
+                    secret = {
+                        "clientId": `${data.aadApp.appId}`,
+                        "clientSecret": `${data.aadApp.secret}`,
+                        "subscriptionId": `${inputs.subscriptionId}`,
+                        "tenantId": `${inputs.azureSession.tenantId}`,
+                    };
+                    break;
+                case ServiceConnectionType.ACR:
+                case ServiceConnectionType.AKS:
+                default:
+                    throw new Error(utils.format(Messages.assetOfTypeNotSupported, type));
+            }
+
+            if (secret) {
+                let showCopyAndOpenNotificationFunction = (nextLabel = false) => {
+                    return this.showCopyAndOpenNotification(
+                        JSON.stringify(secret),
+                        `https://github.com/${inputs.sourceRepository.repositoryId}/settings/secrets`,
+                        utils.format(Messages.copyAndCreateSecretMessage, name),
+                        'copyAzureCredentials',
+                        nextLabel);
+                };
+
+                let copyAndOpen = await showCopyAndOpenNotificationFunction();
+                if (copyAndOpen === Messages.copyAndOpenLabel) {
+                    let nextSelected = "";
+                    while (nextSelected !== Messages.nextLabel) {
+                        nextSelected = await showCopyAndOpenNotificationFunction(true);
+                        if (nextSelected === undefined) {
+                            throw new UserCancelledError(Messages.operationCancelled);
+                        }
+                    }
+                }
+
+                return name;
+            }
+
+            return null;
+        }
 
     public async getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
         // Create .github directory
@@ -109,7 +156,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 inputs.sourceRepository.commitId = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
                     try {
                         // handle when the branch is not upto date with remote branch and push fails
-                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineParameters.pipelineFilePath, inputs.sourceRepository, Messages.addGitHubWorkflowYmlFile);
+                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineParameters.filePath, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);
@@ -132,29 +179,29 @@ export class GitHubWorkflowConfigurer implements Configurer {
         return this.queuedPipelineUrl;
     }
 
-    public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
-        if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
+    public async executePostPipelineCreationSteps(inputs: WizardInputs): Promise<void> {
+        if (inputs.pipelineParameters.params["targetResource"].type === TargetResourceType.WebApp) {
             try {
-                let appServiceClient = azureResourceClient as AppServiceClient;
-                
+                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
+
                 // Update web app sourceControls as GitHubAction
                 let sourceControlProperties = {
                     "isGitHubAction": true,
                     "repoUrl": `https://github.com/${inputs.sourceRepository.repositoryId}`,
                     "branch": inputs.sourceRepository.branch,
                 };
-                await appServiceClient.setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
-                
+                await appServiceClient.setSourceControl(inputs.pipelineParameters.params["targetResource"].id, sourceControlProperties);
+
                 // Update web app metadata
                 let updateMetadataPromise = new Promise<void>(async (resolve) => {
-                    let metadata = await appServiceClient.getAppServiceMetadata(inputs.targetResource.resource.id);
+                    let metadata = await appServiceClient.getAppServiceMetadata(inputs.pipelineParameters.params["targetResource"].id);
                     metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
 
                     let repositoryPath = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getGitRootDirectory();
-                    let configPath = path.relative(repositoryPath, inputs.pipelineParameters.pipelineFilePath);
+                    let configPath = path.relative(repositoryPath, inputs.pipelineParameters.filePath);
                     metadata["properties"]["configPath"] = `${configPath}`;
 
-                    await appServiceClient.updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
+                    await appServiceClient.updateAppServiceMetadata(inputs.pipelineParameters.params["targetResource"].id, metadata);
                     resolve();
                 });
 
@@ -164,7 +211,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     message: Messages.deploymentLogMessage
                 });
 
-                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage);
+                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(inputs.pipelineParameters.params["targetResource"].id, deploymentMessage);
 
                 Q.all([updateMetadataPromise, updateDeploymentLogPromise])
                     .then(() => {

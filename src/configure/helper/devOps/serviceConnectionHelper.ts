@@ -25,7 +25,7 @@ export class ServiceConnectionHelper {
         return endpointId;
     }
 
-    public async createAzureServiceConnection(name: string, tenantId: string, subscriptionId: string, scope: string, aadApp: AadApplication): Promise<string> {
+    public async createARMServiceConnection(name: string, tenantId: string, subscriptionId: string, scope: string, aadApp: AadApplication): Promise<string> {
         let response = await this.serviceConnectionClient.createAzureServiceConnection(name, tenantId, subscriptionId, scope, aadApp);
         let endpointId = response.id;
         await this.waitForEndpointToBeReady(endpointId);

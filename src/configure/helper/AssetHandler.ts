@@ -1,10 +1,9 @@
 import * as utils from 'util';
 import * as vscode from 'vscode';
 import { UniqueResourceNameSuffix } from '../configure';
-import { AzurePipelineConfigurer } from '../configurers/azurePipelineConfigurer';
 import { Configurer } from "../configurers/configurerBase";
-import { WizardInputs } from "../model/models";
-import { TemplateAsset, TemplateAssetType } from '../model/templateModels';
+import { ServiceConnectionType, WizardInputs } from "../model/models";
+import { TemplateAsset, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
 import { GraphHelper } from './graphHelper';
@@ -13,15 +12,15 @@ import { telemetryHelper } from './telemetryHelper';
 const Layer = "AssetCreationHandler";
 
 export class AssetCreationHandler {
-    public async createAssets(assets: TemplateAsset[], inputs: WizardInputs, configurer) {
+    public async createAssets(assets: TemplateAsset[], inputs: WizardInputs, configurer: Configurer) {
         if (!!assets && assets.length > 0) {
             assets.forEach(async (asset) => {
-                await this.getConnectedServiceParameter(asset, inputs, configurer);
+                await this.createAndSetAsset(asset, inputs, configurer);
             });
         }
     }
 
-    private async getConnectedServiceParameter(asset: TemplateAsset, inputs: WizardInputs, configurer: Configurer): Promise<void> {
+    private async createAndSetAsset(asset: TemplateAsset, inputs: WizardInputs, configurer: Configurer): Promise<void> {
         if (!!asset) {
             switch (asset.type) {
                 case TemplateAssetType.AzureARM:
@@ -32,11 +31,13 @@ export class AssetCreationHandler {
                         },
                         async () => {
                             try {
+                                // find LCS of all azure resource params
                                 let scope = inputs.pipelineParameters.params["targetResource"].id;
                                 let aadAppName = GraphHelper.generateAadApplicationName(inputs.organizationName, inputs.project.name);
                                 let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
-                                let serviceConnectionName = `${inputs.pipelineParameters.params["targetResource"].name}-${UniqueResourceNameSuffix}`;
-                                await (configurer as AzurePipelineConfigurer).createServiceConnection(inputs, serviceConnectionName, aadApp, scope);
+                                // Use param name for first azure resource param
+                                let serviceConnectionName = `${inputs.pipelineParameters.params[inputs.pipelineParameters.template.parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${UniqueResourceNameSuffix}`;
+                                return await configurer.createSecretOrServiceConnection(serviceConnectionName, ServiceConnectionType.AzureRM, { "aadApp": aadApp, "scope": scope}, inputs);
                             }
                             catch (error) {
                                 telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -51,7 +52,7 @@ export class AssetCreationHandler {
                 case TemplateAssetType.GitHubARM:
                 case TemplateAssetType.GitHubARMPublishProfile:
                 default:
-                    throw new Error(utils.format(Messages.parameterOfTypeNotSupported, asset.type));
+                    throw new Error(utils.format(Messages.assetOfTypeNotSupported, asset.type));
             }
         }
     }

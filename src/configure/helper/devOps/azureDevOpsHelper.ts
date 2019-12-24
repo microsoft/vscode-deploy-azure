@@ -117,7 +117,7 @@ export class AzureDevOpsHelper {
             },
             process: {
                 type: 2,
-                yamlFileName: path.join(inputs.pipelineParameters.workingDirectory, path.basename(inputs.pipelineParameters.pipelineFilePath))
+                yamlFileName: path.join(inputs.pipelineParameters.workingDirectory, path.basename(inputs.pipelineParameters.filePath))
             },
             queue: {
                 id: queueId // Default queue Hosted VS 2017. This value is overriden by queue specified in YAML

@@ -1,4 +1,4 @@
-import { TargetKind, TargetResourceType } from "./models";
+import { ServiceConnectionType, TargetKind, TargetResourceType } from "./models";
 
 export interface PipelineTemplate {
     path: string;
@@ -23,13 +23,6 @@ export interface TemplateParameter {
 export interface TemplateAsset {
     id: string;
     type: TemplateAssetType;
-}
-
-export enum ServiceConnectionType {
-    GitHub = 'github',
-    AzureRM = 'arm',
-    ACR = "containerRegistery",
-    AKS = 'azureKubernetes'
 }
 
 export enum GitHubSecretType {
