@@ -77,7 +77,7 @@ stages:
             displayName: 'Use Python 3.7'
 
           - task: AzureWebApp@1
-            displayName: 'Azure Web App Deploy: $(webAppName)'
+            displayName: 'Deploy Azure Web App: $(webAppName)'
             inputs:
               azureSubscription: $(azureServiceConnectionId)
               appName: $(webAppName)
