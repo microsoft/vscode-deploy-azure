@@ -97,7 +97,7 @@ stages:
         deploy:
           steps:
           - task: AzureRMWebAppDeployment@4
-            displayName: "Deploy Azure Web App"
+            displayName: 'Azure Web App Deploy: $(webAppName)'
             inputs:
               ConnectionType: "AzureRM"
               ConnectedServiceName: $(azureSubscription)
