@@ -165,29 +165,31 @@ export class AzurePipelineConfigurer implements Configurer {
 
         // TODO: show notification while setup is being done.
         // ?? should SPN created be scoped to resource group of target azure resource.
-        inputs.targetResource.serviceConnectionId = await vscode.window.withProgress(
-            {
-                location: vscode.ProgressLocation.Notification,
-                title: utils.format(Messages.creatingAzureServiceConnection, inputs.targetResource.subscriptionId)
-            },
-            async () => {
-                try {
-                    let serviceConnectionName = `${inputs.targetResource.resource.name}-${UniqueResourceNameSuffix}`;
-                    switch (inputs.pipelineParameters.pipelineTemplate.azureConnectionType) {
-                        case AzureConnectionType.None:
-                            return '';
-                        case AzureConnectionType.AzureRMPublishProfile:
-                            return await this.createAzurePublishProfileEndpoint(serviceConnectionHelper, azureResourceClient, serviceConnectionName, inputs);
-                        case AzureConnectionType.AzureRMServicePrincipal:
-                        default:
-                            return await this.createAzureSPNServiceEndpoint(serviceConnectionHelper, serviceConnectionName, inputs);
+        if (inputs.targetResource.resource) {
+            inputs.targetResource.serviceConnectionId = await vscode.window.withProgress(
+                {
+                    location: vscode.ProgressLocation.Notification,
+                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.targetResource.subscriptionId)
+                },
+                async () => {
+                    try {
+                        let serviceConnectionName = `${inputs.targetResource.resource.name}-${UniqueResourceNameSuffix}`;
+                        switch (inputs.pipelineParameters.pipelineTemplate.azureConnectionType) {
+                            case AzureConnectionType.None:
+                                return '';
+                            case AzureConnectionType.AzureRMPublishProfile:
+                                return await this.createAzurePublishProfileEndpoint(serviceConnectionHelper, azureResourceClient, serviceConnectionName, inputs);
+                            case AzureConnectionType.AzureRMServicePrincipal:
+                            default:
+                                return await this.createAzureSPNServiceEndpoint(serviceConnectionHelper, serviceConnectionName, inputs);
+                        }
                     }
-                }
-                catch (error) {
-                    telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
-                    throw error;
-                }
-            });
+                    catch (error) {
+                        telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
+                        throw error;
+                    }
+                });
+        }
     }
 
     public async getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {

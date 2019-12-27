@@ -28,18 +28,6 @@ export class ServiceConnectionHelper {
     public async createAzureSPNServiceConnection(name: string, tenantId: string, subscriptionId: string, scope: string, aadApp: AadApplication): Promise<string> {
         let response = await this.serviceConnectionClient.createAzureSPNServiceConnection(name, tenantId, subscriptionId, scope, aadApp);
         let endpointId = response.id;
-        await this.waitAndAuthorizeEndpoint(endpointId);
-        return endpointId;
-    }
-
-    public async createAzurePublishProfileServiceConnection(name: string, tenantId: string, resourceId: string, publishProfile: string): Promise<string> {
-        let response = await this.serviceConnectionClient.createAzurePublishProfileServiceConnection(name, tenantId, resourceId, publishProfile);
-        let endpointId = response.id;
-        await this.waitAndAuthorizeEndpoint(endpointId);
-        return endpointId;
-    }
-
-    private async waitAndAuthorizeEndpoint(endpointId: string): Promise<void> {
         await this.waitForEndpointToBeReady(endpointId);
         await this.serviceConnectionClient.authorizeEndpointForAllPipelines(endpointId)
             .then((response) => {
@@ -47,6 +35,20 @@ export class ServiceConnectionHelper {
                     throw new Error(Messages.couldNotAuthorizeEndpoint);
                 }
             });
+        return endpointId;
+    }
+
+    public async createAzurePublishProfileServiceConnection(name: string, tenantId: string, resourceId: string, publishProfile: string): Promise<string> {
+        let response = await this.serviceConnectionClient.createAzurePublishProfileServiceConnection(name, tenantId, resourceId, publishProfile);
+        let endpointId = response.id;
+        await this.waitForEndpointToBeReady(endpointId);
+        await this.serviceConnectionClient.authorizeEndpointForAllPipelines(endpointId)
+            .then((response) => {
+                if (response.allPipelines.authorized !== true) {
+                    throw new Error(Messages.couldNotAuthorizeEndpoint);
+                }
+            });
+        return endpointId;
     }
 
     private async waitForEndpointToBeReady(endpointId: string): Promise<void> {
