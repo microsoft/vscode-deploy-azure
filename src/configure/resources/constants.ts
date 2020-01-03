@@ -133,6 +133,19 @@ export const ReservedHostNames: string[] = [
     "beta"
 ];
 
+export const PipelineTemplateLabels = {
+    SimpleApplicationToAppService: 'Simple application to App Service',
+    NodeJSWithNpmToAppService: 'Node.js with npm to App Service',
+    NodeJSWithGulpToAppService: 'Node.js with Gulp to App Service',
+    NodeJSWithGruntToAppService: 'Node.js with Grunt to App Service',
+    NodeJSWithAngularToAppService: 'Node.js with Angular to App Service',
+    NodeJSWithWebpackToAppService: 'Node.js with Webpack to App Service',
+    DotNetCoreWebAppToAppService: '.NET Core Web App to App Service',
+    NodeJSFunctionAppToAzureFunction: 'Node.js Function App to Azure Function',
+    DotNetCoreFunctionAppToAzureFunction: '.NET Core Function App to Azure Function',
+    PythonFunctionAppToLinuxAzureFunction: 'Python Function App to Linux Azure Function'
+};
+
 export const SelectFolderOrRepository = 'selectFolderOrRepository';
 export const SelectOrganization = 'selectOrganization';
 export const SelectProject = 'selectProject';

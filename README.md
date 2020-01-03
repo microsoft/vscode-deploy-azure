@@ -2,7 +2,7 @@
 
 # Deploy to Azure from VS Code
 
-[Get it on the VS Code Marketplace!]()
+[Get it on the VS Code Marketplace!](https://marketplace.visualstudio.com/items?itemName=ms-vscode-deploy-azure.azure-deploy)
 
 This VS Code extension helps you set up continuous build and deployment for Azure WebApps without leaving VS Code.
 

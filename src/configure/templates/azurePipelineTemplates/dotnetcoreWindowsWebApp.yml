@@ -97,7 +97,7 @@ stages:
         deploy:
           steps:
           - task: AzureWebApp@1
-            displayName: 'Azure Web App Deploy'
+            displayName: 'Deploy Azure Web App: $(webAppName)'
             inputs:
               azureSubscription: $(azureSubscription)
               appType: webApp
