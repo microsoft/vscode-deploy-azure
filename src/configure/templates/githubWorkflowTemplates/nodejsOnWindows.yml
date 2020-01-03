@@ -15,10 +15,6 @@ jobs:
     - uses: actions/setup-node@v1
       with:
         node-version: '10.x'
-    
-    - uses: azure/login@v1
-      with:
-        creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
 
     # install dependencies, build, and test
     - name: npm install, build, and test
@@ -33,8 +29,4 @@ jobs:
       with:
         app-name: {{{ targetResource.resource.name }}}
         package: {{{ pipelineParameters.workingDirectory }}}
-
-    # Azure logout
-    - name: logout
-      run: |
-        az logout
+        publish-profile: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>

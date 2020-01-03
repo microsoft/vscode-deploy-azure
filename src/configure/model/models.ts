@@ -143,6 +143,12 @@ export interface GitRepositoryParameters {
     serviceConnectionId?: string; // Id of the service connection in Azure DevOps
 }
 
+export enum AzureConnectionType {
+    None,
+    AzureRMServicePrincipal,
+    AzureRMPublishProfile
+}
+
 export interface PipelineTemplate {
     path: string;
     label: string;
@@ -150,6 +156,7 @@ export interface PipelineTemplate {
     targetType: TargetResourceType;
     targetKind: WebAppKind;
     enabled: boolean;
+    azureConnectionType: AzureConnectionType; 
 }
 
 export interface Token {

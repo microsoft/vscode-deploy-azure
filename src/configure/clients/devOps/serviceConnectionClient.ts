@@ -1,4 +1,4 @@
-import { AadApplication } from '../../model/models';
+import { AadApplication, ParsedAzureResourceId } from '../../model/models';
 import { AzureDevOpsBaseUrl } from "../../resources/constants";
 import { AzureDevOpsClient } from './azureDevOpsClient';
 import { UrlBasedRequestPrepareOptions } from 'ms-rest';
@@ -46,7 +46,7 @@ export class ServiceConnectionClient {
             });
     }
 
-    public async createAzureServiceConnection(endpointName: string, tenantId: string, subscriptionId: string, scope: string, aadApp: AadApplication): Promise<any> {
+    public async createAzureSPNServiceConnection(endpointName: string, tenantId: string, subscriptionId: string, scope: string, aadApp: AadApplication): Promise<any> {
         let url = `${AzureDevOpsBaseUrl}/${this.organizationName}/${this.projectName}/_apis/serviceendpoint/endpoints`;
 
         return this.azureDevOpsClient.sendRequest(<UrlBasedRequestPrepareOptions>{
@@ -72,6 +72,43 @@ export class ServiceConnectionClient {
                     "creationMode": "Manual",
                     "subscriptionId": subscriptionId,
                     "subscriptionName": subscriptionId
+                },
+                "description": "",
+                "groupScopeId": null,
+                "name": endpointName,
+                "operationStatus": null,
+                "readersGroup": null,
+                "type": "azurerm",
+                "url": "https://management.azure.com/"
+            },
+            deserializationMapper: null,
+            serializationMapper: null
+        });
+    }
+
+    public async createAzurePublishProfileServiceConnection(endpointName: string, tenantId: string, resourceId: string, publishProfile: string): Promise<any> {
+        let url = `${AzureDevOpsBaseUrl}/${this.organizationName}/${this.projectName}/_apis/serviceendpoint/endpoints`;
+        let parsedResourceId = new ParsedAzureResourceId(resourceId);
+
+        return this.azureDevOpsClient.sendRequest(<UrlBasedRequestPrepareOptions>{
+            url: url,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json;api-version=5.1-preview.2;excludeUrls=true"
+            },
+            method: "POST",
+            body: {
+                "administratorsGroup": null,
+                "authorization": {
+                    "parameters": {
+                        "publishProfile": publishProfile,
+                        "tenantid": tenantId
+                    },
+                    "scheme": "PublishProfile"
+                },
+                "data": {
+                    "subscriptionName": parsedResourceId.subscriptionId,
+                    "resourceId": resourceId
                 },
                 "description": "",
                 "groupScopeId": null,

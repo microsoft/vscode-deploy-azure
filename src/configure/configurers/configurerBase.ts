@@ -5,7 +5,7 @@ import { LocalGitRepoHelper } from "../helper/LocalGitRepoHelper";
 export interface Configurer {
     validatePermissions(): Promise<void>;
     getInputs(inputs: WizardInputs): Promise<void>;
-    createPreRequisites(inputs: WizardInputs): Promise<void>;
+    createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void>;
     getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string>;
     checkInPipelineFileToRepository(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string>;
     createAndQueuePipeline(inputs: WizardInputs): Promise<string>;

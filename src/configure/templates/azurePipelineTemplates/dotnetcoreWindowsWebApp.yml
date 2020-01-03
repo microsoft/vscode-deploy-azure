@@ -96,12 +96,10 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: AzureRMWebAppDeployment@4
+          - task: AzureWebApp@1
             displayName: 'Deploy Azure Web App: $(webAppName)'
             inputs:
-              ConnectionType: "AzureRM"
-              ConnectedServiceName: $(azureSubscription)
-              WebAppName: $(webAppName)
-              WebAppKind: webApp
-              Package: $(Pipeline.Workspace)/**/*.zip
-              DeploymentType: "webDeploy"
+              azureSubscription: $(azureSubscription)
+              appType: webApp
+              appName: $(webAppName)
+              package: $(Pipeline.Workspace)/**/*.zip
