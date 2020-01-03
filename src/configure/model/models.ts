@@ -22,13 +22,6 @@ class ExtensionVariables implements UIExtensionVariables {
 let extensionVariables = new ExtensionVariables();
 export { extensionVariables };
 
-export interface AzureAccountExtensionExports {
-    sessions: AzureSession[];
-    subscriptions: { session: AzureSession, subscription: SubscriptionModels.Subscription }[];
-    filters: { session: AzureSession, subscription: SubscriptionModels.Subscription }[];
-    waitForLogin: () => Promise<boolean>;
-}
-
 export class WizardInputs {
     organizationName: string;
     project: DevOpsProject;
@@ -38,11 +31,6 @@ export class WizardInputs {
     pipelineParameters: PipelineParameters = new PipelineParameters();
     azureSession: AzureSession;
     githubPATToken?: string;
-}
-
-export interface DevOpsProject {
-    id: string;
-    name: string;
 }
 
 export class Organization {
@@ -70,64 +58,6 @@ export class PipelineParameters {
     pipelineFilePath: string;
     pipelineTemplate: PipelineTemplate;
     workingDirectory: string;
-}
-
-export interface GitRepositoryParameters {
-    repositoryProvider: RepositoryProvider;
-    repositoryName: string;
-    repositoryId: string;
-    remoteName: string;
-    remoteUrl: string;
-    branch: string;
-    commitId: string;
-    localPath: string;
-    serviceConnectionId?: string; // Id of the service connection in Azure DevOps
-}
-
-export interface PipelineTemplate {
-    path: string;
-    label: string;
-    language: string;
-    targetType: TargetResourceType;
-    targetKind: WebAppKind;
-    enabled: boolean;
-    azureConnectionType: AzureConnectionType; 
-}
-
-export enum SourceOptions {
-    CurrentWorkspace = 'Current workspace',
-    BrowseLocalMachine = 'Browse local machine',
-    GithubRepository = 'Github repository'
-}
-
-export enum RepositoryProvider {
-    Github = 'github',
-    AzureRepos = 'tfsgit'
-}
-
-export enum TargetResourceType {
-    None = 'none',
-    WebApp = 'Microsoft.Web/sites'
-}
-
-export enum ServiceConnectionType {
-    GitHub = 'github',
-    AzureRM = 'azurerm'
-}
-
-export enum WebAppKind {
-    WindowsApp = 'app',
-    FunctionApp = 'functionapp',
-    FunctionAppLinux = 'functionapp,linux',
-    FunctionAppLinuxContainer = 'functionapp,linux,container',
-    LinuxApp = 'app,linux',
-    LinuxContainerApp = 'app,linux,container'
-}
-
-export enum AzureConnectionType {
-    None,
-    AzureRMServicePrincipal,
-    AzureRMPublishProfile
 }
 
 export class QuickPickItemWithData implements QuickPickItem {
@@ -189,6 +119,46 @@ export class ParsedAzureResourceId {
     }
 }
 
+export interface AzureAccountExtensionExports {
+    sessions: AzureSession[];
+    subscriptions: { session: AzureSession, subscription: SubscriptionModels.Subscription }[];
+    filters: { session: AzureSession, subscription: SubscriptionModels.Subscription }[];
+    waitForLogin: () => Promise<boolean>;
+}
+
+export interface DevOpsProject {
+    id: string;
+    name: string;
+}
+
+export interface GitRepositoryParameters {
+    repositoryProvider: RepositoryProvider;
+    repositoryName: string;
+    repositoryId: string;
+    remoteName: string;
+    remoteUrl: string;
+    branch: string;
+    commitId: string;
+    localPath: string;
+    serviceConnectionId?: string; // Id of the service connection in Azure DevOps
+}
+
+export enum AzureConnectionType {
+    None,
+    AzureRMServicePrincipal,
+    AzureRMPublishProfile
+}
+
+export interface PipelineTemplate {
+    path: string;
+    label: string;
+    language: string;
+    targetType: TargetResourceType;
+    targetKind: WebAppKind;
+    enabled: boolean;
+    azureConnectionType: AzureConnectionType; 
+}
+
 export interface Token {
     session: AzureSession;
     accessToken: string;
@@ -214,4 +184,34 @@ export interface WebAppSourceControl {
         isGitHubAction: boolean;
         branch: string;
     };
+}
+
+export enum SourceOptions {
+    CurrentWorkspace = 'Current workspace',
+    BrowseLocalMachine = 'Browse local machine',
+    GithubRepository = 'Github repository'
+}
+
+export enum RepositoryProvider {
+    Github = 'github',
+    AzureRepos = 'tfsgit'
+}
+
+export enum TargetResourceType {
+    None = 'none',
+    WebApp = 'Microsoft.Web/sites'
+}
+
+export enum ServiceConnectionType {
+    GitHub = 'github',
+    AzureRM = 'azurerm'
+}
+
+export enum WebAppKind {
+    WindowsApp = 'app',
+    FunctionApp = 'functionapp',
+    FunctionAppLinux = 'functionapp,linux',
+    FunctionAppLinuxContainer = 'functionapp,linux,container',
+    LinuxApp = 'app,linux',
+    LinuxContainerApp = 'app,linux,container'
 }
