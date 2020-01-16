@@ -4,13 +4,13 @@ import { AppServiceClient } from "../clients/azure/appServiceClient";
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { openBrowseExperience } from '../configure';
 import * as templateHelper from '../helper/templateHelper';
-import { QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs, extensionVariables } from "../model/models";
+import { extensionVariables, QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs } from "../model/models";
 import { PreDefinedDataSourceIds, TemplateParameter, TemplateParameterType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from "../resources/messages";
 import { TelemetryKeys } from "../resources/telemetryKeys";
-import { ControlProvider } from "./controlProvider";
 import { getSubscriptionSession } from "./azureSessionHelper";
+import { ControlProvider } from "./controlProvider";
 
 export class TemplateParameterHelper {
     private azureResourceClient: AzureResourceClient;

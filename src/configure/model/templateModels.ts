@@ -55,4 +55,4 @@ export let PreDefinedDataSourceIds = {
     LinuxFunctionApp: TargetResourceType.WebApp + ":" + TargetKind.FunctionAppLinux,
     LinuxContainerFunctionApp: TargetResourceType.WebApp + ":" + TargetKind.FunctionAppLinuxContainer,
     WindowsApp: TargetResourceType.WebApp + ":" + TargetKind.WindowsApp
-}
+};
