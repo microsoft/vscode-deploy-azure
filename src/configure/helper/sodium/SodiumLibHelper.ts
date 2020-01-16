@@ -26,7 +26,7 @@ export class SodiumLibHelper {
     }
   
     encodeToBase64 = (decoded : string) : string => {
-        return (new Buffer(decoded)).toString('base64')
+        return (new Buffer(decoded, 'binary')).toString('base64')
     }
 
     convertStringToUint8Array = (v: string) : Uint8Array => {
@@ -37,8 +37,8 @@ export class SodiumLibHelper {
         return Uint8Array.from(_body)
     }
 
-    convertUint8ArrayToString = (v: Uint8Array): string => {
-        return Buffer.from(v).toString();
+    convertUint8ArrayToString = (bytes: Uint8Array): string => {
+        return String.fromCharCode.apply(null, Array.from(bytes))
     }
 }
 

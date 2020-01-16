@@ -105,7 +105,8 @@ export class GitHubProvider {
             headers: {
                 "User-Agent": "vscode",
                 "Content-Type": "application/json",
-                "Authorization": "Bearer " + patToken 
+                "Authorization": "Bearer " + patToken,
+                "Accept": "*/*"
             },
             method: "PUT",
             deserializationMapper: null,

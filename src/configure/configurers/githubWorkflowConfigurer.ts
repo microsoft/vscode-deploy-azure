@@ -77,8 +77,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                             title: Messages.settingUpGithubSecrets
                         },
                         async () => {
-                            let result = await GitHubProvider.createGithubSecret(inputs.targetResource.serviceConnectionId, azureConnectionSecret, inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
-                            return result;
+                            await GitHubProvider.createGithubSecret(inputs.targetResource.serviceConnectionId, azureConnectionSecret, inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
                         });
                 } catch (error) {
                     // Add telemetry
