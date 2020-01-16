@@ -20,12 +20,13 @@ export class Messages {
     public static creatingGitHubServiceConnection: string = 'Creating GitHub service connection';
     public static discardPipeline: string = 'Discard pipeline';
     public static enterAzureDevOpsOrganizationName: string = 'Azure DevOps organization name where your pipeline will be hosted';
-    public static enterGitHubPat: string = 'Enter GitHub personal access token (PAT)';
+    public static enterGitHubPat: string = 'Enter GitHub personal access token (PAT), required to faciliate access to your GitHub repository';
     public static failedToCreateAzureDevOpsProject: string = 'Couldn\'t create a project in the Azure DevOps organization. Error: %s.';
     public static failedToCreateAzurePipeline: string = 'Couldn\'t configure pipeline. Error: %s';
     public static failedToDetermineAzureRepoDetails: string = 'Failed to determine Azure Repo details from remote url. Please ensure that the remote points to a valid Azure Repos url.';
     public static githubPatTokenErrorMessage: string = 'GitHub PAT token cannot be empty.';
     public static githubPatTokenHelpMessage: string = 'GitHub personal access token (PAT) with following permissions: full access to repository webhooks and services, read and write access to all repository data.';
+    public static githubPatTokenHelpMessageGithubWorkflow: string = 'GitHub personal access token (PAT) with following permissions: read and write access to all repository data.';
     public static modifyAndCommitFile: string = 'Modify and save your YAML file. %s will commit this file, push the branch \'%s\' to remote \'%s\' and proceed with deployment.';
     public static modifyAndCommitFileWithGitInitialization: string = 'Modify and save your YAML file to proceed with deployment.';
     public static noAgentQueueFound: string = 'No agent pool found named "%s".';

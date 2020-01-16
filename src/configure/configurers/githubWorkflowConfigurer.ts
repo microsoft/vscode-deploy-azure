@@ -14,7 +14,6 @@ import { GraphHelper } from '../helper/graphHelper';
 import { TracePoints } from '../resources/tracePoints';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
 import { AzureResourceClient } from '../clients/azure/azureResourceClient';
-import { GitHubProvider } from "../helper/gitHubHelper";
 import * as Q from 'q';
 import * as constants from '../resources/constants';
 import { GithubClient } from '../clients/github/githubClient';
@@ -33,7 +32,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
     public async getInputs(inputs: WizardInputs): Promise<void> {
         inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
             placeHolder: Messages.enterGitHubPat,
-            prompt: Messages.githubPatTokenHelpMessage,
+            prompt: Messages.githubPatTokenHelpMessageGithubWorkflow,
             validateInput: (inputValue) => {
                 return !inputValue ? Messages.githubPatTokenErrorMessage : null;
             }
