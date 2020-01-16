@@ -122,7 +122,8 @@ export class GitHubProvider {
         let secretKeyObject: GitHubSecretKey = await GitHubProvider.getGitHubSecretKey(remoteUrl, patToken);
         let sodiumObj = new SodiumLibHelper(secretKeyObject.key);
         let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);
-        let encryptedEncodedText = sodiumObj.encode(encryptedBytes);
+        let encryptedBytesAsString: string = sodiumObj.convertUint8ArrayToString(encryptedBytes);
+        let encryptedEncodedText = sodiumObj.encodeToBase64(encryptedBytesAsString);
         await GitHubProvider.setGithubSecret(secretName, remoteUrl, secretKeyObject.key_id, encryptedEncodedText, patToken);
     }
 }
