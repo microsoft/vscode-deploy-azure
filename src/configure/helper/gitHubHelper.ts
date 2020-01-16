@@ -102,6 +102,7 @@ export class GitHubProvider {
         let request = <UrlBasedRequestPrepareOptions>{
             url: GitHubProvider.getFormattedGitHubApiUrlBase(remoteUrl) + "/actions/secrets/AZURE_CREDENTIALS",
             headers: {
+                "User-Agent": "vscode",
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + patToken 
             },
@@ -119,15 +120,16 @@ export class GitHubProvider {
             result = response
         } catch (error) {
             throw error;
-        }GitHubProvider
+        }
         return result;
     }
 
     public static async createGithubSecret(body: string, patToken: string, remoteUrl: string): Promise<boolean> {
         let secretKeyObject: GitHubSecretKey = await GitHubProvider.getGitHubSecretKey(remoteUrl, patToken);
         let sodiumObj = new SodiumLibHelper(secretKeyObject.key);
-        let encryptedText = sodiumObj.encrypt(body);
-        let setSecret = await GitHubProvider.setGithubSecret(remoteUrl, secretKeyObject.key_id, encryptedText, patToken);
+        let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);
+        let encryptedEncodedText = sodiumObj.encode(encryptedBytes);
+        let setSecret = await GitHubProvider.setGithubSecret(remoteUrl, secretKeyObject.key_id, encryptedEncodedText, patToken);
         return !!setSecret
     }
 }

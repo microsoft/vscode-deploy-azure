@@ -5,14 +5,15 @@ export class SodiumLibHelper {
 
     constructor(key: Uint8Array | string) {
         if(typeof(key) == "string") {
-            this.key = this.convertStringToUint8Array(key)
+            this.key = this.decode(key);
         } else {
             this.key = key;
         }
     }
     
     decode = (encoded : string) : Uint8Array => {
-        return Uint8Array.from(this.convertStringToUint8Array(encoded))
+        let decodedbase64 = new Buffer(encoded, 'base64');
+        return this.convertStringToUint8Array(decodedbase64.toString('utf-8'))
     }
   
     encode = (bytes : Uint8Array) : string => {
@@ -29,10 +30,10 @@ export class SodiumLibHelper {
 
     convertStringToUint8Array = (v: string) => {
         let body = v.split('')
-        .map((a) => {
+        let _body = body.map((a) => {
             return a.charCodeAt(0);
         })
-        let uintBody = Uint8Array.from(body)
+        let uintBody = Uint8Array.from(_body)
         return uintBody;
     }
 }
