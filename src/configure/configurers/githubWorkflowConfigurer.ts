@@ -59,6 +59,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                                 return await (azureResourceClient as AppServiceClient).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
                             case AzureConnectionType.AzureRMServicePrincipal:
                             default:
+                                return await this.getAzureSPNSecret(inputs);
                         }
                     }
                     catch (error) {
@@ -67,16 +68,16 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     }
                 });
             
-            if (true) {
+            if (!!azureConnectionSecret) {
+                inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS';
                 try {
                     await vscode.window.withProgress(
                         {
                             location: vscode.ProgressLocation.Notification,
-                            title: "Setting up Github Workflow"
+                            title: Messages.settingUpGithubSecrets
                         },
                         async () => {
-                            let secret: string =  await this.getAzureSPNSecret(inputs);
-                            let result = await GitHubProvider.createGithubSecret(secret, inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
+                            let result = await GitHubProvider.createGithubSecret(inputs.targetResource.serviceConnectionId, azureConnectionSecret, inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
                             return result;
                         });
                 } catch (error) {

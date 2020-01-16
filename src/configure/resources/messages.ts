@@ -68,4 +68,5 @@ export class Messages {
     public static browseWorkflow: string = 'Browse Workflow';
     public static deploymentLogMessage: string = 'Configured from VS Code';
     public static setupAlreadyConfigured = 'Setup is already configured for your web app. Browse to know more about the existing setup.';
+    public static settingUpGithubSecrets = 'Setting up GitHub Workflow secrets'
 }

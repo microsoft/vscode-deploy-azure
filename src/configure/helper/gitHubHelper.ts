@@ -2,6 +2,7 @@ import { RestClient } from "../clients/restClient";
 import { UrlBasedRequestPrepareOptions } from 'ms-rest';
 import { SodiumLibHelper } from "./sodium/SodiumLibHelper";
 import { RequestOptions } from "http";
+import { WizardInputs } from "../model/models";
 
 
 class GitHubSecretKey {
@@ -97,10 +98,10 @@ export class GitHubProvider {
         return result;
     }
 
-    public static async setGithubSecret(remoteUrl: string, key_id: string, encrypted_secret: string, patToken: string): Promise<any> {
+    public static async setGithubSecret(secretName: string, remoteUrl: string, key_id: string, encrypted_secret: string, patToken: string): Promise<any> {
         let restClient = new RestClient();
         let request = <UrlBasedRequestPrepareOptions>{
-            url: GitHubProvider.getFormattedGitHubApiUrlBase(remoteUrl) + "/actions/secrets/AZURE_CREDENTIALS",
+            url: GitHubProvider.getFormattedGitHubApiUrlBase(remoteUrl) + "/actions/secrets/" + secretName,
             headers: {
                 "User-Agent": "vscode",
                 "Content-Type": "application/json",
@@ -114,22 +115,14 @@ export class GitHubProvider {
                 "key_id": key_id
             }
         }
-        let result = null;
-        try {
-            let response = await restClient.sendRequest(request);
-            result = response
-        } catch (error) {
-            throw error;
-        }
-        return result;
+        await restClient.sendRequest(request);
     }
 
-    public static async createGithubSecret(body: string, patToken: string, remoteUrl: string): Promise<boolean> {
+    public static async createGithubSecret(secretName: string,body: string, patToken: string, remoteUrl: string): Promise<any> {
         let secretKeyObject: GitHubSecretKey = await GitHubProvider.getGitHubSecretKey(remoteUrl, patToken);
         let sodiumObj = new SodiumLibHelper(secretKeyObject.key);
         let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);
         let encryptedEncodedText = sodiumObj.encode(encryptedBytes);
-        let setSecret = await GitHubProvider.setGithubSecret(remoteUrl, secretKeyObject.key_id, encryptedEncodedText, patToken);
-        return !!setSecret
+        await GitHubProvider.setGithubSecret(secretName, remoteUrl, secretKeyObject.key_id, encryptedEncodedText, patToken);
     }
 }
