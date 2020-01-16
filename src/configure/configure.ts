@@ -94,7 +94,7 @@ class Orchestrator {
             await pipelineConfigurer.createPreRequisites(this.inputs);
 
             telemetryHelper.setCurrentStep('CreateAssets');
-            await new AssetCreationHandler().createAssets(this.inputs.pipelineParameters.template.assets, this.inputs, pipelineConfigurer);
+            await new AssetCreationHandler().createAssets(this.inputs.pipelineConfiguration.template.assets, this.inputs, pipelineConfigurer);
 
             telemetryHelper.setCurrentStep('CheckInPipeline');
             await this.checkInPipelineFileToRepository(pipelineConfigurer);
@@ -118,16 +118,16 @@ class Orchestrator {
             await this.getSourceRepositoryDetails();
             await this.getSelectedPipeline();
 
-            if (this.inputs.pipelineParameters.template.label === "Containerized application to AKS") {
+            if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
                 // try to see if node corresponds to any parameter of selected pipeline.
-                let resourceParam = TemplateParameterHelper.getMatchingAzureResourceTemplateParameter(resourceNode, this.inputs.pipelineParameters.template.parameters);
+                let resourceParam = TemplateParameterHelper.getMatchingAzureResourceTemplateParameter(resourceNode, this.inputs.pipelineConfiguration.template.parameters);
                 if (resourceParam) {
-                    this.inputs.pipelineParameters.params.push(resourceParam);
+                    this.inputs.pipelineConfiguration.params.push(resourceParam);
                 }
 
                 try {
                     let templateParameterHelper = new TemplateParameterHelper();
-                    await templateParameterHelper.setParameters(this.inputs.pipelineParameters.template.parameters, this.inputs);
+                    await templateParameterHelper.setParameters(this.inputs.pipelineConfiguration.template.parameters, this.inputs);
                 }
                 catch (err) {
                     if (err.message === Messages.setupAlreadyConfigured) {
@@ -242,10 +242,10 @@ class Orchestrator {
 
             // Set working directory relative to repository root
             let gitRootDir = await this.localGitRepoHelper.getGitRootDirectory();
-            this.inputs.pipelineParameters.workingDirectory = path.relative(gitRootDir, this.workspacePath).split(path.sep).join('/');
+            this.inputs.pipelineConfiguration.workingDirectory = path.relative(gitRootDir, this.workspacePath).split(path.sep).join('/');
 
-            if (this.inputs.pipelineParameters.workingDirectory === "") {
-                this.inputs.pipelineParameters.workingDirectory = ".";
+            if (this.inputs.pipelineConfiguration.workingDirectory === "") {
+                this.inputs.pipelineConfiguration.workingDirectory = ".";
             }
 
             this.inputs.sourceRepository = this.inputs.sourceRepository ? this.inputs.sourceRepository : await this.getGitRepositoryParameters(gitBranchDetails);
@@ -258,7 +258,7 @@ class Orchestrator {
     }
 
     private setDefaultRepositoryDetails(): void {
-        this.inputs.pipelineParameters.workingDirectory = '.';
+        this.inputs.pipelineConfiguration.workingDirectory = '.';
         this.inputs.sourceRepository = {
             branch: 'master',
             commitId: '',
@@ -373,13 +373,13 @@ class Orchestrator {
         this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
 
         // show available resources and get the chosen one
-        switch(this.inputs.pipelineParameters.template.targetType) {
+        switch(this.inputs.pipelineConfiguration.template.targetType) {
             case TargetResourceType.None:
                 break;
             case TargetResourceType.WebApp:
             default:
                 let appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
-                let selectedPipelineTemplate = this.inputs.pipelineParameters.template;
+                let selectedPipelineTemplate = this.inputs.pipelineConfiguration.template;
                 let matchingPipelineTemplates = templateHelper.getPipelineTemplatesForAllWebAppKind(this.inputs.sourceRepository.repositoryProvider,
                     selectedPipelineTemplate.label, selectedPipelineTemplate.language, selectedPipelineTemplate.targetKind);
 
@@ -397,7 +397,7 @@ class Orchestrator {
                 }
                 else {
                     this.inputs.targetResource.resource = selectedResource.data;
-                    this.inputs.pipelineParameters.template = matchingPipelineTemplates.find((template) => template.targetKind === <TargetKind>this.inputs.targetResource.resource.kind);
+                    this.inputs.pipelineConfiguration.template = matchingPipelineTemplates.find((template) => template.targetKind === <TargetKind>this.inputs.targetResource.resource.kind);
                 }
         }
     }
@@ -408,7 +408,7 @@ class Orchestrator {
             () => templateHelper.analyzeRepoAndListAppropriatePipeline(
                 this.inputs.sourceRepository.localPath,
                 this.inputs.sourceRepository.repositoryProvider,
-                this.inputs.pipelineParameters.params[constants.TargetResource])
+                this.inputs.pipelineConfiguration.params[constants.TargetResource])
         );
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
@@ -418,24 +418,24 @@ class Orchestrator {
                 appropriatePipelines.map((pipeline) => { return { label: pipeline.label }; }),
                 { placeHolder: Messages.selectPipelineTemplate },
                 TelemetryKeys.PipelineTempateListCount);
-            this.inputs.pipelineParameters.template = appropriatePipelines.find((pipeline) => {
+            this.inputs.pipelineConfiguration.template = appropriatePipelines.find((pipeline) => {
                 return pipeline.label === selectedOption.label;
             });
         }
         else {
-            this.inputs.pipelineParameters.template = appropriatePipelines[0];
+            this.inputs.pipelineConfiguration.template = appropriatePipelines[0];
         }
 
-        telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineParameters.template.label);
+        telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
     }
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
         try {
-            this.inputs.pipelineParameters.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
+            this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
             await this.localGitRepoHelper.addContentToFile(
-                await templateHelper.renderContent(this.inputs.pipelineParameters.template.path, this.inputs),
-                this.inputs.pipelineParameters.filePath);
-            await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineParameters.filePath));
+                await templateHelper.renderContent(this.inputs.pipelineConfiguration.template.path, this.inputs),
+                this.inputs.pipelineConfiguration.filePath);
+            await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineConfiguration.filePath));
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.AddingContentToPipelineFileFailed, error);
@@ -462,7 +462,7 @@ export async function openBrowseExperience(resourceId: string): Promise<void> {
             Messages.setupAlreadyConfigured,
             constants.Browse);
 
-        if (browsePipelineAction) {
+        if (browsePipelineAction === constants.Browse) {
             vscode.commands.executeCommand('browse-cicd-pipeline', { fullId: resourceId });
         }
     }

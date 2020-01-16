@@ -37,13 +37,13 @@ export class TemplateParameterHelper {
     public async setParameters(parameters: TemplateParameter[], inputs: WizardInputs): Promise<void> {
         if (!!parameters && parameters.length > 0) {
             parameters.forEach(async (parameter) => {
-                if (!inputs.pipelineParameters.params[parameter.name]) {
+                if (!inputs.pipelineConfiguration.params[parameter.name]) {
                     try {
                         await this.getParameterValue(parameter, inputs);
                     }
                     catch (err) {
-                        if (!inputs.pipelineParameters.params[parameter.name] && !!parameter.defaultValue) {
-                            inputs.pipelineParameters.params[parameter.name] = parameter.defaultValue;
+                        if (!inputs.pipelineConfiguration.params[parameter.name] && !!parameter.defaultValue) {
+                            inputs.pipelineConfiguration.params[parameter.name] = parameter.defaultValue;
                         }
                         else {
                             throw err;
@@ -62,7 +62,7 @@ export class TemplateParameterHelper {
         if (!!parameter) {
             switch (parameter.type) {
                 case TemplateParameterType.String:
-                    await this.getInputParameter(parameter, inputs);
+                    await this.getStringParameter(parameter, inputs);
                     break;
                 case TemplateParameterType.GenericAzureResource:
                     await this.getAzureResourceParameter(parameter, inputs);
@@ -98,25 +98,25 @@ export class TemplateParameterHelper {
 
         if (!!parameter) {
             switch (parameter.dataSourceId) {
-                case PreDefinedDataSourceIds.ACR.toString():
-                case PreDefinedDataSourceIds.AKS.toString():
+                case PreDefinedDataSourceIds.ACR:
+                case PreDefinedDataSourceIds.AKS:
                     if (!this.azureResourceClient) {
                         this.azureResourceClient = new AzureResourceClient(inputs.azureSession.credentials, inputs.subscriptionId);
                     }
 
                     let selectedContainerResource = await controlProvider.showQuickPick(
                         parameter.name,
-                        this.azureResourceClient.getResourceList(parameter.dataSourceId.toString(), true)
+                        this.azureResourceClient.getResourceList(parameter.dataSourceId, true)
                             .then((list) => list.map(x => { return { label: x.name, data: x }; })),
                         { placeHolder: parameter.displayName },
-                        TelemetryKeys.AzureResourceListCount);
-                    inputs.pipelineParameters.params[parameter.name] = selectedContainerResource.data;
+                        utils.format(TelemetryKeys.pickListCount, parameter.dataSourceId));
+                    inputs.pipelineConfiguration.params[parameter.name] = selectedContainerResource.data;
                     break;
-                case PreDefinedDataSourceIds.WindowsApp.toString():
-                case PreDefinedDataSourceIds.LinuxApp.toString():
-                case PreDefinedDataSourceIds.FunctionApp.toString():
-                case PreDefinedDataSourceIds.LinuxFunctionApp.toString():
-                    let selectedPipelineTemplate = inputs.pipelineParameters.template;
+                case PreDefinedDataSourceIds.WindowsApp:
+                case PreDefinedDataSourceIds.LinuxApp:
+                case PreDefinedDataSourceIds.FunctionApp:
+                case PreDefinedDataSourceIds.LinuxFunctionApp:
+                    let selectedPipelineTemplate = inputs.pipelineConfiguration.template;
                     let matchingPipelineTemplates = templateHelper.getPipelineTemplatesForAllWebAppKind(inputs.sourceRepository.repositoryProvider,
                         selectedPipelineTemplate.label, selectedPipelineTemplate.language, selectedPipelineTemplate.targetKind);
 
@@ -135,22 +135,21 @@ export class TemplateParameterHelper {
                         throw Error(Messages.setupAlreadyConfigured);
                     }
                     else {
-                        inputs.pipelineParameters.params[constants.TargetResource] = selectedResource.data;
-                        inputs.pipelineParameters.template = matchingPipelineTemplates.find((template) => template.targetKind === <TargetKind>inputs.targetResource.resource.kind);
+                        inputs.pipelineConfiguration.params[constants.TargetResource] = selectedResource.data;
+                        inputs.pipelineConfiguration.template = matchingPipelineTemplates.find((template) => template.targetKind === <TargetKind>inputs.targetResource.resource.kind);
                     }
                     break;
                 default:
-                    throw new Error(utils.format(Messages.parameterOfTypeNotSupported, parameter.type));
+                    throw new Error(utils.format(Messages.parameterWithDataSourceOfTypeNotSupported, parameter.dataSourceId));
             }
         }
     }
 
-    private async getInputParameter(parameter: TemplateParameter, inputs: WizardInputs): Promise<void> {
+    private async getStringParameter(parameter: TemplateParameter, inputs: WizardInputs): Promise<void> {
         let controlProvider = new ControlProvider();
 
-
         if (!parameter.dataSourceId) {
-            inputs.pipelineParameters.params[parameter.name] = await controlProvider.showInputBox(
+            inputs.pipelineConfiguration.params[parameter.name] = await controlProvider.showInputBox(
                 parameter.name,
                 {
                     placeHolder: parameter.displayName
@@ -158,13 +157,11 @@ export class TemplateParameterHelper {
             );
         }
         else {
-            inputs.pipelineParameters.params[parameter.name] = await controlProvider.showQuickPick(
+            inputs.pipelineConfiguration.params[parameter.name] = await controlProvider.showQuickPick(
                 parameter.name,
                 parameter.options ? parameter.options.map(x => { return { label: x.key, data: x.value }; }) : [],
                 { placeHolder: parameter.displayName },
                 utils.format(TelemetryKeys.pickListCount, parameter.name));
         }
-
-        throw new Error(utils.format(Messages.parameterOfTypeNotSupported, parameter.type));
     }
 }

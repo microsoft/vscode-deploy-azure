@@ -37,22 +37,22 @@ export enum TemplateParameterType {
 }
 
 export enum TemplateAssetType {
-    AzureARM = "endpoint:" + ServiceConnectionType.AzureRM,
-    AzureARMPublishProfile = "endpoint:" + ServiceConnectionType.AzureRM + ":publishProfile",
+    AzureARMServiceConnection = "endpoint:" + ServiceConnectionType.AzureRM,
+    AzureARMPublishProfileServiceConnection = "endpoint:" + ServiceConnectionType.AzureRM + ":publishProfile",
     ACRServiceConnection = "endpoint:" + ServiceConnectionType.ACR,
-    AKSServiceConnectionKubeConfig = "endpoint:" + ServiceConnectionType.AKS + ":kubeconfig",
+    AKSKubeConfigServiceConnection = "endpoint:" + ServiceConnectionType.AKS + ":kubeconfig",
 
-    GitHubARM = "GitHubSecret:" + GitHubSecretType.AzureRM,
-    GitHubARMPublishProfile = "GitHubSecret:" + GitHubSecretType.AzureRM + ":publishProfile"
+    GitHubARM = "gitHubSecret:" + GitHubSecretType.AzureRM,
+    GitHubARMPublishProfile = "gitHubSecret:" + GitHubSecretType.AzureRM + ":publishProfile"
 }
 
-export enum PreDefinedDataSourceIds {
-    ACR = TargetResourceType.ACR,
-    AKS = TargetResourceType.AKS,
-    FunctionApp = TargetResourceType.WebApp + ":" + TargetKind.FunctionApp,
-    LinuxApp = TargetResourceType.WebApp + ":" + TargetKind.LinuxApp,
-    LinuxContainerApp = TargetResourceType.WebApp + ":" + TargetKind.LinuxContainerApp,
-    LinuxFunctionApp = TargetResourceType.WebApp + ":" + TargetKind.FunctionAppLinux,
-    LinuxContainerFunctionApp = TargetResourceType.WebApp + ":" + TargetKind.FunctionAppLinuxContainer,
-    WindowsApp = TargetResourceType.WebApp + ":" + TargetKind.WindowsApp
+export let PreDefinedDataSourceIds = {
+    ACR: TargetResourceType.ACR,
+    AKS: TargetResourceType.AKS,
+    FunctionApp: TargetResourceType.WebApp + ":" + TargetKind.FunctionApp,
+    LinuxApp: TargetResourceType.WebApp + ":" + TargetKind.LinuxApp,
+    LinuxContainerApp: TargetResourceType.WebApp + ":" + TargetKind.LinuxContainerApp,
+    LinuxFunctionApp: TargetResourceType.WebApp + ":" + TargetKind.FunctionAppLinux,
+    LinuxContainerFunctionApp: TargetResourceType.WebApp + ":" + TargetKind.FunctionAppLinuxContainer,
+    WindowsApp: TargetResourceType.WebApp + ":" + TargetKind.WindowsApp
 }

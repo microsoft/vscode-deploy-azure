@@ -243,7 +243,7 @@ export class AzurePipelineConfigurer implements Configurer {
                         }
 
                         if (initializeGitRepository) {
-                            await localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl, inputs.pipelineParameters.filePath);
+                            await localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl, inputs.pipelineConfiguration.filePath);
 
                             let branchDetails = await localGitRepoHelper.getGitBranchDetails();
                             inputs.sourceRepository.branch = branchDetails.branch;
@@ -251,7 +251,7 @@ export class AzurePipelineConfigurer implements Configurer {
                         }
 
                         // handle when the branch is not upto date with remote branch and push fails
-                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineParameters.filePath, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
+                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineConfiguration.filePath, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);
@@ -274,7 +274,7 @@ export class AzurePipelineConfigurer implements Configurer {
             try {
                 let targetResource = AzurePipelineConfigurer.getTargetResource(inputs);
 
-                let pipelineName = `${(targetResource ? targetResource.name : inputs.pipelineParameters.template.label)}-${UniqueResourceNameSuffix}`;
+                let pipelineName = `${(targetResource ? targetResource.name : inputs.pipelineConfiguration.template.label)}-${UniqueResourceNameSuffix}`;
                 return await this.azureDevOpsHelper.createAndRunPipeline(pipelineName, inputs);
             }
             catch (error) {
@@ -287,7 +287,7 @@ export class AzurePipelineConfigurer implements Configurer {
     }
 
     public async executePostPipelineCreationSteps(inputs: WizardInputs): Promise<void> {
-        if (inputs.pipelineParameters.template.targetType === TargetResourceType.WebApp) {
+        if (inputs.pipelineConfiguration.template.targetType === TargetResourceType.WebApp) {
             try {
                 let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
                 // update SCM type
@@ -349,12 +349,12 @@ export class AzurePipelineConfigurer implements Configurer {
     private static getTargetResource(inputs: WizardInputs) : GenericResource {
         let targetResource = !!inputs.targetResource.resource ? inputs.targetResource.resource : null;
         if (!targetResource) {
-            let targetParam = TemplateParameterHelper.getParameterForTargetResourceType(inputs.pipelineParameters.template.parameters, inputs.pipelineParameters.template.targetType);
-            if (!!targetParam && !!inputs.pipelineParameters.params[targetParam.name]) {
-                targetResource = inputs.pipelineParameters.params[targetParam.name];
+            let targetParam = TemplateParameterHelper.getParameterForTargetResourceType(inputs.pipelineConfiguration.template.parameters, inputs.pipelineConfiguration.template.targetType);
+            if (!!targetParam && !!inputs.pipelineConfiguration.params[targetParam.name]) {
+                targetResource = inputs.pipelineConfiguration.params[targetParam.name];
             }
             else {
-                throw new Error(utils.format(Messages.couldNotFindTargetResourceValueInParams, inputs.pipelineParameters.template.targetType));
+                throw new Error(utils.format(Messages.couldNotFindTargetResourceValueInParams, inputs.pipelineConfiguration.template.targetType));
             }
         }
 

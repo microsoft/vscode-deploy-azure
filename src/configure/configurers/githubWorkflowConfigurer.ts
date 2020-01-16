@@ -41,7 +41,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 },
                 async () => {
                     try {
-                        let scope = inputs.pipelineParameters.params["targetResource"].id;
+                        let scope = inputs.targetResource.resource.id;
                         let aadAppName = GraphHelper.generateAadApplicationName(inputs.sourceRepository.remoteName, 'github');
                         let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
                         return {
@@ -156,7 +156,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 inputs.sourceRepository.commitId = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
                     try {
                         // handle when the branch is not upto date with remote branch and push fails
-                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineParameters.filePath, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
+                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineConfiguration.filePath, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);
@@ -180,7 +180,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
     }
 
     public async executePostPipelineCreationSteps(inputs: WizardInputs): Promise<void> {
-        if (inputs.pipelineParameters.params["targetResource"].type === TargetResourceType.WebApp) {
+        if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
             try {
                 let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
 
@@ -190,18 +190,18 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     "repoUrl": `https://github.com/${inputs.sourceRepository.repositoryId}`,
                     "branch": inputs.sourceRepository.branch,
                 };
-                await appServiceClient.setSourceControl(inputs.pipelineParameters.params["targetResource"].id, sourceControlProperties);
+                await appServiceClient.setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
 
                 // Update web app metadata
                 let updateMetadataPromise = new Promise<void>(async (resolve) => {
-                    let metadata = await appServiceClient.getAppServiceMetadata(inputs.pipelineParameters.params["targetResource"].id);
+                    let metadata = await appServiceClient.getAppServiceMetadata(inputs.targetResource.resource.id);
                     metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
 
                     let repositoryPath = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getGitRootDirectory();
-                    let configPath = path.relative(repositoryPath, inputs.pipelineParameters.filePath);
+                    let configPath = path.relative(repositoryPath, inputs.pipelineConfiguration.filePath);
                     metadata["properties"]["configPath"] = `${configPath}`;
 
-                    await appServiceClient.updateAppServiceMetadata(inputs.pipelineParameters.params["targetResource"].id, metadata);
+                    await appServiceClient.updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
                     resolve();
                 });
 
@@ -211,7 +211,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     message: Messages.deploymentLogMessage
                 });
 
-                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(inputs.pipelineParameters.params["targetResource"].id, deploymentMessage);
+                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage);
 
                 Q.all([updateMetadataPromise, updateDeploymentLogPromise])
                     .then(() => {

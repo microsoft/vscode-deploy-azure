@@ -15,16 +15,16 @@ export class AssetCreationHandler {
     public async createAssets(assets: TemplateAsset[], inputs: WizardInputs, configurer: Configurer) {
         if (!!assets && assets.length > 0) {
             assets.forEach(async (asset) => {
-                await this.createAndSetAsset(asset, inputs, configurer);
+                await this.createAssetInternal(asset, inputs, configurer);
             });
         }
     }
 
-    private async createAndSetAsset(asset: TemplateAsset, inputs: WizardInputs, configurer: Configurer): Promise<void> {
+    private async createAssetInternal(asset: TemplateAsset, inputs: WizardInputs, configurer: Configurer): Promise<void> {
         if (!!asset) {
             switch (asset.type) {
-                case TemplateAssetType.AzureARM:
-                    inputs.pipelineParameters.assets[asset.id] = await vscode.window.withProgress(
+                case TemplateAssetType.AzureARMServiceConnection:
+                    inputs.pipelineConfiguration.assets[asset.id] = await vscode.window.withProgress(
                         {
                             location: vscode.ProgressLocation.Notification,
                             title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
@@ -32,11 +32,11 @@ export class AssetCreationHandler {
                         async () => {
                             try {
                                 // find LCS of all azure resource params
-                                let scope = inputs.pipelineParameters.params["targetResource"].id;
+                                let scope = inputs.pipelineConfiguration.params["targetResource"].id;
                                 let aadAppName = GraphHelper.generateAadApplicationName(inputs.organizationName, inputs.project.name);
                                 let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
                                 // Use param name for first azure resource param
-                                let serviceConnectionName = `${inputs.pipelineParameters.params[inputs.pipelineParameters.template.parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${UniqueResourceNameSuffix}`;
+                                let serviceConnectionName = `${inputs.pipelineConfiguration.params[inputs.pipelineConfiguration.template.parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${UniqueResourceNameSuffix}`;
                                 return await configurer.createSecretOrServiceConnection(serviceConnectionName, ServiceConnectionType.AzureRM, { "aadApp": aadApp, "scope": scope}, inputs);
                             }
                             catch (error) {
@@ -47,8 +47,8 @@ export class AssetCreationHandler {
                     break;
                 // uses azure resource client to get the required details, and then calls into configurer.createServiceConnection(serviceConnectionType, properties: property bag with all the required information that are needed/available to create service connection.)
                 case TemplateAssetType.ACRServiceConnection:
-                case TemplateAssetType.AKSServiceConnectionKubeConfig:
-                case TemplateAssetType.AzureARMPublishProfile:
+                case TemplateAssetType.AKSKubeConfigServiceConnection:
+                case TemplateAssetType.AzureARMPublishProfileServiceConnection:
                 case TemplateAssetType.GitHubARM:
                 case TemplateAssetType.GitHubARMPublishProfile:
                 default:

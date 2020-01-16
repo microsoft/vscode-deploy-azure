@@ -29,7 +29,7 @@ export class WizardInputs {
     isNewOrganization: boolean;
     sourceRepository: GitRepositoryParameters;
     targetResource: AzureParameters = new AzureParameters();
-    pipelineParameters: PipelineParameters = new PipelineParameters();
+    pipelineConfiguration: PipelineConfiguration = new PipelineConfiguration();
     azureSession: AzureSession;
     subscriptionId: string;
     githubPATToken?: string;
@@ -56,7 +56,7 @@ export class AzureSession {
     credentials: ServiceClientCredentials;
 }
 
-export class PipelineParameters {
+export class PipelineConfiguration {
     filePath: string;
     template: PipelineTemplate;
     workingDirectory: string;

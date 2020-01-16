@@ -221,13 +221,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -243,13 +243,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         }
@@ -267,13 +267,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -289,13 +289,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -311,13 +311,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -333,13 +333,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -355,13 +355,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -377,13 +377,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -399,13 +399,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -421,13 +421,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -443,13 +443,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -465,13 +465,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         }
@@ -489,13 +489,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -522,13 +522,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -544,13 +544,13 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         }
@@ -559,7 +559,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
         {
             label: 'Containerized application to AKS',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/AksWithReuseACR.yml'),
-            language: 'docker',
+            language: SupportedLanguage.DOCKER,
             targetType: TargetResourceType.AKS,
             targetKind: null,
             enabled: true,
@@ -568,22 +568,22 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "cluster",
                     "displayName": "Select Azure Kubernetes cluster to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.AKS.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.AKS
                 },
                 {
                     "name": "acr",
                     "displayName": "Select Azure Container Registry to store docker image",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.ACR.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.ACR
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AKSServiceConnectionKubeConfig
+                    "id": "aKSEndpoint",
+                    "type": TemplateAssetType.AKSKubeConfigServiceConnection
                 },
                 {
-                    "id": "",
+                    "id": "aCREndpoint",
                     "type": TemplateAssetType.ACRServiceConnection
                 }
             ]
@@ -605,13 +605,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -627,13 +627,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -649,13 +649,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -671,13 +671,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -693,13 +693,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -715,13 +715,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -737,13 +737,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -759,13 +759,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -781,13 +781,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -803,13 +803,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         }
@@ -827,13 +827,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.WindowsApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -849,13 +849,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         }
@@ -873,13 +873,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "name": "webapp",
                     "displayName": "Select the target Azure webapp to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -903,13 +903,13 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
                     "name": "webapp",
                     "displayName": "Select the target Azure Function to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.FunctionApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.FunctionApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -925,13 +925,13 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
                     "name": "webapp",
                     "displayName": "Select the target Azure Function to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -955,13 +955,13 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
                     "name": "webapp",
                     "displayName": "Select the target Azure Function to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.FunctionApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.FunctionApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -977,13 +977,13 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
                     "name": "webapp",
                     "displayName": "Select the target Azure Function to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -1007,13 +1007,13 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
                     "name": "webapp",
                     "displayName": "Select the target Azure Function to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -1043,13 +1043,13 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
                     "name": "webapp",
                     "displayName": "Select the target Azure Function to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.FunctionApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.FunctionApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -1065,13 +1065,13 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
                     "name": "webapp",
                     "displayName": "Select the target Azure Function to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -1095,13 +1095,13 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
                     "name": "webapp",
                     "displayName": "Select the target Azure Function to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxFunctionApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         },
@@ -1117,13 +1117,13 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
                     "name": "webapp",
                     "displayName": "Select the target Azure Function to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.LinuxContainerFunctionApp.toString()
+                    "dataSourceId": PreDefinedDataSourceIds.LinuxContainerFunctionApp
                 }
             ],
             assets: [
                 {
-                    "id": "",
-                    "type": TemplateAssetType.AzureARM
+                    "id": "endpoint",
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ]
         }
