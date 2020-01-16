@@ -1,5 +1,4 @@
 import { ServiceClient, ServiceClientCredentials, ServiceClientOptions, PathTemplateBasedRequestPrepareOptions, UrlBasedRequestPrepareOptions } from "ms-rest";
-import { RequestOptions, request } from "http";
 
 export class RestClient extends ServiceClient {
     constructor(credentials?: ServiceClientCredentials, options?: ServiceClientOptions) {

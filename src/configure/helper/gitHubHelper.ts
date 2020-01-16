@@ -55,6 +55,7 @@ export class GitHubProvider {
             if(accountDone && !repoDone) {
                 repoName = item;
                 repoDone = true;
+                break;
             }
             
             if(accountNext && !accountDone) {
@@ -81,21 +82,14 @@ export class GitHubProvider {
                 headers: {
                     "User-Agent": "vscode",
                     "Content-Type": "application/json",
-                    "Authorization": "Bearer " + patToken 
+                    "Authorization": "Bearer " + patToken,
+                    "Accept": "*/*" 
                 },
                 serializationMapper: null, 
                 deserializationMapper: null
             }
         let restClient = new RestClient();
-        let result = {} as GitHubSecretKey;
-        try {
-            let responseBody: GitHubSecretKey = (await restClient.sendRequest(request)) as GitHubSecretKey;
-            result = responseBody
-        } catch (error) {
-            console.log(error)
-            result = null;
-        }
-        return result;
+        return (await restClient.sendRequest(request)) as GitHubSecretKey;
     }
 
     public static async setGithubSecret(secretName: string, remoteUrl: string, key_id: string, encrypted_secret: string, patToken: string): Promise<any> {
