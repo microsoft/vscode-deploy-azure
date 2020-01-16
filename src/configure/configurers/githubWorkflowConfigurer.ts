@@ -17,12 +17,14 @@ import { AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { GitHubProvider } from "../helper/gitHubHelper";
 import * as Q from 'q';
 import * as constants from '../resources/constants';
+import { GithubClient } from '../clients/github/githubClient';
 
 const Layer = 'GitHubWorkflowConfigurer';
 
 export class GitHubWorkflowConfigurer implements Configurer {
     private queuedPipelineUrl: string;
     private controlProvider: ControlProvider;
+    private githubClient: GithubClient;
 
     constructor(azureSession: AzureSession, subscriptionId: string) {
         this.controlProvider = new ControlProvider();
@@ -36,6 +38,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 return !inputValue ? Messages.githubPatTokenErrorMessage : null;
             }
         });
+        this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
         return;
     }
 
@@ -77,7 +80,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                             title: Messages.settingUpGithubSecrets
                         },
                         async () => {
-                            await GitHubProvider.createGithubSecret(inputs.targetResource.serviceConnectionId, azureConnectionSecret, inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
+                            await this.githubClient.createOrUpdateGithubSecret(inputs.targetResource.serviceConnectionId, azureConnectionSecret);
                         });
                 } catch (error) {
                     // Add telemetry
