@@ -4,12 +4,13 @@ import { AppServiceClient } from "../clients/azure/appServiceClient";
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { openBrowseExperience } from '../configure';
 import * as templateHelper from '../helper/templateHelper';
-import { QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs } from "../model/models";
+import { QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs, extensionVariables } from "../model/models";
 import { PreDefinedDataSourceIds, TemplateParameter, TemplateParameterType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from "../resources/messages";
 import { TelemetryKeys } from "../resources/telemetryKeys";
 import { ControlProvider } from "./controlProvider";
+import { getSubscriptionSession } from "./azureSessionHelper";
 
 export class TemplateParameterHelper {
     private azureResourceClient: AzureResourceClient;
@@ -61,10 +62,10 @@ export class TemplateParameterHelper {
         if (!!parameter) {
             switch (parameter.type) {
                 case TemplateParameterType.String:
-                    this.getInputParameter(parameter, inputs);
+                    await this.getInputParameter(parameter, inputs);
                     break;
                 case TemplateParameterType.GenericAzureResource:
-                    this.getAzureResourceParameter(parameter, inputs);
+                    await this.getAzureResourceParameter(parameter, inputs);
                     break;
                 case TemplateParameterType.Boolean:
                 case TemplateParameterType.SecureString:
@@ -77,33 +78,39 @@ export class TemplateParameterHelper {
     private async getAzureResourceParameter(parameter: TemplateParameter, inputs: WizardInputs): Promise<void> {
         let controlProvider = new ControlProvider();
 
+        if (!inputs.subscriptionId) {
+                // show available subscriptions and get the chosen one
+                let subscriptionList = extensionVariables.azureAccountExtensionApi.filters.map((subscriptionObject) => {
+                    return <QuickPickItemWithData>{
+                        label: `${<string>subscriptionObject.subscription.displayName}`,
+                        data: subscriptionObject,
+                        description: `${<string>subscriptionObject.subscription.subscriptionId}`
+                    };
+                });
+                let selectedSubscription: QuickPickItemWithData = await controlProvider.showQuickPick(
+                    constants.SelectSubscription,
+                    subscriptionList,
+                    { placeHolder: Messages.selectSubscription },
+                    TelemetryKeys.SubscriptionListCount);
+                inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
+                inputs.azureSession = getSubscriptionSession(inputs.subscriptionId);
+        }
+
         if (!!parameter) {
             switch (parameter.dataSourceId) {
                 case PreDefinedDataSourceIds.ACR.toString():
-                    if (!this.azureResourceClient) {
-                        this.azureResourceClient = new AzureResourceClient(inputs.azureSession.credentials, inputs.subscriptionId);
-                    }
-
-                    let selectedAcr = await controlProvider.showQuickPick(
-                        parameter.name,
-                        this.azureResourceClient.getResourceList(parameter.type.toString(), true)
-                            .then((acrList) => acrList.map(x => { return { label: x.name, data: x }; })),
-                        { placeHolder: parameter.displayName },
-                        TelemetryKeys.AcrListCount);
-                    inputs.pipelineParameters.params[parameter.name] = selectedAcr.data;
-                    break;
                 case PreDefinedDataSourceIds.AKS.toString():
                     if (!this.azureResourceClient) {
                         this.azureResourceClient = new AzureResourceClient(inputs.azureSession.credentials, inputs.subscriptionId);
                     }
 
-                    let selectedAks = await controlProvider.showQuickPick(
+                    let selectedContainerResource = await controlProvider.showQuickPick(
                         parameter.name,
-                        this.azureResourceClient.getResourceList(parameter.type.toString(), true)
-                            .then((acrList) => acrList.map(x => { return { label: x.name, data: x }; })),
+                        this.azureResourceClient.getResourceList(parameter.dataSourceId.toString(), true)
+                            .then((list) => list.map(x => { return { label: x.name, data: x }; })),
                         { placeHolder: parameter.displayName },
-                        TelemetryKeys.AksListCount);
-                    inputs.pipelineParameters.params[parameter.name] = selectedAks.data;
+                        TelemetryKeys.AzureResourceListCount);
+                    inputs.pipelineParameters.params[parameter.name] = selectedContainerResource.data;
                     break;
                 case PreDefinedDataSourceIds.WindowsApp.toString():
                 case PreDefinedDataSourceIds.LinuxApp.toString():
