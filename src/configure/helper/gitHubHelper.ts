@@ -50,11 +50,11 @@ export class GitHubProvider {
             }
             accountName = accountAndGithubName[1]
         } else {
-            if(params.length < 6) {
+            if(params.length < 5) {
                 return null;
             }
-            accountName = params[4]
-            repoName = params[5]    
+            accountName = params[3]
+            repoName = params[4]    
         }
 
         // If you're trying to create a repository with name SampleRepo.git, it'll be renamed to SampleRepo by Github
