@@ -15,7 +15,7 @@ class ExtensionVariables implements UIExtensionVariables {
     public enableGitHubWorkflow: boolean;
 
     constructor() {
-        this.enableGitHubWorkflow = false;
+        this.enableGitHubWorkflow = true;
     }
 }
 
@@ -29,8 +29,19 @@ export class WizardInputs {
     sourceRepository: GitRepositoryParameters;
     targetResource: AzureParameters = new AzureParameters();
     pipelineParameters: PipelineParameters = new PipelineParameters();
+    repoAnalysisParameters: RepositoryAnalysisParameters = new RepositoryAnalysisParameters();
     azureSession: AzureSession;
     githubPATToken?: string;
+}
+
+//VS Code side model to extract information in any format from RepoAnalysis service result.
+export class RepositoryAnalysisParameters {
+    languages: SupportedLanguage[] = [];
+    buildTargets: string[] = [];
+    deployTargets: string[] = [];
+    gulpFilePath: string = "gulpfile.js";
+    gruntFilePath: string = "gruntfile.js";
+    requirementsFilePath: string = "requirements.txt";
 }
 
 export class Organization {
@@ -119,6 +130,18 @@ export class ParsedAzureResourceId {
     }
 }
 
+export class RepositoryAnalysisRequest {
+    id: string;
+    type: string;
+    defaultbranch: string;
+    authorizationInfo:{
+        scheme: string;
+        parameters:{
+            accesstoken: string;
+        }
+    }
+}
+
 export interface AzureAccountExtensionExports {
     sessions: AzureSession[];
     subscriptions: { session: AzureSession, subscription: SubscriptionModels.Subscription }[];
@@ -156,7 +179,7 @@ export interface PipelineTemplate {
     targetType: TargetResourceType;
     targetKind: WebAppKind;
     enabled: boolean;
-    azureConnectionType: AzureConnectionType; 
+    azureConnectionType: AzureConnectionType;
 }
 
 export interface Token {
@@ -214,4 +237,11 @@ export enum WebAppKind {
     FunctionAppLinuxContainer = 'functionapp,linux,container',
     LinuxApp = 'app,linux',
     LinuxContainerApp = 'app,linux,container'
+}
+
+export enum SupportedLanguage {
+    NONE = 'none',
+    NODE = 'node',
+    PYTHON = 'python',
+    DOTNETCORE = 'dotnetcore'
 }

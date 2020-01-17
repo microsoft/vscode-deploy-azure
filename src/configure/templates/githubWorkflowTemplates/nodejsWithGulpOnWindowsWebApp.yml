@@ -15,7 +15,7 @@ jobs:
     steps:
     # checkout the repo
     - uses: actions/checkout@master
-    
+
     - uses: actions/setup-node@v1
       with:
         node-version: '10.x'
@@ -25,9 +25,9 @@ jobs:
       working-directory: {{{ pipelineParameters.workingDirectory }}}
       run: |
         npm install
-        gulp default --gulpfile gulpfile.js
-    
-    # deploy web app 
+        gulp default --gulpfile {{{ repoAnalysisParameters.gulpFilePath }}}
+
+    # deploy web app
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}

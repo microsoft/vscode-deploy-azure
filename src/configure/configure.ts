@@ -19,6 +19,7 @@ import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
+import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
@@ -110,10 +111,14 @@ class Orchestrator {
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
-            await this.getSelectedPipeline();
 
             if (!this.inputs.targetResource.resource) {
+                await this.getAzureSession();
+                await this.getSelectedPipeline();
                 await this.getAzureResourceDetails();
+            }
+            else{
+                await this.getSelectedPipeline();
             }
         }
     }
@@ -337,11 +342,15 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(): Promise<void> {
+        var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
+        this.inputs.repoAnalysisParameters = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
+
         let appropriatePipelines: PipelineTemplate[] = await vscode.window.withProgress(
             { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
             () => templateHelper.analyzeRepoAndListAppropriatePipeline(
                 this.inputs.sourceRepository.localPath,
                 this.inputs.sourceRepository.repositoryProvider,
+                this.inputs.repoAnalysisParameters,
                 this.inputs.targetResource.resource)
         );
 
@@ -363,7 +372,7 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineParameters.pipelineTemplate.label);
     }
 
-    private async getAzureResourceDetails(): Promise<void> {
+    private async getAzureSession(): Promise<void> {
         // show available subscriptions and get the chosen one
         let subscriptionList = extensionVariables.azureAccountExtensionApi.filters.map((subscriptionObject) => {
             return <QuickPickItemWithData>{
@@ -375,6 +384,9 @@ class Orchestrator {
         let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
         this.inputs.targetResource.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
         this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
+    }
+
+    private async getAzureResourceDetails(): Promise<void> {
 
         // show available resources and get the chosen one
         switch(this.inputs.pipelineParameters.pipelineTemplate.targetType) {

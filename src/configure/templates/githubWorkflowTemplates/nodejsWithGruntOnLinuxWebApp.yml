@@ -20,7 +20,7 @@ jobs:
     - uses: azure/login@v1
       with:
         creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
-    
+
     - uses: actions/setup-node@v1
       with:
         node-version: '10.x'
@@ -30,13 +30,13 @@ jobs:
       working-directory: {{{ pipelineParameters.workingDirectory }}}
       run: |
         npm install
-        grunt --gruntfile Gruntfile.js
-    
+        grunt --gruntfile {{{ repoAnalysisParameters.gruntFilePath }}}
+
     - uses: azure/appservice-settings@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        general-settings-json: '{"linuxFxVersion": "NODE|10.10"}' #'General configuration settings as Key Value pairs'   
-    
+        general-settings-json: '{"linuxFxVersion": "NODE|10.10"}' #'General configuration settings as Key Value pairs'
+
     # deploy web app
     - uses: azure/webapps-deploy@v1
       with:

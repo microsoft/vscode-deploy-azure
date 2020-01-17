@@ -3,12 +3,21 @@ import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
-import { AzureConnectionType, extensionVariables, PipelineTemplate, RepositoryProvider, TargetResourceType, WebAppKind, WizardInputs } from '../model/models';
-import { PipelineTemplateLabels } from '../resources/constants';
+import { AzureConnectionType, extensionVariables, PipelineTemplate, RepositoryProvider, TargetResourceType, WebAppKind, WizardInputs, RepositoryAnalysisParameters, SupportedLanguage } from '../model/models';
+import { PipelineTemplateLabels, RepoAnalysis } from '../resources/constants';
 import { Messages } from '../resources/messages';
 
-export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
-    let analysisResult = await analyzeRepo(repoPath);
+export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters,  targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+    let analysisResult: AnalysisResult = new AnalysisResult();
+
+    //If Repo analysis fails then we'll go with the basic existing analysis
+    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters) {
+        analysisResult.isFunctionApp = repoAnalysisParameters.deployTargets.indexOf(RepoAnalysis.AzureFunctions) > -1 ? true : false;
+        analysisResult.languages = repoAnalysisParameters.languages;
+    }
+    else {
+        analysisResult = await analyzeRepo(repoPath);
+    }
 
     let templateList: { [key: string]: PipelineTemplate[] } = {};
     switch (repositoryProvider) {
@@ -178,15 +187,8 @@ function removeDuplicates(templateList: PipelineTemplate[]): PipelineTemplate[] 
 
 export class AnalysisResult {
     public languages: SupportedLanguage[];
-    public isFunctionApp: boolean;
+    public isFunctionApp: boolean = false;
     // public isContainerized: boolean;
-}
-
-export enum SupportedLanguage {
-    NONE = 'none',
-    NODE = 'node',
-    PYTHON = 'python',
-    DOTNETCORE = 'dotnetcore'
 }
 
 export enum AzureTarget {

@@ -163,3 +163,21 @@ export const DeploymentMessageType = 'CDDeploymentConfiguration';
 export const SetupAlreadyExists =  'SetupAlreadyExists';
 export const Browse =  'Browse';
 
+//RepoAnalysis constants
+export const RepoAnalysis = {
+    //Common
+    Master: 'master',
+
+    //Node
+    Gulp: 'gulp',
+    Grunt: 'grunt',
+    GulpFilePath: 'gulpfilepath',
+    GruntFilePath: 'gruntfilepath',
+
+    //Python
+    Django: 'django',
+    RequirementsFilePath: 'requirementsfilepath',
+
+    //Functions
+    AzureFunctions: 'azure:functions'
+}
