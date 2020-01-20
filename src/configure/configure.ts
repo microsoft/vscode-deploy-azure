@@ -148,7 +148,7 @@ class Orchestrator {
     }
 
     private async analyzeNode(node: any): Promise<GenericResource> {
-        if (!!node && (node.value.nodeType.toLowerCase() === 'cluster' || !!node.fullId)) {
+        if (!!node && !!node.fullId) {
             return await this.extractAzureResourceFromNode(node);
         }
         else if (node && node.fsPath) {
