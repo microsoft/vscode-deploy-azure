@@ -82,7 +82,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                             await this.githubClient.createOrUpdateGithubSecret(inputs.targetResource.serviceConnectionId, azureConnectionSecret);
                         });
                 } catch (error) {
-                    // Add telemetry
+                    telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
                     throw error;
                 }
             }
