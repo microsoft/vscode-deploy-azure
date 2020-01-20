@@ -5,6 +5,7 @@ import * as utils from 'util';
 import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, VSTSDeploymentMessage } from '../clients/azure/appServiceClient';
+import { AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { AzureDevOpsClient } from "../clients/devOps/azureDevOpsClient";
 import { UniqueResourceNameSuffix } from '../configure';
 import { generateDevOpsOrganizationName, generateDevOpsProjectName } from '../helper/commonHelper';
@@ -16,7 +17,7 @@ import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
 import { Build } from '../model/azureDevOps';
-import { AzureSession, RepositoryProvider, ServiceConnectionType, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, AzureSession, RepositoryProvider, ServiceConnectionType, TargetResourceType, WizardInputs } from "../model/models";
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
@@ -120,7 +121,7 @@ export class AzurePipelineConfigurer implements Configurer {
         return;
     }
 
-    public async createPreRequisites(inputs: WizardInputs): Promise<void> {
+    public async createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
         if (inputs.isNewOrganization) {
             await vscode.window.withProgress(
                 {
@@ -143,7 +144,6 @@ export class AzurePipelineConfigurer implements Configurer {
                     }
                 });
         }
-
         let serviceConnectionHelper = new ServiceConnectionHelper(inputs.organizationName, inputs.project.name, this.azureDevOpsClient);
 
         if (inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
@@ -175,11 +175,16 @@ export class AzurePipelineConfigurer implements Configurer {
                 },
                 async () => {
                     try {
-                        let scope = inputs.targetResource.resource.id;
-                        let aadAppName = GraphHelper.generateAadApplicationName(inputs.organizationName, inputs.project.name);
-                        let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
                         let serviceConnectionName = `${inputs.targetResource.resource.name}-${UniqueResourceNameSuffix}`;
-                        return await serviceConnectionHelper.createARMServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId, scope, aadApp);
+                        switch (inputs.pipelineConfiguration.template.azureConnectionType) {
+                            case AzureConnectionType.None:
+                                return '';
+                            case AzureConnectionType.AzureRMPublishProfile:
+                                return await this.createAzurePublishProfileEndpoint(serviceConnectionHelper, azureResourceClient, serviceConnectionName, inputs);
+                            case AzureConnectionType.AzureRMServicePrincipal:
+                            default:
+                                return await this.createAzureSPNServiceEndpoint(serviceConnectionHelper, serviceConnectionName, inputs);
+                        }
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -198,7 +203,7 @@ export class AzurePipelineConfigurer implements Configurer {
 
         switch (type) {
             case ServiceConnectionType.AzureRM:
-                return await serviceConnectionHelper.createARMServiceConnection(name, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId, data.scope, data.aadApp);
+                return await serviceConnectionHelper.createAzureSPNServiceConnection(name, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId, data.scope, data.aadApp);
             case ServiceConnectionType.ACR:
             case ServiceConnectionType.AKS:
             default:
@@ -359,5 +364,17 @@ export class AzurePipelineConfigurer implements Configurer {
         }
 
         return targetResource;
+    }
+
+    private async createAzurePublishProfileEndpoint(serviceConnectionHelper: ServiceConnectionHelper, azureResourceClient: AzureResourceClient, serviceConnectionName: string, inputs: WizardInputs): Promise<string> {
+        let publishProfile = await (azureResourceClient as AppServiceClient).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
+        return await serviceConnectionHelper.createAzurePublishProfileServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.targetResource.resource.id, publishProfile);
+    }
+
+    private async createAzureSPNServiceEndpoint(serviceConnectionHelper: ServiceConnectionHelper, serviceConnectionName: string, inputs: WizardInputs): Promise<string> {
+        let scope = inputs.targetResource.resource.id;
+        let aadAppName = GraphHelper.generateAadApplicationName(inputs.organizationName, inputs.project.name);
+        let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
+        return await serviceConnectionHelper.createAzureSPNServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId, scope, aadApp);
     }
 }

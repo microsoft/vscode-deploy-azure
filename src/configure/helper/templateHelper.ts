@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
-import {  extensionVariables, RepositoryProvider, TargetKind, TargetResourceType, WizardInputs } from '../model/models';
+import { AzureConnectionType, extensionVariables, RepositoryProvider, TargetKind, TargetResourceType, WizardInputs } from '../model/models';
 import { PipelineTemplate, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { PipelineTemplateLabels } from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -229,7 +229,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.SimpleApplicationToAppService,
@@ -251,7 +252,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ],
     'node': [
@@ -275,7 +277,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
@@ -297,7 +300,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
@@ -319,7 +323,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
@@ -341,7 +346,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
@@ -363,7 +369,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.NodeJSWithNpmToAppService,
@@ -385,7 +392,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
@@ -407,7 +415,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
@@ -429,7 +438,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
@@ -451,7 +461,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
@@ -473,7 +484,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ],
     'python': [
@@ -497,7 +509,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: 'Build and Test Python Django App',
@@ -506,7 +519,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             targetType: TargetResourceType.None,
             targetKind: null,
             enabled: true,
-            parameters: []
+            parameters: [],
+            azureConnectionType: AzureConnectionType.None
         }
     ],
     'dotnetcore': [
@@ -530,7 +544,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.DotNetCoreWebAppToAppService,
@@ -552,7 +567,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ],
     'docker': [
@@ -586,7 +602,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "aCREndpoint",
                     "type": TemplateAssetType.ACRServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ]
 };
@@ -613,7 +630,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.NodeJSWithNpmToAppService,
@@ -635,7 +653,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
@@ -657,7 +676,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
@@ -679,7 +699,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
@@ -701,7 +722,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
@@ -723,7 +745,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
@@ -745,7 +768,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
@@ -767,7 +791,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
@@ -789,7 +814,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
@@ -811,7 +837,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ],
     'none': [
@@ -835,7 +862,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
         },
         {
             label: PipelineTemplateLabels.SimpleApplicationToAppService,
@@ -857,7 +885,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ],
     'python': [
@@ -881,7 +910,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
     ],
     'dotnetcore': [],
@@ -911,7 +941,8 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
@@ -933,7 +964,8 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
@@ -941,7 +973,8 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: TargetKind.FunctionAppLinuxContainer,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.DotNetCoreFunctionAppToAzureFunction,
@@ -963,7 +996,8 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.DotNetCoreFunctionAppToAzureFunction,
@@ -985,7 +1019,8 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.DotNetCoreFunctionAppToAzureFunction,
@@ -993,7 +1028,8 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
             language: SupportedLanguage.DOTNETCORE,
             targetType: TargetResourceType.WebApp,
             targetKind: TargetKind.FunctionAppLinuxContainer,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.PythonFunctionAppToLinuxAzureFunction,
@@ -1015,7 +1051,8 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.PythonFunctionAppToLinuxAzureFunction,
@@ -1023,7 +1060,8 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
             language: SupportedLanguage.PYTHON,
             targetType: TargetResourceType.WebApp,
             targetKind: TargetKind.FunctionAppLinuxContainer,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
     ]
 };
@@ -1051,7 +1089,8 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
@@ -1073,7 +1112,8 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
@@ -1081,7 +1121,8 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
             language: SupportedLanguage.NODE,
             targetType: TargetResourceType.WebApp,
             targetKind: TargetKind.FunctionAppLinuxContainer,
-            enabled: true
+            enabled: true,
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.PythonFunctionAppToLinuxAzureFunction,
@@ -1103,7 +1144,8 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
         {
             label: PipelineTemplateLabels.PythonFunctionAppToLinuxAzureFunction,
@@ -1125,7 +1167,8 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTempla
                     "id": "endpoint",
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ]
 };

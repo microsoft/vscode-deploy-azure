@@ -1,15 +1,14 @@
 const uuid = require('uuid/v4');
-import { ResourceListResult, GenericResource } from 'azure-arm-resource/lib/resource/models';
+import { GenericResource, ResourceListResult } from 'azure-arm-resource/lib/resource/models';
 import { WebSiteManagementClient } from 'azure-arm-website';
-import { SiteConfigResource, StringDictionary, Deployment } from 'azure-arm-website/lib/models';
+import { Deployment, SiteConfigResource, StringDictionary } from 'azure-arm-website/lib/models';
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from 'ms-rest';
-
-import { AzureResourceClient } from './azureResourceClient';
-import { TargetKind, ParsedAzureResourceId, WebAppSourceControl } from '../../model/models';
-import {Messages} from '../../resources/messages';
 import { AzureEnvironment } from 'ms-rest-azure';
 import { telemetryHelper } from '../../helper/telemetryHelper';
+import { ParsedAzureResourceId, TargetKind, WebAppSourceControl } from '../../model/models';
+import {Messages} from '../../resources/messages';
 import { TelemetryKeys } from '../../resources/telemetryKeys';
+import { AzureResourceClient } from './azureResourceClient';
 
 export class AppServiceClient extends AzureResourceClient {
 

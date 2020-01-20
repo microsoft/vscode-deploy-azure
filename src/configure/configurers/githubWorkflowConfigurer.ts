@@ -5,11 +5,12 @@ import * as utils from 'util';
 import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
+import { AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { ControlProvider } from '../helper/controlProvider';
 import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
-import { AzureSession, ServiceConnectionType, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, AzureSession, ServiceConnectionType, TargetResourceType, WizardInputs } from "../model/models";
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
@@ -32,24 +33,24 @@ export class GitHubWorkflowConfigurer implements Configurer {
         return;
     }
 
-    public async createPreRequisites(inputs: WizardInputs): Promise<void> {
-        if (inputs.targetResource.resource && inputs.targetResource.resource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
-            let azureConnectionSecret = await vscode.window.withProgress(
+    public async createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
+        if (inputs.targetResource.resource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
+            let azureConnectionSecret: string = await vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
                     title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
                 },
                 async () => {
                     try {
-                        let scope = inputs.targetResource.resource.id;
-                        let aadAppName = GraphHelper.generateAadApplicationName(inputs.sourceRepository.remoteName, 'github');
-                        let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
-                        return {
-                            "clientId": `${aadApp.appId}`,
-                            "clientSecret": `${aadApp.secret}`,
-                            "subscriptionId": `${inputs.subscriptionId}`,
-                            "tenantId": `${inputs.azureSession.tenantId}`,
-                        };
+                        switch (inputs.pipelineConfiguration.template.azureConnectionType) {
+                            case AzureConnectionType.None:
+                                return null;
+                            case AzureConnectionType.AzureRMPublishProfile:
+                                return await (azureResourceClient as AppServiceClient).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
+                            case AzureConnectionType.AzureRMServicePrincipal:
+                            default:
+                                return await this.getAzureSPNSecret(inputs);
+                        }
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -57,22 +58,25 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     }
                 });
 
-            let showCopyAndOpenNotificationFunction = (nextLabel = false) => {
-                return this.showCopyAndOpenNotification(
-                    JSON.stringify(azureConnectionSecret),
-                    `https://github.com/${inputs.sourceRepository.repositoryId}/settings/secrets`,
-                    utils.format(Messages.copyAndCreateSecretMessage, 'AZURE_CREDENTIALS'),
-                    'copyAzureCredentials',
-                    nextLabel);
-            };
+            if (!!azureConnectionSecret) {
+                inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS';
+                let showCopyAndOpenNotificationFunction = (nextLabel = false) => {
+                    return this.showCopyAndOpenNotification(
+                        azureConnectionSecret,
+                        `https://github.com/${inputs.sourceRepository.repositoryId}/settings/secrets`,
+                        utils.format(Messages.copyAndCreateSecretMessage, inputs.targetResource.serviceConnectionId),
+                        'copyAzureCredentials',
+                        nextLabel);
+                };
 
-            let copyAndOpen = await showCopyAndOpenNotificationFunction();
-            if (copyAndOpen === Messages.copyAndOpenLabel) {
-                let nextSelected = "";
-                while (nextSelected !== Messages.nextLabel) {
-                    nextSelected = await showCopyAndOpenNotificationFunction(true);
-                    if (nextSelected === undefined) {
-                        throw new UserCancelledError(Messages.operationCancelled);
+                let copyAndOpen = await showCopyAndOpenNotificationFunction();
+                if (copyAndOpen === Messages.copyAndOpenLabel) {
+                    let nextSelected = "";
+                    while (nextSelected !== Messages.nextLabel) {
+                        nextSelected = await showCopyAndOpenNotificationFunction(true);
+                        if (nextSelected === undefined) {
+                            throw new UserCancelledError(Messages.operationCancelled);
+                        }
                     }
                 }
             }
@@ -247,5 +251,17 @@ export class GitHubWorkflowConfigurer implements Configurer {
         }
 
         return copyAndOpen;
+    }
+
+    private async getAzureSPNSecret(inputs: WizardInputs): Promise<string> {
+        let scope = inputs.targetResource.resource.id;
+        let aadAppName = GraphHelper.generateAadApplicationName(inputs.sourceRepository.remoteName, 'github');
+        let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
+        return JSON.stringify({
+            "clientId": `${aadApp.appId}`,
+            "clientSecret": `${aadApp.secret}`,
+            "subscriptionId": `${inputs.targetResource.subscriptionId}`,
+            "tenantId": `${inputs.azureSession.tenantId}`,
+        });
     }
 }

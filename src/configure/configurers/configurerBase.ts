@@ -1,10 +1,11 @@
+import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { LocalGitRepoHelper } from "../helper/LocalGitRepoHelper";
 import { ServiceConnectionType, WizardInputs } from "../model/models";
 
 export interface Configurer {
     validatePermissions(): Promise<void>;
     getInputs(inputs: WizardInputs): Promise<void>;
-    createPreRequisites(inputs: WizardInputs): Promise<void>;
+    createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void>;
     createSecretOrServiceConnection(
         name: string,
         type: ServiceConnectionType,

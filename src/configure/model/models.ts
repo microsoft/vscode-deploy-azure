@@ -147,6 +147,12 @@ export interface GitRepositoryParameters {
     serviceConnectionId?: string; // Id of the service connection in Azure DevOps
 }
 
+export enum AzureConnectionType {
+    None,
+    AzureRMServicePrincipal,
+    AzureRMPublishProfile
+}
+
 export interface Token {
     session: AzureSession;
     accessToken: string;

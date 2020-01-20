@@ -1,8 +1,8 @@
-import { AadApplication } from '../../model/models';
-import { AzureDevOpsClient } from '../../clients/devOps/azureDevOpsClient';
-import { Messages } from '../../resources/messages';
-import { ServiceConnectionClient } from '../../clients/devOps/serviceConnectionClient';
 import * as util from 'util';
+import { AzureDevOpsClient } from '../../clients/devOps/azureDevOpsClient';
+import { ServiceConnectionClient } from '../../clients/devOps/serviceConnectionClient';
+import { AadApplication } from '../../model/models';
+import { Messages } from '../../resources/messages';
 
 export class ServiceConnectionHelper {
     private serviceConnectionClient: ServiceConnectionClient;
@@ -25,8 +25,8 @@ export class ServiceConnectionHelper {
         return endpointId;
     }
 
-    public async createARMServiceConnection(name: string, tenantId: string, subscriptionId: string, scope: string, aadApp: AadApplication): Promise<string> {
-        let response = await this.serviceConnectionClient.createAzureServiceConnection(name, tenantId, subscriptionId, scope, aadApp);
+    public async createAzureSPNServiceConnection(name: string, tenantId: string, subscriptionId: string, scope: string, aadApp: AadApplication): Promise<string> {
+        let response = await this.serviceConnectionClient.createAzureSPNServiceConnection(name, tenantId, subscriptionId, scope, aadApp);
         let endpointId = response.id;
         await this.waitForEndpointToBeReady(endpointId);
         await this.serviceConnectionClient.authorizeEndpointForAllPipelines(endpointId)
@@ -35,7 +35,19 @@ export class ServiceConnectionHelper {
                     throw new Error(Messages.couldNotAuthorizeEndpoint);
                 }
             });
+        return endpointId;
+    }
 
+    public async createAzurePublishProfileServiceConnection(name: string, tenantId: string, resourceId: string, publishProfile: string): Promise<string> {
+        let response = await this.serviceConnectionClient.createAzurePublishProfileServiceConnection(name, tenantId, resourceId, publishProfile);
+        let endpointId = response.id;
+        await this.waitForEndpointToBeReady(endpointId);
+        await this.serviceConnectionClient.authorizeEndpointForAllPipelines(endpointId)
+            .then((response) => {
+                if (response.allPipelines.authorized !== true) {
+                    throw new Error(Messages.couldNotAuthorizeEndpoint);
+                }
+            });
         return endpointId;
     }
 

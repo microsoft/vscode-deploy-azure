@@ -91,7 +91,7 @@ class Orchestrator {
             await pipelineConfigurer.getInputs(this.inputs);
 
             telemetryHelper.setCurrentStep('CreatePreRequisites');
-            await pipelineConfigurer.createPreRequisites(this.inputs);
+            await pipelineConfigurer.createPreRequisites(this.inputs, this.azureResourceClient);
 
             telemetryHelper.setCurrentStep('CreateAssets');
             await new AssetCreationHandler().createAssets(this.inputs.pipelineConfiguration.template.assets, this.inputs, pipelineConfigurer);

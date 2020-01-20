@@ -75,7 +75,7 @@ stages:
         deploy:
           steps:            
           - task: AzureFunctionApp@1
-            displayName: 'Azure Functions App Deploy: {{ functionAppName }}'
+            displayName: 'Deploy Azure Functions App: $(functionAppName)'
             inputs:
               azureSubscription: '$(azureSubscription)'
               appType: functionApp

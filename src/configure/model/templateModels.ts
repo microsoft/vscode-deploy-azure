@@ -1,4 +1,4 @@
-import { ServiceConnectionType, TargetKind, TargetResourceType } from "./models";
+import { AzureConnectionType, ServiceConnectionType, TargetKind, TargetResourceType } from "./models";
 
 export interface PipelineTemplate {
     path: string;
@@ -9,6 +9,7 @@ export interface PipelineTemplate {
     enabled: boolean;
     parameters?: TemplateParameter[];
     assets?: TemplateAsset[];
+    azureConnectionType: AzureConnectionType;
 }
 
 export interface TemplateParameter {
