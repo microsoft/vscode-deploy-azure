@@ -578,7 +578,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.DOCKER,
             targetType: TargetResourceType.AKS,
             targetKind: null,
-            enabled: true,
+            enabled: false,
             parameters: [
                 {
                     "name": "cluster",
