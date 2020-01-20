@@ -1,7 +1,7 @@
 import { ResourceListResult, GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { ServiceClientCredentials } from 'ms-rest';
 import * as ResourceManagementClient from 'azure-arm-resource/lib/resource/resourceManagementClient';
-import { TargetResourceType, WebAppKind } from '../../model/models';
+import { TargetResourceType, TargetKind } from '../../model/models';
 import * as utils from 'util';
 import { Messages } from '../../resources/messages';
 
@@ -21,15 +21,17 @@ export class AzureResourceClient {
         switch (resource.type.toLowerCase()) {
             case TargetResourceType.WebApp.toLowerCase():
                 switch (resource.kind ? resource.kind.toLowerCase() : '') {
-                    case WebAppKind.LinuxApp:
-                    case WebAppKind.FunctionAppLinux:
-                    case WebAppKind.WindowsApp:
+                    case TargetKind.LinuxApp:
+                    case TargetKind.FunctionAppLinux:
+                    case TargetKind.WindowsApp:
                         return;
-                    case WebAppKind.LinuxContainerApp:
-                    case WebAppKind.FunctionApp:
+                    case TargetKind.LinuxContainerApp:
+                    case TargetKind.FunctionApp:
                     default:
                         throw new Error(utils.format(Messages.appKindIsNotSupported, resource.kind));
                 }
+            case TargetResourceType.AKS.toLowerCase():
+                return;
             default:
                 throw new Error(utils.format(Messages.resourceTypeIsNotSupported, resource.type));
         }

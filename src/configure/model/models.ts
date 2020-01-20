@@ -5,6 +5,7 @@ import { AzureEnvironment } from 'ms-rest-azure';
 import { ExtensionContext, OutputChannel, QuickPickItem } from 'vscode';
 import { IAzureUserInput, ITelemetryReporter, UIExtensionVariables } from 'vscode-azureextensionui';
 import { Messages } from '../resources/messages';
+import { PipelineTemplate } from './templateModels';
 
 class ExtensionVariables implements UIExtensionVariables {
     public azureAccountExtensionApi: AzureAccountExtensionExports;
@@ -28,9 +29,16 @@ export class WizardInputs {
     isNewOrganization: boolean;
     sourceRepository: GitRepositoryParameters;
     targetResource: AzureParameters = new AzureParameters();
-    pipelineParameters: PipelineParameters = new PipelineParameters();
+    pipelineConfiguration: PipelineConfiguration = new PipelineConfiguration();
     azureSession: AzureSession;
+    subscriptionId: string;
     githubPATToken?: string;
+}
+
+export class AzureParameters {
+    subscriptionId: string;
+    resource: GenericResource;
+    serviceConnectionId: string;
 }
 
 export class Organization {
@@ -48,16 +56,12 @@ export class AzureSession {
     credentials: ServiceClientCredentials;
 }
 
-export class AzureParameters {
-    subscriptionId: string;
-    resource: GenericResource;
-    serviceConnectionId: string;
-}
-
-export class PipelineParameters {
-    pipelineFilePath: string;
-    pipelineTemplate: PipelineTemplate;
+export class PipelineConfiguration {
+    filePath: string;
+    template: PipelineTemplate;
     workingDirectory: string;
+    params: { [key: string]: any } = {};
+    assets: { [key: string]: any } = {};
 }
 
 export class QuickPickItemWithData implements QuickPickItem {
@@ -149,16 +153,6 @@ export enum AzureConnectionType {
     AzureRMPublishProfile
 }
 
-export interface PipelineTemplate {
-    path: string;
-    label: string;
-    language: string;
-    targetType: TargetResourceType;
-    targetKind: WebAppKind;
-    enabled: boolean;
-    azureConnectionType: AzureConnectionType; 
-}
-
 export interface Token {
     session: AzureSession;
     accessToken: string;
@@ -199,15 +193,19 @@ export enum RepositoryProvider {
 
 export enum TargetResourceType {
     None = 'none',
-    WebApp = 'Microsoft.Web/sites'
+    WebApp = 'Microsoft.Web/sites',
+    AKS = 'Microsoft.ContainerService/ManagedClusters',
+    ACR = 'Microsoft.ContainerRegistry/registries'
 }
 
 export enum ServiceConnectionType {
     GitHub = 'github',
-    AzureRM = 'azurerm'
+    AzureRM = 'arm',
+    ACR = "containerRegistery",
+    AKS = 'azureKubernetes'
 }
 
-export enum WebAppKind {
+export enum TargetKind {
     WindowsApp = 'app',
     FunctionApp = 'functionapp',
     FunctionAppLinux = 'functionapp,linux',

@@ -1,12 +1,12 @@
+import * as path from 'path';
+import * as util from 'util';
 import { AzureDevOpsClient } from '../../clients/devOps/azureDevOpsClient';
-import { BuildDefinition, BuildDefinitionRepositoryProperties, Build } from '../../model/azureDevOps';
+import { Build, BuildDefinition, BuildDefinitionRepositoryProperties } from '../../model/azureDevOps';
+import { RepositoryProvider, WizardInputs } from '../../model/models';
 import { HostedVS2017QueueName } from '../../resources/constants';
 import { Messages } from '../../resources/messages';
-import { telemetryHelper } from '../telemetryHelper';
 import { TracePoints } from '../../resources/tracePoints';
-import { WizardInputs, RepositoryProvider } from '../../model/models';
-import * as util from 'util';
-import * as path from 'path';
+import { telemetryHelper } from '../telemetryHelper';
 
 const Layer: string = 'azureDevOpsHelper';
 
@@ -117,7 +117,7 @@ export class AzureDevOpsHelper {
             },
             process: {
                 type: 2,
-                yamlFileName: path.join(inputs.pipelineParameters.workingDirectory, path.basename(inputs.pipelineParameters.pipelineFilePath))
+                yamlFileName: path.join(inputs.pipelineConfiguration.workingDirectory, path.basename(inputs.pipelineConfiguration.filePath))
             },
             queue: {
                 id: queueId // Default queue Hosted VS 2017. This value is overriden by queue specified in YAML
