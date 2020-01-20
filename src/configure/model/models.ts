@@ -15,7 +15,7 @@ class ExtensionVariables implements UIExtensionVariables {
     public enableGitHubWorkflow: boolean;
 
     constructor() {
-        this.enableGitHubWorkflow = true;
+        this.enableGitHubWorkflow = false;
     }
 }
 
