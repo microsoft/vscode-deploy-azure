@@ -79,7 +79,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                             title: Messages.settingUpGithubSecrets
                         },
                         async () => {
-                            await this.githubClient.createOrUpdateGithubSecret(inputs.targetResource.serviceConnectionId, azureConnectionSecret);
+                            await this.createSecretOrServiceConnection(null, ServiceConnectionType.AzureRM, azureConnectionSecret, inputs);
                         });
                 } catch (error) {
                     telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -94,48 +94,28 @@ export class GitHubWorkflowConfigurer implements Configurer {
         type: ServiceConnectionType,
         data: any,
         inputs: WizardInputs): Promise<string> {
-            let secret = null;
-            switch (type) {
-                case ServiceConnectionType.AzureRM:
-                    secret = {
-                        "clientId": `${data.aadApp.appId}`,
-                        "clientSecret": `${data.aadApp.secret}`,
-                        "subscriptionId": `${inputs.subscriptionId}`,
-                        "tenantId": `${inputs.azureSession.tenantId}`,
-                    };
-                    break;
-                case ServiceConnectionType.ACR:
-                case ServiceConnectionType.AKS:
-                default:
-                    throw new Error(utils.format(Messages.assetOfTypeNotSupported, type));
-            }
-
-            if (secret) {
-                let showCopyAndOpenNotificationFunction = (nextLabel = false) => {
-                    return this.showCopyAndOpenNotification(
-                        JSON.stringify(secret),
-                        `https://github.com/${inputs.sourceRepository.repositoryId}/settings/secrets`,
-                        utils.format(Messages.copyAndCreateSecretMessage, name),
-                        'copyAzureCredentials',
-                        nextLabel);
+        let secret = null;
+        switch (type) {
+            case ServiceConnectionType.AzureRM:
+                secret = {
+                    "clientId": `${data.aadApp.appId}`,
+                    "clientSecret": `${data.aadApp.secret}`,
+                    "subscriptionId": `${inputs.subscriptionId}`,
+                    "tenantId": `${inputs.azureSession.tenantId}`,
                 };
-
-                let copyAndOpen = await showCopyAndOpenNotificationFunction();
-                if (copyAndOpen === Messages.copyAndOpenLabel) {
-                    let nextSelected = "";
-                    while (nextSelected !== Messages.nextLabel) {
-                        nextSelected = await showCopyAndOpenNotificationFunction(true);
-                        if (nextSelected === undefined) {
-                            throw new UserCancelledError(Messages.operationCancelled);
-                        }
-                    }
-                }
-
-                return name;
-            }
-
-            return null;
+                break;
+            case ServiceConnectionType.ACR:
+            case ServiceConnectionType.AKS:
+            default:
+                throw new Error(utils.format(Messages.assetOfTypeNotSupported, type));
         }
+
+        if (secret) {    
+            await this.githubClient.createOrUpdateGithubSecret(inputs.targetResource.serviceConnectionId, secret);        
+        }
+
+        return null;
+    }
 
     public async getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
         // Create .github directory
