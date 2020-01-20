@@ -79,7 +79,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                             title: Messages.settingUpGithubSecrets
                         },
                         async () => {
-                            await this.createSecretOrServiceConnection(null, ServiceConnectionType.AzureRM, azureConnectionSecret, inputs);
+                            await this.createSecretOrServiceConnection(inputs.targetResource.serviceConnectionId, ServiceConnectionType.AzureRM, azureConnectionSecret, inputs);
                         });
                 } catch (error) {
                     telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -111,7 +111,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
         }
 
         if (secret) {    
-            await this.githubClient.createOrUpdateGithubSecret(inputs.targetResource.serviceConnectionId, secret);        
+            await this.githubClient.createOrUpdateGithubSecret(name, secret);        
         }
 
         return null;
