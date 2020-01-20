@@ -35,32 +35,9 @@ export class GitHubProvider {
     }
 
     public static getFormattedGitHubApiUrlBase(remoteUrl: string): string {
-        let params: string[] = remoteUrl.split('/')
-        let accountName: string = "";
-        let repoName: string = "";
-
-        if (remoteUrl.startsWith(GitHubProvider.SSHGitHubUrl)) {
-            if(params.length < 2) {
-                return null;
-            }
-            let accountAndGithubName = params[0].split(':');
-            repoName = params[1];
-            if(accountAndGithubName.length < 2) {
-                return null;
-            }
-            accountName = accountAndGithubName[1]
-        } else {
-            if(params.length < 5) {
-                return null;
-            }
-            accountName = params[3]
-            repoName = params[4]    
-        }
-
-        // If you're trying to create a repository with name SampleRepo.git, it'll be renamed to SampleRepo by Github
-        if(repoName.endsWith(".git")) {
-            repoName = repoName.substr(0, repoName.length - 4)
-        }
+        let params: string[] = GitHubProvider.getRepositoryIdFromUrl(remoteUrl).split('/')
+        let accountName: string = params[0];
+        let repoName: string = params[1];
         return `https://api.github.com/repos/${accountName}/${repoName}`;
     }
 }
