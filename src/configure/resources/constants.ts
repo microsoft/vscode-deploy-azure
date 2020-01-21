@@ -171,12 +171,12 @@ export const RepoAnalysis = {
     //Node
     Gulp: 'gulp',
     Grunt: 'grunt',
-    GulpFilePath: 'gulpfilepath',
-    GruntFilePath: 'gruntfilepath',
+    GulpFilePath: 'gulpFilePath',
+    GruntFilePath: 'gruntFilePath',
 
     //Python
     Django: 'django',
-    RequirementsFilePath: 'requirementsfilepath',
+    RequirementsFilePath: 'requirementsFilePath',
 
     //Functions
     AzureFunctions: 'azure:functions'
