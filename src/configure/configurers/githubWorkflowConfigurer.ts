@@ -17,6 +17,7 @@ import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
+import { GitHubProvider } from '../helper/gitHubHelper';
 
 const Layer = 'GitHubWorkflowConfigurer';
 
@@ -71,7 +72,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 });
 
             if (!!azureConnectionSecret) {
-                inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS';
+                inputs.targetResource.serviceConnectionId = GitHubProvider.getSecretId(16);
                 try {
                     await vscode.window.withProgress(
                         {
