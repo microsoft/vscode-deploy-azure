@@ -39,9 +39,9 @@ export class RepositoryAnalysisParameters {
     languages: SupportedLanguage[] = [];
     buildTargets: string[] = [];
     deployTargets: string[] = [];
-    gulpFilePath: string = "gulpfile.js";
-    gruntFilePath: string = "gruntfile.js";
-    requirementsFilePath: string = "requirements.txt";
+    gulpFilePath?: string = "gulpfile.js";
+    gruntFilePath?: string = "gruntfile.js";
+    requirementsFilePath?: string = "requirements.txt";
 }
 
 export class Organization {

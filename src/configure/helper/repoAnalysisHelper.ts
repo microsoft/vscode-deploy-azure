@@ -1,6 +1,5 @@
-import { AzureSession, SupportedLanguage, RepositoryAnalysisParameters, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider } from "../model/models";
 import { PortalExtensionClient } from "../clients/PortalExtensionClient";
-import * as Q from 'q';
+import { AzureSession, SupportedLanguage, RepositoryAnalysisParameters, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider } from "../model/models";
 import { RepoAnalysis } from "../resources/constants";
 
 export class RepoAnalysisHelper {
@@ -11,11 +10,10 @@ export class RepoAnalysisHelper {
     }
 
     public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters): Promise<RepositoryAnalysisParameters> {
-        let deferred = Q.defer<RepositoryAnalysisParameters>();
 
         //As of now this solution has support only for github
         if (sourceRepositoryDetails.repositoryProvider != RepositoryProvider.Github) {
-            deferred.resolve();
+            return null;
         }
 
         var repositoryAnalysisResponse;
@@ -26,12 +24,12 @@ export class RepoAnalysisHelper {
 
             repositoryAnalysisResponse = await this.portalExtensionClient.getRepositoryAnalysis(request);
             if (!!repositoryAnalysisResponse && repositoryAnalysisResponse.length === 0) {
-                throw "No analysis result received";
+                return null;
             }
         }
         catch(e) {
             //Return empty if Repo Analysis fails
-            deferred.resolve();
+            return null;
         }
 
         let parameters: RepositoryAnalysisParameters = new RepositoryAnalysisParameters();
@@ -74,7 +72,6 @@ export class RepoAnalysisHelper {
             parameters.languages.push(SupportedLanguage.NONE);
         }
 
-        deferred.resolve(parameters);
-        return deferred.promise;
+        return parameters;;
     }
 }

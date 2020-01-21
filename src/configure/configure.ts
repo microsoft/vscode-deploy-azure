@@ -12,6 +12,7 @@ import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
+import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { extensionVariables, GitBranchDetails, GitRepositoryParameters, PipelineTemplate, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetResourceType, WebAppKind, WizardInputs } from './model/models';
@@ -19,7 +20,6 @@ import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
-import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
