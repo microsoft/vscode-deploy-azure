@@ -2,7 +2,7 @@
     "name": "azure-deploy",
     "displayName": "Deploy to Azure",
     "description": "Generating CI/CD pipelines to Azure from GitHub Repo and Azure Repo",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "publisher": "ms-vscode-deploy-azure",
     "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
     "repository": {
@@ -101,6 +101,7 @@
         "q": "1.5.1",
         "shelljs": "^0.3.0",
         "simple-git": "1.110.0",
+        "tweetsodium": "0.0.4",
         "typed-rest-client": "1.0.7",
         "underscore": "1.9.1",
         "uuid": "^3.3.2",

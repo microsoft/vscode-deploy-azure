@@ -12,6 +12,7 @@ import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { AzureConnectionType, AzureSession, ServiceConnectionType, TargetResourceType, WizardInputs } from "../model/models";
 import * as constants from '../resources/constants';
+import { GithubClient } from '../clients/github/githubClient';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
@@ -21,11 +22,22 @@ const Layer = 'GitHubWorkflowConfigurer';
 
 export class GitHubWorkflowConfigurer implements Configurer {
     private queuedPipelineUrl: string;
+    private controlProvider: ControlProvider;
+    private githubClient: GithubClient;
 
     constructor(azureSession: AzureSession, subscriptionId: string) {
+        this.controlProvider = new ControlProvider();
     }
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
+        inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
+            placeHolder: Messages.enterGitHubPat,
+            prompt: Messages.githubPatTokenHelpMessageGithubWorkflow,
+            validateInput: (inputValue) => {
+                return !inputValue ? Messages.githubPatTokenErrorMessage : null;
+            }
+        });
+        this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
         return;
     }
 
@@ -60,24 +72,18 @@ export class GitHubWorkflowConfigurer implements Configurer {
 
             if (!!azureConnectionSecret) {
                 inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS';
-                let showCopyAndOpenNotificationFunction = (nextLabel = false) => {
-                    return this.showCopyAndOpenNotification(
-                        azureConnectionSecret,
-                        `https://github.com/${inputs.sourceRepository.repositoryId}/settings/secrets`,
-                        utils.format(Messages.copyAndCreateSecretMessage, inputs.targetResource.serviceConnectionId),
-                        'copyAzureCredentials',
-                        nextLabel);
-                };
-
-                let copyAndOpen = await showCopyAndOpenNotificationFunction();
-                if (copyAndOpen === Messages.copyAndOpenLabel) {
-                    let nextSelected = "";
-                    while (nextSelected !== Messages.nextLabel) {
-                        nextSelected = await showCopyAndOpenNotificationFunction(true);
-                        if (nextSelected === undefined) {
-                            throw new UserCancelledError(Messages.operationCancelled);
-                        }
-                    }
+                try {
+                    await vscode.window.withProgress(
+                        {
+                            location: vscode.ProgressLocation.Notification,
+                            title: Messages.settingUpGithubSecrets
+                        },
+                        async () => {
+                            await this.createSecretOrServiceConnection(inputs.targetResource.serviceConnectionId, ServiceConnectionType.AzureRM, azureConnectionSecret, inputs);
+                        });
+                } catch (error) {
+                    telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
+                    throw error;
                 }
             }
         }
@@ -88,48 +94,28 @@ export class GitHubWorkflowConfigurer implements Configurer {
         type: ServiceConnectionType,
         data: any,
         inputs: WizardInputs): Promise<string> {
-            let secret = null;
-            switch (type) {
-                case ServiceConnectionType.AzureRM:
-                    secret = {
-                        "clientId": `${data.aadApp.appId}`,
-                        "clientSecret": `${data.aadApp.secret}`,
-                        "subscriptionId": `${inputs.subscriptionId}`,
-                        "tenantId": `${inputs.azureSession.tenantId}`,
-                    };
-                    break;
-                case ServiceConnectionType.ACR:
-                case ServiceConnectionType.AKS:
-                default:
-                    throw new Error(utils.format(Messages.assetOfTypeNotSupported, type));
-            }
-
-            if (secret) {
-                let showCopyAndOpenNotificationFunction = (nextLabel = false) => {
-                    return this.showCopyAndOpenNotification(
-                        JSON.stringify(secret),
-                        `https://github.com/${inputs.sourceRepository.repositoryId}/settings/secrets`,
-                        utils.format(Messages.copyAndCreateSecretMessage, name),
-                        'copyAzureCredentials',
-                        nextLabel);
+        let secret = null;
+        switch (type) {
+            case ServiceConnectionType.AzureRM:
+                secret = {
+                    "clientId": `${data.aadApp.appId}`,
+                    "clientSecret": `${data.aadApp.secret}`,
+                    "subscriptionId": `${inputs.subscriptionId}`,
+                    "tenantId": `${inputs.azureSession.tenantId}`,
                 };
-
-                let copyAndOpen = await showCopyAndOpenNotificationFunction();
-                if (copyAndOpen === Messages.copyAndOpenLabel) {
-                    let nextSelected = "";
-                    while (nextSelected !== Messages.nextLabel) {
-                        nextSelected = await showCopyAndOpenNotificationFunction(true);
-                        if (nextSelected === undefined) {
-                            throw new UserCancelledError(Messages.operationCancelled);
-                        }
-                    }
-                }
-
-                return name;
-            }
-
-            return null;
+                break;
+            case ServiceConnectionType.ACR:
+            case ServiceConnectionType.AKS:
+            default:
+                throw new Error(utils.format(Messages.assetOfTypeNotSupported, type));
         }
+
+        if (secret) {    
+            await this.githubClient.createOrUpdateGithubSecret(name, secret);        
+        }
+
+        return null;
+    }
 
     public async getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
         // Create .github directory
@@ -236,21 +222,6 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     vscode.env.openExternal(vscode.Uri.parse(this.queuedPipelineUrl));
                 }
             });
-    }
-
-    private async showCopyAndOpenNotification(valueToBeCopied: string, urlToBeOpened: string, messageToBeShown: string, messageIdentifier: string, showNextButton = false): Promise<string> {
-        let actions: Array<string> = showNextButton ? [Messages.copyAndOpenLabel, Messages.nextLabel] : [Messages.copyAndOpenLabel];
-        let controlProvider = new ControlProvider();
-        let copyAndOpen = await controlProvider.showInformationBox(
-            messageIdentifier,
-            messageToBeShown,
-            ...actions);
-        if (copyAndOpen === Messages.copyAndOpenLabel) {
-            await vscode.env.clipboard.writeText(valueToBeCopied);
-            await vscode.env.openExternal(vscode.Uri.parse(urlToBeOpened));
-        }
-
-        return copyAndOpen;
     }
 
     private async getAzureSPNSecret(inputs: WizardInputs): Promise<string> {
