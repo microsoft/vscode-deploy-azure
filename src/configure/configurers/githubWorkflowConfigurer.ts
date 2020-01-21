@@ -53,7 +53,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
             let azureConnectionSecret: string = await vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
-                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
+                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.targetResource.subscriptionId)
                 },
                 async () => {
                     try {
@@ -108,8 +108,8 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 throw new Error(utils.format(Messages.assetOfTypeNotSupported, type));
         }
 
-        if (secret) {    
-            await this.githubClient.createOrUpdateGithubSecret(name, secret);        
+        if (secret) {
+            await this.githubClient.createOrUpdateGithubSecret(name, secret);
         }
 
         return null;
@@ -170,7 +170,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
     public async executePostPipelineCreationSteps(inputs: WizardInputs): Promise<void> {
         if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
             try {
-                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
+                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId);
 
                 // Update web app sourceControls as GitHubAction
                 let sourceControlProperties = {
