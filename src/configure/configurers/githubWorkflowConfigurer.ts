@@ -97,12 +97,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
         let secret = null;
         switch (type) {
             case ServiceConnectionType.AzureRM:
-                secret = {
-                    "clientId": `${data.aadApp.appId}`,
-                    "clientSecret": `${data.aadApp.secret}`,
-                    "subscriptionId": `${inputs.targetResource.subscriptionId}`,
-                    "tenantId": `${inputs.azureSession.tenantId}`,
-                };
+                secret = data;
                 break;
             case ServiceConnectionType.ACR:
             case ServiceConnectionType.AKS:
