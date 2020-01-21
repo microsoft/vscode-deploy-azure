@@ -18,7 +18,6 @@ import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
-import { GitHubProvider } from '../helper/gitHubHelper';
 
 const Layer = 'GitHubWorkflowConfigurer';
 
