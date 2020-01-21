@@ -33,4 +33,11 @@ export class GitHubProvider {
 
         return remoteUrl;
     }
+
+    public static getFormattedGitHubApiUrlBase(remoteUrl: string): string {
+        let params: string[] = GitHubProvider.getRepositoryIdFromUrl(remoteUrl).split('/')
+        let accountName: string = params[0];
+        let repoName: string = params[1];
+        return `https://api.github.com/repos/${accountName}/${repoName}`;
+    }
 }
