@@ -40,14 +40,4 @@ export class GitHubProvider {
         let repoName: string = params[1];
         return `https://api.github.com/repos/${accountName}/${repoName}`;
     }
-
-    public static getSecretId(length: number): string {
-        let result: string = '';
-        let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let charactersLength = characters.length;
-        for ( let i = 0; i < length; i++ ) {
-           result += characters.charAt(Math.floor(Math.random() * charactersLength));
-        }
-        return 'AZURE_CREDENTIALS_' + result;
-     }
 }
