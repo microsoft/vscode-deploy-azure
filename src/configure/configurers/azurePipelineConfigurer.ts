@@ -23,7 +23,7 @@ import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
-
+const uuid = require('uuid/v4');
 
 const Layer = 'AzurePipelineConfigurer';
 
@@ -240,7 +240,7 @@ export class AzurePipelineConfigurer implements Configurer {
                     try {
                         if (!inputs.sourceRepository.remoteUrl) {
                             let repositoryName = path.basename(inputs.sourceRepository.localPath).trim().replace(/[^a-zA-Z0-9-]/g, '');
-                            repositoryName = !!repositoryName ? repositoryName : "codetoazure";
+                            repositoryName = !!repositoryName ? (repositoryName + uuid().substring(0, 4)) : "codetoazure";
                             let repository = await this.azureDevOpsClient.createRepository(inputs.organizationName, inputs.project.id, repositoryName);
                             inputs.sourceRepository.repositoryName = repository.name;
                             inputs.sourceRepository.repositoryId = repository.id;
