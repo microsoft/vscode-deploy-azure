@@ -578,7 +578,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.DOCKER,
             targetType: TargetResourceType.AKS,
             targetKind: null,
-            enabled: false,
+            enabled: true,
             parameters: [
                 {
                     "name": "cluster",
@@ -609,6 +609,41 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
 };
 
 let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } = {
+    'docker': [
+        {
+            label: 'Containerized application to AKS',
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/AksWithReuseACR.yml'),
+            language: SupportedLanguage.DOCKER,
+            targetType: TargetResourceType.AKS,
+            targetKind: null,
+            enabled: true,
+            parameters: [
+                {
+                    "name": "cluster",
+                    "displayName": "Select Azure Kubernetes cluster to deploy your application",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.AKS
+                },
+                {
+                    "name": "acr",
+                    "displayName": "Select Azure Container Registry to store docker image",
+                    "type": TemplateParameterType.GenericAzureResource,
+                    "dataSourceId": PreDefinedDataSourceIds.ACR
+                }
+            ],
+            assets: [
+                {
+                    "id": "aKSEndpoint",
+                    "type": TemplateAssetType.AKSKubeConfigServiceConnection
+                },
+                {
+                    "id": "aCREndpoint",
+                    "type": TemplateAssetType.ACRServiceConnection
+                }
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+        }
+    ],
     'node': [
         {
             label: PipelineTemplateLabels.NodeJSWithNpmToAppService,
@@ -914,8 +949,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
     ],
-    'dotnetcore': [],
-    'docker': []
+    'dotnetcore': []
 };
 
 const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplate[] } =

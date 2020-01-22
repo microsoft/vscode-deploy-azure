@@ -4,7 +4,7 @@ import { AppServiceClient } from "../clients/azure/appServiceClient";
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { openBrowseExperience } from '../configure';
 import * as templateHelper from '../helper/templateHelper';
-import { extensionVariables, QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs } from "../model/models";
+import { extensionVariables, PipelineConfiguration, QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs } from "../model/models";
 import { PreDefinedDataSourceIds, TemplateParameter, TemplateParameterType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from "../resources/messages";
@@ -15,8 +15,22 @@ import { ControlProvider } from "./controlProvider";
 export class TemplateParameterHelper {
     private azureResourceClient: AzureResourceClient;
 
-    public static getParameterForTargetResourceType(parameters: TemplateParameter[], targetResourceType: TargetResourceType) : TemplateParameter {
-        return parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(targetResourceType)); });
+    public static getParameterForTargetResourceType(parameters: TemplateParameter[], targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): TemplateParameter {
+        return parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(targetResourceKind ? targetResourceType + ':' + targetResourceKind : targetResourceType)); });
+    }
+
+    public static getParameterValueForTargetResourceType(pipelineConfiguration: PipelineConfiguration, targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): any {
+        let resourceTemplateParameter = pipelineConfiguration.template.parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(targetResourceKind ? targetResourceType + ':' + targetResourceKind : targetResourceType)); });
+        if (!resourceTemplateParameter) {
+            throw utils.format(Messages.azureResourceTemplateParameterCouldNotBeFound, targetResourceType);
+        }
+
+        let parameterValue: GenericResource = pipelineConfiguration.params[resourceTemplateParameter.name];
+        if (!parameterValue) {
+            throw utils.format(Messages.parameterWithNameNotSet, resourceTemplateParameter.name);
+        }
+
+        return parameterValue;
     }
 
     public static getMatchingAzureResourceTemplateParameter(resource: GenericResource, templateParameters: TemplateParameter[]): { key: string, value: any } {
@@ -25,7 +39,7 @@ export class TemplateParameterHelper {
         }
 
         let resourceTargetType = TemplateParameterHelper.convertToAzureResourceType(<TargetResourceType>resource.type, <TargetKind>resource.kind);
-        let matchedParam = templateParameters.find((templateParameter) => { return templateParameter.type.toString().toLowerCase() === resourceTargetType.toLowerCase(); });
+        let matchedParam = templateParameters.find((templateParameter) => { return templateParameter.dataSourceId.toLowerCase() === resourceTargetType.toLowerCase(); });
 
         if (matchedParam) {
             return { key: matchedParam.name, value: resource };
@@ -36,7 +50,7 @@ export class TemplateParameterHelper {
 
     public async setParameters(parameters: TemplateParameter[], inputs: WizardInputs): Promise<void> {
         if (!!parameters && parameters.length > 0) {
-            parameters.forEach(async (parameter) => {
+            for (let parameter of parameters) {
                 if (!inputs.pipelineConfiguration.params[parameter.name]) {
                     try {
                         await this.getParameterValue(parameter, inputs);
@@ -50,7 +64,7 @@ export class TemplateParameterHelper {
                         }
                     }
                 }
-            });
+            };
         }
     }
 
@@ -79,21 +93,21 @@ export class TemplateParameterHelper {
         let controlProvider = new ControlProvider();
 
         if (!inputs.subscriptionId) {
-                // show available subscriptions and get the chosen one
-                let subscriptionList = extensionVariables.azureAccountExtensionApi.filters.map((subscriptionObject) => {
-                    return <QuickPickItemWithData>{
-                        label: `${<string>subscriptionObject.subscription.displayName}`,
-                        data: subscriptionObject,
-                        description: `${<string>subscriptionObject.subscription.subscriptionId}`
-                    };
-                });
-                let selectedSubscription: QuickPickItemWithData = await controlProvider.showQuickPick(
-                    constants.SelectSubscription,
-                    subscriptionList,
-                    { placeHolder: Messages.selectSubscription },
-                    TelemetryKeys.SubscriptionListCount);
-                inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
-                inputs.azureSession = getSubscriptionSession(inputs.subscriptionId);
+            // show available subscriptions and get the chosen one
+            let subscriptionList = extensionVariables.azureAccountExtensionApi.filters.map((subscriptionObject) => {
+                return <QuickPickItemWithData>{
+                    label: `${<string>subscriptionObject.subscription.displayName}`,
+                    data: subscriptionObject,
+                    description: `${<string>subscriptionObject.subscription.subscriptionId}`
+                };
+            });
+            let selectedSubscription: QuickPickItemWithData = await controlProvider.showQuickPick(
+                constants.SelectSubscription,
+                subscriptionList,
+                { placeHolder: Messages.selectSubscription },
+                TelemetryKeys.SubscriptionListCount);
+            inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
+            inputs.azureSession = getSubscriptionSession(inputs.subscriptionId);
         }
 
         if (!!parameter) {
@@ -141,6 +155,18 @@ export class TemplateParameterHelper {
                     break;
                 default:
                     throw new Error(utils.format(Messages.parameterWithDataSourceOfTypeNotSupported, parameter.dataSourceId));
+            }
+
+            // update the parameter with more details azure generic resource by directly getting the resource via ID
+            // orchestration should not fail if this fails
+            try {
+                let detailedResource = await this.azureResourceClient.getResource(inputs.pipelineConfiguration.params[parameter.name].id);
+                if (detailedResource) {
+                    inputs.pipelineConfiguration.params[parameter.name] = detailedResource;
+                }
+            }
+            catch (err) {
+                // continue;
             }
         }
     }

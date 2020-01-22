@@ -7,13 +7,14 @@ const uuid = require('uuid/v4');
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
 import { AzureResourceClient } from '../clients/azure/azureResourceClient';
+import { GithubClient } from '../clients/github/githubClient';
 import { ControlProvider } from '../helper/controlProvider';
 import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
-import { AzureConnectionType, AzureSession, ServiceConnectionType, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, AzureSession, TargetResourceType, WizardInputs } from "../model/models";
+import { TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
-import { GithubClient } from '../clients/github/githubClient';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
@@ -47,7 +48,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
     }
 
     public async createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
-        if (inputs.targetResource.resource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
+        if (inputs.targetResource && inputs.targetResource.resource && inputs.targetResource.resource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
             let azureConnectionSecret: string = await vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
@@ -80,7 +81,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                             title: Messages.settingUpGithubSecrets
                         },
                         async () => {
-                            await this.createSecretOrServiceConnection(inputs.targetResource.serviceConnectionId, ServiceConnectionType.AzureRM, azureConnectionSecret, inputs);
+                            await this.processAsset(inputs.targetResource.serviceConnectionId, TemplateAssetType.GitHubARM, azureConnectionSecret, inputs);
                         });
                 } catch (error) {
                     telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -90,27 +91,29 @@ export class GitHubWorkflowConfigurer implements Configurer {
         }
     }
 
-    public async createSecretOrServiceConnection(
+    public async processAsset(
         name: string,
-        type: ServiceConnectionType,
+        type: TemplateAssetType,
         data: any,
-        inputs: WizardInputs): Promise<string> {
-        let secret = null;
+        inputs: WizardInputs,
+        metadata?: { [key: string]: any }): Promise<string> {
+        let secret: string = null;
         switch (type) {
-            case ServiceConnectionType.AzureRM:
+            case TemplateAssetType.GitHubARM:
+            case TemplateAssetType.AKSKubeConfigServiceConnection:
+            case TemplateAssetType.GitHubRegistryUsername:
+            case TemplateAssetType.GitHubRegistryPassword:
                 secret = data;
                 break;
-            case ServiceConnectionType.ACR:
-            case ServiceConnectionType.AKS:
             default:
-                throw new Error(utils.format(Messages.assetOfTypeNotSupported, type));
+                throw new Error(utils.format(Messages.assetOfTypeNotSupportedForGitHub, type));
         }
 
         if (secret) {
             await this.githubClient.createOrUpdateGithubSecret(name, secret);
         }
 
-        return null;
+        return name;
     }
 
     public async getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {

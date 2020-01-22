@@ -17,7 +17,8 @@ import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
 import { Build } from '../model/azureDevOps';
-import { AzureConnectionType, AzureSession, RepositoryProvider, ServiceConnectionType, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, AzureSession, RepositoryProvider, TargetResourceType, WizardInputs } from "../model/models";
+import { TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
@@ -42,7 +43,7 @@ export class AzurePipelineConfigurer implements Configurer {
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
         try {
-            if(inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+            if (inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
                 inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
                     placeHolder: Messages.enterGitHubPat,
                     prompt: Messages.githubPatTokenHelpMessage,
@@ -194,20 +195,26 @@ export class AzurePipelineConfigurer implements Configurer {
         }
     }
 
-    public async createSecretOrServiceConnection(
+    public async processAsset(
         name: string,
-        type: ServiceConnectionType,
+        type: TemplateAssetType,
         data: any,
-        inputs: WizardInputs): Promise<string> {
+        inputs: WizardInputs,
+        metadata?: { [key: string]: any }): Promise<string> {
         let serviceConnectionHelper = new ServiceConnectionHelper(inputs.organizationName, inputs.project.name, this.azureDevOpsClient);
 
         switch (type) {
-            case ServiceConnectionType.AzureRM:
+            case TemplateAssetType.AzureARMServiceConnection:
                 return await serviceConnectionHelper.createAzureSPNServiceConnection(name, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId, data.scope, data.aadApp);
-            case ServiceConnectionType.ACR:
-            case ServiceConnectionType.AKS:
+            case TemplateAssetType.AzureARMPublishProfileServiceConnection:
+                return await serviceConnectionHelper.createAzurePublishProfileServiceConnection(name, inputs.azureSession.tenantId, metadata.targetResource.resource.id, data);
+            case TemplateAssetType.AKSKubeConfigServiceConnection:
+                let serverUrl = metadata && (<GenericResource>metadata.targetResource) && (<GenericResource>metadata.targetResource).properties ? (<GenericResource>metadata.targetResource).properties.fqdn : '';
+                serverUrl = !!serverUrl ? 'https://' + serverUrl : serverUrl;
+                return await serviceConnectionHelper.createKubeConfigServiceConnection(name, data, serverUrl);
+            case TemplateAssetType.ACRServiceConnection:
             default:
-                throw new Error(utils.format(Messages.assetOfTypeNotSupported, type));
+                throw new Error(utils.format(Messages.assetOfTypeNotSupportedForAzurePipelines, type));
         }
     }
 
@@ -351,7 +358,7 @@ export class AzurePipelineConfigurer implements Configurer {
             });
     }
 
-    private static getTargetResource(inputs: WizardInputs) : GenericResource {
+    private static getTargetResource(inputs: WizardInputs): GenericResource {
         let targetResource = !!inputs.targetResource.resource ? inputs.targetResource.resource : null;
         if (!targetResource) {
             let targetParam = TemplateParameterHelper.getParameterForTargetResourceType(inputs.pipelineConfiguration.template.parameters, inputs.pipelineConfiguration.template.targetType);

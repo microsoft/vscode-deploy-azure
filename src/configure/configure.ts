@@ -7,7 +7,7 @@ import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
-import { AssetCreationHandler } from './helper/AssetHandler';
+import { AssetHandler } from './helper/AssetHandler';
 import { getSubscriptionSession } from './helper/azureSessionHelper';
 import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
@@ -94,7 +94,7 @@ class Orchestrator {
             await pipelineConfigurer.createPreRequisites(this.inputs, this.azureResourceClient);
 
             telemetryHelper.setCurrentStep('CreateAssets');
-            await new AssetCreationHandler().createAssets(this.inputs.pipelineConfiguration.template.assets, this.inputs, pipelineConfigurer);
+            await (new AssetHandler().createAssets(this.inputs.pipelineConfiguration.template.assets, this.inputs, pipelineConfigurer));
 
             telemetryHelper.setCurrentStep('CheckInPipeline');
             await this.checkInPipelineFileToRepository(pipelineConfigurer);
@@ -120,9 +120,11 @@ class Orchestrator {
 
             if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
                 // try to see if node corresponds to any parameter of selected pipeline.
-                let resourceParam = TemplateParameterHelper.getMatchingAzureResourceTemplateParameter(resourceNode, this.inputs.pipelineConfiguration.template.parameters);
-                if (resourceParam) {
-                    this.inputs.pipelineConfiguration.params.push(resourceParam);
+                if (resourceNode) {
+                    let resourceParam = TemplateParameterHelper.getMatchingAzureResourceTemplateParameter(resourceNode, this.inputs.pipelineConfiguration.template.parameters);
+                    if (resourceParam) {
+                        this.inputs.pipelineConfiguration.params.push(resourceParam);
+                    }
                 }
 
                 try {
@@ -373,7 +375,7 @@ class Orchestrator {
         this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
 
         // show available resources and get the chosen one
-        switch(this.inputs.pipelineConfiguration.template.targetType) {
+        switch (this.inputs.pipelineConfiguration.template.targetType) {
             case TargetResourceType.None:
                 break;
             case TargetResourceType.WebApp:

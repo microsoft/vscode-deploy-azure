@@ -51,6 +51,19 @@ export class ServiceConnectionHelper {
         return endpointId;
     }
 
+    public async createKubeConfigServiceConnection(name: string, kubeConfig: string, apiServerAddress: string): Promise<string> {
+        let response = await this.serviceConnectionClient.createKubernetesServiceConnectionWithKubeConfig(name, kubeConfig, apiServerAddress);
+        let endpointId = response.id;
+        await this.waitForEndpointToBeReady(endpointId);
+        await this.serviceConnectionClient.authorizeEndpointForAllPipelines(endpointId)
+            .then((response) => {
+                if (response.allPipelines.authorized !== true) {
+                    throw new Error(Messages.couldNotAuthorizeEndpoint);
+                }
+            });
+        return endpointId;
+    }
+
     private async waitForEndpointToBeReady(endpointId: string): Promise<void> {
         let retryCount = 1;
         while (1) {

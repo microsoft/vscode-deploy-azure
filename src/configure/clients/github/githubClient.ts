@@ -1,7 +1,7 @@
-import { RestClient } from "../restClient";
 import { UrlBasedRequestPrepareOptions } from 'ms-rest';
 import { GitHubProvider } from "../../helper/gitHubHelper";
 import { SodiumLibHelper } from "../../helper/sodium/SodiumLibHelper";
+import { RestClient } from "../restClient";
 
 const UserAgent = "deploy-to-azure-vscode";
 
@@ -19,11 +19,11 @@ export class GithubClient {
         let secretKeyObject: GitHubSecretKey = await this._getGitHubSecretKey();
         let sodiumObj = new SodiumLibHelper(secretKeyObject.key);
         let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);
-        let encryptedBytesAsString: string = sodiumObj.convertUint8ArrayToString(encryptedBytes);
-        let encryptedEncodedText = sodiumObj.encodeToBase64(encryptedBytesAsString);
+        let encryptedBytesAsString: string = SodiumLibHelper.convertUint8ArrayToString(encryptedBytes);
+        let encryptedEncodedText = SodiumLibHelper.encodeToBase64(encryptedBytesAsString);
         await this._setGithubSecret(secretName, secretKeyObject.key_id, encryptedEncodedText);
     }
-    
+
     private async _getGitHubSecretKey() : Promise<GitHubSecretKey> {
         let request = <UrlBasedRequestPrepareOptions> {
                 url: GitHubProvider.getFormattedGitHubApiUrlBase(this.url) + "/actions/secrets/public-key",
@@ -32,9 +32,9 @@ export class GithubClient {
                     "User-Agent": UserAgent,
                     "Content-Type": "application/json",
                     "Authorization": "Bearer " + this.patToken,
-                    "Accept": "*/*" 
+                    "Accept": "*/*"
                 },
-                serializationMapper: null, 
+                serializationMapper: null,
                 deserializationMapper: null
             }
         let restClient = new RestClient();

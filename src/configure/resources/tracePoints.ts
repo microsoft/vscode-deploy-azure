@@ -15,4 +15,5 @@ export class TracePoints {
     public static PostDeploymentActionFailed = 'PostDeploymentActionFailed';
     public static CorruptMetadataForVstsRmScmType = 'CorruptMetadataForVstsRmScmType';
     public static GithubWorkflowSettingSecretsFailure = 'GithubWorkflowSettingSecretsFailure';
+    public static AssetCreationFailure = 'AssetCreationFailure';
 }

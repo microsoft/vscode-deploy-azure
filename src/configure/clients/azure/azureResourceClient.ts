@@ -52,7 +52,7 @@ export class AzureResourceClient {
         return resourceListResult;
     }
 
-    public async getResource(resourceId: string, apiVersion: string): Promise<GenericResource> {
+    public async getResource(resourceId: string, apiVersion: string = '2019-10-01'): Promise<GenericResource> {
         let resource: GenericResource = await this.azureRmClient.resources.getById(resourceId, apiVersion);
         return resource;
     }
