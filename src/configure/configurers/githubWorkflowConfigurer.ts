@@ -52,7 +52,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
             let azureConnectionSecret: string = await vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
-                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.targetResource.subscriptionId)
+                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
                 },
                 async () => {
                     try {
@@ -60,7 +60,8 @@ export class GitHubWorkflowConfigurer implements Configurer {
                             case AzureConnectionType.None:
                                 return null;
                             case AzureConnectionType.AzureRMPublishProfile:
-                                return await (azureResourceClient as AppServiceClient).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
+                                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
+                                return await appServiceClient.getWebAppPublishProfileXml(inputs.targetResource.resource.id);
                             case AzureConnectionType.AzureRMServicePrincipal:
                             default:
                                 return await this.getAzureSPNSecret(inputs);
@@ -171,7 +172,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
     public async executePostPipelineCreationSteps(inputs: WizardInputs): Promise<void> {
         if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
             try {
-                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId);
+                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
 
                 // Update web app sourceControls as GitHubAction
                 let sourceControlProperties = {
@@ -230,7 +231,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
         return JSON.stringify({
             "clientId": `${aadApp.appId}`,
             "clientSecret": `${aadApp.secret}`,
-            "subscriptionId": `${inputs.targetResource.subscriptionId}`,
+            "subscriptionId": `${inputs.subscriptionId}`,
             "tenantId": `${inputs.azureSession.tenantId}`,
         });
     }

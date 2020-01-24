@@ -172,7 +172,7 @@ export class AzurePipelineConfigurer implements Configurer {
             inputs.targetResource.serviceConnectionId = await vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
-                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.targetResource.subscriptionId)
+                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
                 },
                 async () => {
                     try {
@@ -205,14 +205,21 @@ export class AzurePipelineConfigurer implements Configurer {
 
         switch (type) {
             case TemplateAssetType.AzureARMServiceConnection:
-                return await serviceConnectionHelper.createAzureSPNServiceConnection(name, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId, data.scope, data.aadApp);
+                return await serviceConnectionHelper.createAzureSPNServiceConnection(name, inputs.azureSession.tenantId, inputs.subscriptionId, data.scope, data.aadApp);
             case TemplateAssetType.AzureARMPublishProfileServiceConnection:
-                return await serviceConnectionHelper.createAzurePublishProfileServiceConnection(name, inputs.azureSession.tenantId, metadata.targetResource.resource.id, data);
+                let targetWebApp = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.WebApp);
+                return await serviceConnectionHelper.createAzurePublishProfileServiceConnection(name, inputs.azureSession.tenantId, targetWebApp.id, data);
             case TemplateAssetType.AKSKubeConfigServiceConnection:
-                let serverUrl = metadata && (<GenericResource>metadata.targetResource) && (<GenericResource>metadata.targetResource).properties ? (<GenericResource>metadata.targetResource).properties.fqdn : '';
-                serverUrl = !!serverUrl ? 'https://' + serverUrl : serverUrl;
+                let targetAks = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.AKS);
+                let serverUrl = targetAks.properties ? targetAks.properties.fqdn : '';
+                serverUrl = !!serverUrl  && !serverUrl.startsWith('https://') ? 'https://' + serverUrl : serverUrl;
                 return await serviceConnectionHelper.createKubeConfigServiceConnection(name, data, serverUrl);
             case TemplateAssetType.ACRServiceConnection:
+                let targetAcr = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.ACR);
+                let registryUrl: string = targetAcr.properties ? targetAcr.properties.loginServer : '';
+                registryUrl = !!registryUrl && !registryUrl.startsWith('https://') ? 'https://' + registryUrl : registryUrl;
+                let password = !!data.passwords && data.passwords.length > 0 ? data.passwords[0].value : null;
+                return await serviceConnectionHelper.createContainerRegistryServiceConnection(name, registryUrl, data.username, password);
             default:
                 throw new Error(utils.format(Messages.assetOfTypeNotSupportedForAzurePipelines, type));
         }
@@ -374,7 +381,8 @@ export class AzurePipelineConfigurer implements Configurer {
     }
 
     private async createAzurePublishProfileEndpoint(serviceConnectionHelper: ServiceConnectionHelper, azureResourceClient: AzureResourceClient, serviceConnectionName: string, inputs: WizardInputs): Promise<string> {
-        let publishProfile = await (azureResourceClient as AppServiceClient).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
+        let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
+        let publishProfile = await appServiceClient.getWebAppPublishProfileXml(inputs.targetResource.resource.id);
         return await serviceConnectionHelper.createAzurePublishProfileServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.targetResource.resource.id, publishProfile);
     }
 
@@ -382,6 +390,6 @@ export class AzurePipelineConfigurer implements Configurer {
         let scope = inputs.targetResource.resource.id;
         let aadAppName = GraphHelper.generateAadApplicationName(inputs.organizationName, inputs.project.name);
         let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
-        return await serviceConnectionHelper.createAzureSPNServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId, scope, aadApp);
+        return await serviceConnectionHelper.createAzureSPNServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.subscriptionId, scope, aadApp);
     }
 }

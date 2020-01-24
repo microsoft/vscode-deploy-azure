@@ -1,5 +1,6 @@
 import * as utils from 'util';
 import * as vscode from 'vscode';
+import { AppServiceClient } from '../clients/azure/appServiceClient';
 import { RestClient } from '../clients/restClient';
 import { UniqueResourceNameSuffix } from '../configure';
 import { Configurer } from "../configurers/configurerBase";
@@ -16,9 +17,11 @@ const Layer = "AssetCreationHandler";
 
 export class AssetHandler {
     public async createAssets(assets: TemplateAsset[], inputs: WizardInputs, configurer: Configurer): Promise<void> {
-        if (!!assets && assets.length > 0) {
-            for (let asset of assets) {
-                await this.createAssetInternal(asset, inputs, configurer);
+        if (inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
+            if (!!assets && assets.length > 0) {
+                for (let asset of assets) {
+                    await this.createAssetInternal(asset, inputs, configurer);
+                }
             }
         }
     }
@@ -41,6 +44,27 @@ export class AssetHandler {
                                 // Use param name for first azure resource param
                                 let serviceConnectionName = `${inputs.pipelineConfiguration.params[inputs.pipelineConfiguration.template.parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${UniqueResourceNameSuffix}`;
                                 return await configurer.processAsset(serviceConnectionName, asset.type, { "aadApp": aadApp, "scope": scope }, inputs);
+                            }
+                            catch (error) {
+                                telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
+                                throw error;
+                            }
+                        });
+                    break;
+                case TemplateAssetType.AzureARMPublishProfileServiceConnection:
+                    let targetWebAppResource = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.WebApp);
+                    inputs.pipelineConfiguration.assets[asset.id] = await vscode.window.withProgress(
+                        {
+                            location: vscode.ProgressLocation.Notification,
+                            title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
+                        },
+                        async () => {
+                            try {
+                                // find LCS of all azure resource params
+                                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
+                                let publishProfile = await appServiceClient.getWebAppPublishProfileXml(inputs.targetResource.resource.id);
+                                let serviceConnectionName = `${targetWebAppResource.name}-${UniqueResourceNameSuffix}`;
+                                return await configurer.processAsset(serviceConnectionName, asset.type, publishProfile, inputs, { targetResource: targetWebAppResource });
                             }
                             catch (error) {
                                 telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -71,7 +95,7 @@ export class AssetHandler {
                                         serializationMapper: null
                                     });
 
-                                let assetName = AssetHandler.sanitizeAssetName(targetAksResource.name + UniqueResourceNameSuffix);
+                                let assetName = AssetHandler.getSanitizedUniqueAssetName(targetAksResource.name);
                                 return await configurer.processAsset(assetName, asset.type, SodiumLibHelper.decodeFromBase64(JSON.stringify(base64EncodedKubeConfig.kubeconfigs[0].value)), inputs, { targetResource: targetAksResource });
                             }
                             catch (error) {
@@ -102,7 +126,7 @@ export class AssetHandler {
                                         serializationMapper: null
                                     });
 
-                                let assetName = AssetHandler.sanitizeAssetName(targetAcrResource.name + UniqueResourceNameSuffix);
+                                let assetName = AssetHandler.getSanitizedUniqueAssetName(targetAcrResource.name);
                                 await configurer.processAsset(assetName, asset.type, registryCreds, inputs, { targetResource: targetAcrResource });
                             }
                             catch (error) {
@@ -111,7 +135,6 @@ export class AssetHandler {
                             }
                         });
                     break;
-                case TemplateAssetType.AzureARMPublishProfileServiceConnection:
                 case TemplateAssetType.GitHubRegistryUsername:
                 case TemplateAssetType.GitHubRegistryPassword:
                     targetAcrResource = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.ACR);
@@ -135,7 +158,7 @@ export class AssetHandler {
                                         serializationMapper: null
                                     });
 
-                                let assetName = AssetHandler.sanitizeAssetName(targetAcrResource.name + "_" + UniqueResourceNameSuffix);
+                                let assetName = AssetHandler.getSanitizedUniqueAssetName(targetAcrResource.name);
                                 if (asset.type === TemplateAssetType.GitHubRegistryUsername) {
                                     await configurer.processAsset(assetName + "_username", asset.type, registryCreds.username, inputs, { targetResource: targetAcrResource });
                                 }
@@ -162,14 +185,19 @@ export class AssetHandler {
         }
     }
 
-    public static sanitizeAssetName(secretName: string): string {
-        let sanitizedSecretName = '';
-        for (let i = 0; i < secretName.length; i++) {
-            if ((secretName[i] > '0' || secretName[i] < '9') || (secretName[i] > 'A' || secretName[i] < 'Z') && (secretName[i] > 'a' || secretName[i] < 'z')) {
-                sanitizedSecretName = sanitizedSecretName + secretName[i];
+    /**
+     * @param assetName : the asset name you need sanitized
+     * @returns sanitized asset name and makes it unique by appending 5 digit random alpha numeric string to asset name.
+     */
+    public static getSanitizedUniqueAssetName(assetName: string): string {
+        assetName = assetName + "_" + UniqueResourceNameSuffix;
+        let sanitizedAssetName = '';
+        for (let i = 0; i < assetName.length; i++) {
+            if ((assetName[i] > '0' || assetName[i] < '9') || (assetName[i] > 'A' || assetName[i] < 'Z') && (assetName[i] > 'a' || assetName[i] < 'z')) {
+                sanitizedAssetName = sanitizedAssetName + assetName[i];
             }
         }
 
-        return sanitizedSecretName;
+        return sanitizedAssetName;
     }
 }

@@ -16,7 +16,7 @@ import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { PipelineTemplate } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -94,7 +94,7 @@ class Orchestrator {
             await pipelineConfigurer.createPreRequisites(this.inputs, this.azureResourceClient);
 
             telemetryHelper.setCurrentStep('CreateAssets');
-            await (new AssetHandler().createAssets(this.inputs.pipelineConfiguration.template.assets, this.inputs, pipelineConfigurer));
+            await new AssetHandler().createAssets(this.inputs.pipelineConfiguration.template.assets, this.inputs, pipelineConfigurer);
 
             telemetryHelper.setCurrentStep('CheckInPipeline');
             await this.checkInPipelineFileToRepository(pipelineConfigurer);
@@ -123,7 +123,7 @@ class Orchestrator {
                 if (resourceNode) {
                     let resourceParam = TemplateParameterHelper.getMatchingAzureResourceTemplateParameter(resourceNode, this.inputs.pipelineConfiguration.template.parameters);
                     if (resourceParam) {
-                        this.inputs.pipelineConfiguration.params.push(resourceParam);
+                        this.inputs.pipelineConfiguration.params[resourceParam.name] = resourceNode;
                     }
                 }
 
@@ -324,9 +324,9 @@ class Orchestrator {
     private async extractAzureResourceFromNode(node: AzureTreeItem | any): Promise<GenericResource> {
         let resource: GenericResource = null;
         if (!!node.fullId) {
-            this.inputs.targetResource.subscriptionId = node.root.subscriptionId;
-            this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
-            let appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
+            this.inputs.subscriptionId = node.root.subscriptionId;
+            this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+            let appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
 
             try {
                 let azureResource: GenericResource = await appServiceClient.getAppServiceResource(node.fullId);
@@ -371,8 +371,8 @@ class Orchestrator {
             };
         });
         let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
-        this.inputs.targetResource.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
-        this.inputs.azureSession = getSubscriptionSession(this.inputs.targetResource.subscriptionId);
+        this.inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
+        this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
 
         // show available resources and get the chosen one
         switch (this.inputs.pipelineConfiguration.template.targetType) {
@@ -380,7 +380,7 @@ class Orchestrator {
                 break;
             case TargetResourceType.WebApp:
             default:
-                let appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.targetResource.subscriptionId);
+                let appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
                 let selectedPipelineTemplate = this.inputs.pipelineConfiguration.template;
                 let matchingPipelineTemplates = templateHelper.getPipelineTemplatesForAllWebAppKind(this.inputs.sourceRepository.repositoryProvider,
                     selectedPipelineTemplate.label, selectedPipelineTemplate.language, selectedPipelineTemplate.targetKind);
@@ -434,8 +434,9 @@ class Orchestrator {
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
         try {
             this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
+            let mustacheContext = new MustacheContext(this.inputs);
             await this.localGitRepoHelper.addContentToFile(
-                await templateHelper.renderContent(this.inputs.pipelineConfiguration.template.path, this.inputs),
+                await templateHelper.renderContent(this.inputs.pipelineConfiguration.template.path, mustacheContext),
                 this.inputs.pipelineConfiguration.filePath);
             await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineConfiguration.filePath));
         }

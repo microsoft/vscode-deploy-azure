@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
-import { AzureConnectionType, extensionVariables, RepositoryProvider, TargetKind, TargetResourceType, WizardInputs } from '../model/models';
+import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryProvider, TargetKind, TargetResourceType } from '../model/models';
 import { PipelineTemplate, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { PipelineTemplateLabels } from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -103,7 +103,7 @@ export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: Reposit
     });
 }
 
-export async function renderContent(templateFilePath: string, context: WizardInputs): Promise<string> {
+export async function renderContent(templateFilePath: string, context: MustacheContext): Promise<string> {
     let deferred: Q.Deferred<string> = Q.defer();
     fs.readFile(templateFilePath, { encoding: "utf8" }, async (error, data) => {
         if (error) {
@@ -227,7 +227,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -275,7 +275,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -298,7 +298,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -321,7 +321,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -344,7 +344,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -367,7 +367,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -542,7 +542,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -578,7 +578,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.DOCKER,
             targetType: TargetResourceType.AKS,
             targetKind: null,
-            enabled: true,
+            enabled: false,
             parameters: [
                 {
                     "name": "cluster",
@@ -602,8 +602,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "id": "aCREndpoint",
                     "type": TemplateAssetType.ACRServiceConnection
                 }
-            ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            ]
         }
     ]
 };
@@ -616,7 +615,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             language: SupportedLanguage.DOCKER,
             targetType: TargetResourceType.AKS,
             targetKind: null,
-            enabled: true,
+            enabled: false,
             parameters: [
                 {
                     "name": "cluster",
@@ -637,11 +636,14 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateAssetType.AKSKubeConfigServiceConnection
                 },
                 {
-                    "id": "aCREndpoint",
-                    "type": TemplateAssetType.ACRServiceConnection
+                    "id": "registryUsername",
+                    "type": TemplateAssetType.GitHubRegistryUsername
+                },
+                {
+                    "id": "registryPassword",
+                    "type": TemplateAssetType.GitHubRegistryPassword
                 }
-            ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            ]
         }
     ],
     'node': [
@@ -663,7 +665,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -709,7 +711,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -755,7 +757,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -801,7 +803,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -847,7 +849,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -895,7 +897,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMServiceConnection
+                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile

@@ -1,7 +1,7 @@
 import { GenericResource } from "azure-arm-resource/lib/resource/models";
 import * as utils from 'util';
 import { AppServiceClient } from "../clients/azure/appServiceClient";
-import { AzureResourceClient } from "../clients/azure/azureResourceClient";
+import { ApiVersions, AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { openBrowseExperience } from '../configure';
 import * as templateHelper from '../helper/templateHelper';
 import { extensionVariables, PipelineConfiguration, QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs } from "../model/models";
@@ -13,13 +13,11 @@ import { getSubscriptionSession } from "./azureSessionHelper";
 import { ControlProvider } from "./controlProvider";
 
 export class TemplateParameterHelper {
-    private azureResourceClient: AzureResourceClient;
-
     public static getParameterForTargetResourceType(parameters: TemplateParameter[], targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): TemplateParameter {
         return parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(targetResourceKind ? targetResourceType + ':' + targetResourceKind : targetResourceType)); });
     }
 
-    public static getParameterValueForTargetResourceType(pipelineConfiguration: PipelineConfiguration, targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): any {
+    public static getParameterValueForTargetResourceType(pipelineConfiguration: PipelineConfiguration, targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): GenericResource {
         let resourceTemplateParameter = pipelineConfiguration.template.parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(targetResourceKind ? targetResourceType + ':' + targetResourceKind : targetResourceType)); });
         if (!resourceTemplateParameter) {
             throw utils.format(Messages.azureResourceTemplateParameterCouldNotBeFound, targetResourceType);
@@ -33,16 +31,16 @@ export class TemplateParameterHelper {
         return parameterValue;
     }
 
-    public static getMatchingAzureResourceTemplateParameter(resource: GenericResource, templateParameters: TemplateParameter[]): { key: string, value: any } {
+    public static getMatchingAzureResourceTemplateParameter(resource: GenericResource, templateParameters: TemplateParameter[]): TemplateParameter {
         if (!resource || !templateParameters) {
             return null;
         }
 
-        let resourceTargetType = TemplateParameterHelper.convertToAzureResourceType(<TargetResourceType>resource.type, <TargetKind>resource.kind);
+        let resourceTargetType = TemplateParameterHelper.convertAzureResourceToDataSourceId(<TargetResourceType>resource.type, <TargetKind>resource.kind);
         let matchedParam = templateParameters.find((templateParameter) => { return templateParameter.dataSourceId.toLowerCase() === resourceTargetType.toLowerCase(); });
 
         if (matchedParam) {
-            return { key: matchedParam.name, value: resource };
+            return matchedParam;
         }
 
         return null;
@@ -64,11 +62,11 @@ export class TemplateParameterHelper {
                         }
                     }
                 }
-            };
+            }
         }
     }
 
-    private static convertToAzureResourceType(targetType: TargetResourceType, targetKind: TargetKind): string {
+    private static convertAzureResourceToDataSourceId(targetType: TargetResourceType, targetKind: TargetKind): string {
         return targetKind ? "resource:" + targetType + ":" + targetKind : "resource:" + targetType;
     }
 
@@ -110,21 +108,38 @@ export class TemplateParameterHelper {
             inputs.azureSession = getSubscriptionSession(inputs.subscriptionId);
         }
 
+        let azureResourceClient = new AzureResourceClient(inputs.azureSession.credentials, inputs.subscriptionId);
         if (!!parameter) {
             switch (parameter.dataSourceId) {
                 case PreDefinedDataSourceIds.ACR:
                 case PreDefinedDataSourceIds.AKS:
-                    if (!this.azureResourceClient) {
-                        this.azureResourceClient = new AzureResourceClient(inputs.azureSession.credentials, inputs.subscriptionId);
-                    }
+                    let azureResourceListPromise = azureResourceClient.getResourceList(parameter.dataSourceId, true)
+                        .then((list) => list.map(x => { return { label: x.name, data: x }; }));
+                    while (1) {
+                        let selectedResource = await controlProvider.showQuickPick(
+                            parameter.name,
+                            azureResourceListPromise,
+                            { placeHolder: parameter.displayName },
+                            utils.format(TelemetryKeys.pickListCount, parameter.dataSourceId));
 
-                    let selectedContainerResource = await controlProvider.showQuickPick(
-                        parameter.name,
-                        this.azureResourceClient.getResourceList(parameter.dataSourceId, true)
-                            .then((list) => list.map(x => { return { label: x.name, data: x }; })),
-                        { placeHolder: parameter.displayName },
-                        utils.format(TelemetryKeys.pickListCount, parameter.dataSourceId));
-                    inputs.pipelineConfiguration.params[parameter.name] = selectedContainerResource.data;
+                        let detailedResource = await this.tryGetSelectedResourceById(
+                            selectedResource.data.id,
+                            azureResourceClient,
+                            ApiVersions.get(parameter.dataSourceId === PreDefinedDataSourceIds.ACR ? TargetResourceType.ACR : TargetResourceType.AKS));
+                        if (!detailedResource) {
+                            throw utils.format(Messages.unableToGetSelectedResource, selectedResource.label);
+                        }
+
+                        if (parameter.dataSourceId === PreDefinedDataSourceIds.ACR) {
+                            if (detailedResource.properties.adminUserEnabled === false) {
+                                controlProvider.showErrorMessage(constants.AcrDoesNotHaveAdminAccessEnabled, Messages.onlyAdminEnabledRegistriesAreAllowed);
+                                continue;
+                            }
+                        }
+
+                        inputs.pipelineConfiguration.params[parameter.name] = detailedResource;
+                        break;
+                    }
                     break;
                 case PreDefinedDataSourceIds.WindowsApp:
                 case PreDefinedDataSourceIds.LinuxApp:
@@ -156,19 +171,29 @@ export class TemplateParameterHelper {
                 default:
                     throw new Error(utils.format(Messages.parameterWithDataSourceOfTypeNotSupported, parameter.dataSourceId));
             }
+        }
+    }
 
-            // update the parameter with more details azure generic resource by directly getting the resource via ID
-            // orchestration should not fail if this fails
-            try {
-                let detailedResource = await this.azureResourceClient.getResource(inputs.pipelineConfiguration.params[parameter.name].id);
-                if (detailedResource) {
-                    inputs.pipelineConfiguration.params[parameter.name] = detailedResource;
-                }
+    private async tryGetSelectedResourceById(selectedResourceId: string, azureResourceClient: AzureResourceClient, getResourceApiVersion?: string): Promise<GenericResource> {
+        try {
+            let detailedResource = null;
+            if (getResourceApiVersion) {
+                detailedResource = await azureResourceClient.getResource(selectedResourceId, getResourceApiVersion);
             }
-            catch (err) {
-                // continue;
+            else {
+                detailedResource = await azureResourceClient.getResource(selectedResourceId);
+            }
+
+            if (detailedResource) {
+                return detailedResource;
             }
         }
+        catch (err) {
+            console.log(err);
+            // continue;
+        }
+
+        return null;
     }
 
     private async getStringParameter(parameter: TemplateParameter, inputs: WizardInputs): Promise<void> {

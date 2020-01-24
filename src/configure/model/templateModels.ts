@@ -9,7 +9,8 @@ export interface PipelineTemplate {
     enabled: boolean;
     parameters?: TemplateParameter[];
     assets?: TemplateAsset[];
-    azureConnectionType: AzureConnectionType;
+    // this should be removed as we will have endpoints/secrets as assets and not a first class property
+    azureConnectionType?: AzureConnectionType;
 }
 
 export interface TemplateParameter {

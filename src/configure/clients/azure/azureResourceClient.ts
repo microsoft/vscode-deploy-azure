@@ -57,3 +57,7 @@ export class AzureResourceClient {
         return resource;
     }
 }
+
+export let ApiVersions: Map<TargetResourceType, string> = new Map<TargetResourceType, string>();
+ApiVersions.set(TargetResourceType.ACR, '2019-05-01');
+ApiVersions.set(TargetResourceType.AKS, '2019-10-01');
