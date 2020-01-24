@@ -1,0 +1,134 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    env:
+      REGISTRY_URL: {{#toLower}} {{{inputs.containerRegistry}}} {{/toLower}}.azurecr.io
+      SERVICE_NAME: {{#sanitizeString}} {{{ inputs.AKSresource.name 50}}} {{/sanitizeString}}
+      NAMESPACE: $SERVICE_NAME{{#tinyguid}}{{/tinyguid}}
+      IMAGE_NAME:  $SERVICE_NAME{{#tinyguid}}{{/tinyguid}}
+      APP_NAME: $(SERVICE_NAME)_{{#tinyguid}}{{/tinyguid}} 
+      SECRET_NAME: {{#sanitizeString}} {{{ inputs.AKSresource.name 12}}} {{/sanitizeString}}dockerauth
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    
+    - uses: azure/docker-login@v1
+      with:
+        login-server: $REGISTRY_URL
+        username: ${{ assets.REGISTRY_USERNAME }}
+        password: ${{ assets.REGISTRY_PASSWORD }}
+    
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/{{ workingDirectory }}" -f  "{{ workingDirectory}}/Dockerfile" -t  $REGISTRY_URL/$IMAGE_NAME:{{=<% %>=}}${{ <% github.sha %> }}<%={{ }}=%>
+        docker push $REGISTRY_URL/$IMAGE_NAME:{{=<% %>=}}${{ <% github.sha %> }}<%={{ }}=%>
+    
+    - uses: azure/k8s-set-context@v1
+      with:
+         kubeconfig: ${{ secrets.KUBE_CONFIG }}
+      id: login
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep $NAMESPACE | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace $NAMESPACE`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: $NAMESPACE
+        container-registry-url: $REGISTRY_URL
+        container-registry-username: ${{ assets.REGISTRY_USERNAME }}
+        container-registry-password: ${{ assets.REGISTRY_PASSWORD }}
+        secret-name: $SECRET_NAME
+       
+    - name: Generate Kubernetes Manifest file
+      id: manifest-creation
+      run: |
+        echo  "apiVersion : apps/v1beta1
+              kind: Deployment
+              metadata:
+                name: "$APP_NAME"
+              spec:
+                replicas: 2
+                template:
+                  metadata:
+                    labels:
+                      app: "$APP_NAME"
+              spec:
+                containers:
+                  - name: "$APP_NAME"
+                    image: "$REGISTRY_URL/$IMAGE_NAME"
+                    ports:
+                    - containerPort: {{{ inputs.containerPort }}}
+                  
+              {{#if}} {{{inputs.AKSresource.properties.addonProfiles.httpapplicationrouting.enabled}}}    
+
+                apiVersion: v1
+                kind: Service
+                metadata:
+                    name: "$APP_NAME"
+                    labels:
+                        app: "$APP_NAME"
+                spec:
+                    type: ClusterIP
+                    ports:
+                    - port: {{{ inputs.containerPort }}}
+                      targetPort: {{{ inputs.containerPort }}}
+                      protocol: TCP
+                      name: http
+                    selector:
+                        app: "$APP_NAME"
+
+                apiVersion: extensions/v1beta1
+                kind: Ingress
+                metadata:
+                    name: "$APP_NAME"
+                    labels:
+                        app: "$APP_NAME"
+                    annotations:
+                        kubernetes.io/ingress.class: addon-http-application-routing
+                spec:
+                    rules:
+                        - host: $NAMESPACE-$APP_NAME.{{{inputs.AKSresource.properties.fqdn}}}
+                          http:
+                            paths:
+                            - path: /
+                              backend:
+                                serviceName: "$APP_NAME"
+                                servicePort: {{{ inputs.containerPort }}}"
+                  
+              {{#else}}
+
+                apiVersion: v1
+                kind: Service
+                metadata:
+                    name: "$APP_NAME"
+                    labels:
+                        app: "$APP_NAME"
+                spec:
+                    type: LoadBalancer
+                    ports:
+                    - port: {{{ inputs.containerPort }}}
+                      targetPort: http
+                      protocol: TCP
+                      name: http
+                    selector:
+                        app: "$APP_NAME"
+                        
+                {{/if}}"  > manifest_{{{IMAGE_NAME}}}.yml
+
+
+    - uses: azure/k8s-deploy@v1
+      with:
+        namespace: $NAMESPACE
+        manifests: |
+          {{{ GITHUB_WORKSPACE/manifest_{{{IMAGE_NAME}}}.yml }}}
+        images: |
+          $REGISTRY_URL/$IMAGE_NAME:{{=<% %>=}}${{ <% github.sha %> }}<%={{ }}=%>
+        imagepullsecrets: |
+          $SECRET_NAME
