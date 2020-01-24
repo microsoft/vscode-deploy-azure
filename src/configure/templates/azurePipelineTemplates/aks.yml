@@ -8,26 +8,26 @@ trigger:
 
 variables:
   # Azure Resource Manager connection created during pipeline creation
-  azureSubscription: '{{{ targetResource.serviceConnectionId }}}'
+  azureSubscription: '{{{ assets.serviceConnectionId }}}'
 
   # Kubernetes Service name
-  serviceName: '{{{ targetResource.resource.name }}}'
+  serviceName: '{{ #sanitizeString }} {{{ inputs.AKSresource.name }}} {{ /sanitizeString }}'
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
 
-  containerRegistry : {FROM INPUTS}.azurecr.io                                                    //USER INPUT
-  kubernetesServiceConnection : {FROM inputs}                                                     //API CALL - ASSETS
-  namespace :  {FROM inputs}                                                                      //THIS CAN BE USERS - NAME - FROM CONFIG FILE
-  appName :  {FROM inputs}                                                                        //USER INPUT
-  dockerAuthSecretName : {}                                                                       //SOME CONSTANT STANDARD STRING
-  imageName : '$(containerRegistry).azurecr.io/$(containerRegistry) ....$(Build.BuildId). : '     //NAME GENERATION USING MOUSTACHE HELPER
+  containerRegistry: '{{{ inputs.containerRegistry }}}.azurecr.io'                                                   
+  kubernetesServiceConnection: '{{{ assets.kubernetesServiceConnection }}}'                                                   
+  namespace: ' $(serviceName) {{#tinyguid}}{{/tinyguid}}'                                                                      
+  appName: '$(serviceName)_{{#tinyguid}}{{/tinyguid}}'                                                                         
+  dockerAuthSecretName: '$(serviceName)dockerauth'                                                                                     
+  imageName : "$(serviceName){{#tinyguid }}{{ /tinyguid }}"           
  
   # Working Directory
-  workingDirectory: '{{{ pipelineParameters.workingDirectory }}}'
+  workingDirectory: '{{{ workingDirectory }}}'
 
   # Build Projects
-  dockerFile: "$(workingDirectory)/**/Dockerfile"                                         
+  dockerFile: "$(workingDirectory)/Dockerfile"                                         
 
 
 stages:
@@ -111,27 +111,74 @@ stages:
                             image:  $(imageName) 
                             ports:
                               - name: http
-                                containerPort: 80
+                                containerPort: {{{ inputs.containerPort }}}
                                 protocol: TCP
                   
                   ---
                   
+                  {{#if}} {{{inputs.AKSresource.properties.addonProfiles.httpapplicationrouting.enabled}}}      
+
                   # $(appName)/service.yaml
                   apiVersion: v1
                   kind: Service
                   metadata:
-                    name: $(appName)
-                    labels:
-                      app: $(appName)
+                      name: $(appName)
+                      labels:
+                          app: $(appName)
                   spec:
-                    type: LoadBalancer
-                    ports:
-                      - port: 80
-                        targetPort: http
-                        protocol: TCP
-                        name: http
-                    selector:
-                      app: $(appName)' | 
+                      type: ClusterIP
+                      ports:
+                          - port: {{{ inputs.containerPort }}}
+                            targetPort: {{{ inputs.containerPort }}}
+                            protocol: TCP
+                            name: http
+                      selector:
+                          app: $(appName)
+                  
+                  ---
+                  
+                  # $(appName)/ingress.yaml
+                  apiVersion: extensions/v1beta1
+                  kind: Ingress
+                  metadata:
+                      name: $(appName)
+                      labels:
+                          app: $(appName)
+                      annotations:
+                          kubernetes.io/ingress.class: addon-http-application-routing
+                  spec:
+                      rules:
+                          - host: $(namespace)-$(appName).{{{inputs.AKSresource.properties.fqdn}}}
+                            http:
+                              paths:
+                              - path: /
+                                backend:
+                                  serviceName: $(appName)
+                                  servicePort: {{{ inputs.containerPort }}}'
+
+                  {{#else}}
+
+                     # $(appName)/service.yaml
+                    apiVersion: v1
+                    kind: Service
+                    metadata:
+                      name: $(appName)
+                      labels:
+                        app: $(appName)
+                    spec:
+                      type: LoadBalancer
+                      ports:
+                        - port: {{{ inputs.containerPort }}}
+                          targetPort: http
+                          protocol: TCP
+                          name: http
+                      selector:
+                        app: $(appName)'
+
+                  {{/if}}    
+                      
+                      | 
+
                   Set-Content $(Agent.TempDirectory)/manifest.yaml                                     
                   displayName: 'Generate Kubernetes Manifest file'
 
