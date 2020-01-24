@@ -18,10 +18,10 @@ variables:
 
   containerRegistry: '{{{ inputs.containerRegistry }}}.azurecr.io'                                                   
   kubernetesServiceConnection: '{{{ assets.kubernetesServiceConnection }}}'                                                   
-  namespace: ' $(serviceName) {{#tinyguid}}{{/tinyguid}}'                                                                      
+  namespace: '$(serviceName) {{#tinyguid}}{{/tinyguid}}'                                                                      
   appName: '$(serviceName)_{{#tinyguid}}{{/tinyguid}}'                                                                         
   dockerAuthSecretName: '$(serviceName)dockerauth'                                                                                     
-  imageName : "$(serviceName){{#tinyguid }}{{ /tinyguid }}"           
+  imageName: "$(serviceName){{#tinyguid }}{{ /tinyguid }}"           
  
   # Working Directory
   workingDirectory: '{{{ workingDirectory }}}'

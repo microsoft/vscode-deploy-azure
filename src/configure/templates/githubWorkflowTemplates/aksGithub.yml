@@ -5,7 +5,7 @@ jobs:
       REGISTRY_URL: {{#toLower}} {{{inputs.containerRegistry}}} {{/toLower}}.azurecr.io
       SERVICE_NAME: {{#sanitizeString}} {{{ inputs.AKSresource.name 50}}} {{/sanitizeString}}
       NAMESPACE: $SERVICE_NAME{{#tinyguid}}{{/tinyguid}}
-      IMAGE_NAME:  $SERVICE_NAME{{#tinyguid}}{{/tinyguid}}
+      IMAGE_NAME: $SERVICE_NAME{{#tinyguid}}{{/tinyguid}}
       APP_NAME: $(SERVICE_NAME)_{{#tinyguid}}{{/tinyguid}} 
       SECRET_NAME: {{#sanitizeString}} {{{ inputs.AKSresource.name 12}}} {{/sanitizeString}}dockerauth
 
