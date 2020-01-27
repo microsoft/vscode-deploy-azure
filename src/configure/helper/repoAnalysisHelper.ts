@@ -1,4 +1,4 @@
-import { PortalExtensionClient } from "../clients/PortalExtensionClient";
+import { PortalExtensionClient } from "../clients/portalExtensionClient";
 import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, NodeBuildSettings, PythonBuildSettings, RepositoryAnalysisParameters, LanguageSettings } from "../model/models";
 import { RepoAnalysis } from "../resources/constants";
 
