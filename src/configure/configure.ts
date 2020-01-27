@@ -409,14 +409,14 @@ class Orchestrator {
 
     private async getSelectedPipeline(): Promise<void> {
         var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
-        this.inputs.repoAnalysisParameters = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
+        var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
 
         let appropriatePipelines: PipelineTemplate[] = await vscode.window.withProgress(
             { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
             () => templateHelper.analyzeRepoAndListAppropriatePipeline(
                 this.inputs.sourceRepository.localPath,
                 this.inputs.sourceRepository.repositoryProvider,
-                this.inputs.repoAnalysisParameters,
+                repoAnalysisResult,
                 this.inputs.pipelineConfiguration.params[constants.TargetResource])
         );
 
@@ -430,6 +430,15 @@ class Orchestrator {
             this.inputs.pipelineConfiguration.template = appropriatePipelines.find((pipeline) => {
                 return pipeline.label === selectedOption.label;
             });
+
+            if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github
+                && !!repoAnalysisResult && !!repoAnalysisResult.languageSettingsList) {
+                repoAnalysisResult.languageSettingsList.forEach((languageSettings) => {
+                    if(languageSettings.language === this.inputs.pipelineConfiguration.template.language){
+                        this.inputs.repoAnalysisParameters = languageSettings;
+                    }
+                })
+            }
         }
         else {
             this.inputs.pipelineConfiguration.template = appropriatePipelines[0];

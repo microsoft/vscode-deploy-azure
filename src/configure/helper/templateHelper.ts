@@ -12,9 +12,14 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     let analysisResult: AnalysisResult = new AnalysisResult();
 
     //If Repo analysis fails then we'll go with the basic existing analysis
-    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters) {
-        analysisResult.isFunctionApp = repoAnalysisParameters.deployTargets.indexOf(RepoAnalysis.AzureFunctions) > -1 ? true : false;
-        analysisResult.languages = repoAnalysisParameters.languages;
+    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.languageSettingsList) {
+        repoAnalysisParameters.languageSettingsList.forEach((settings) => {
+            analysisResult.languages.push(settings.language);
+            analysisResult.isFunctionApp = analysisResult.isFunctionApp || settings.deployTargetName.indexOf(RepoAnalysis.AzureFunctions) > -1 ? true : false;
+        });
+        if(analysisResult.languages.length == 0){
+            analysisResult.languages.push(SupportedLanguage.NONE);
+        }
     }
     else {
         analysisResult = await analyzeRepo(repoPath);
@@ -198,7 +203,7 @@ function removeDuplicates(templateList: PipelineTemplate[]): PipelineTemplate[] 
 }
 
 export class AnalysisResult {
-    public languages: SupportedLanguage[];
+    public languages: SupportedLanguage[] = [];
     public isFunctionApp: boolean = false;
     // public isContainerized: boolean;
 }

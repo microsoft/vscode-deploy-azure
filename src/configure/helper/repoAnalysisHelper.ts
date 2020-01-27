@@ -1,5 +1,5 @@
 import { PortalExtensionClient } from "../clients/PortalExtensionClient";
-import { AzureSession, SupportedLanguage, RepositoryAnalysisParameters, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider } from "../model/models";
+import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, NodeBuildSettings, PythonBuildSettings, RepositoryAnalysisParameters, LanguageSettings } from "../model/models";
 import { RepoAnalysis } from "../resources/constants";
 
 export class RepoAnalysisHelper {
@@ -34,44 +34,41 @@ export class RepoAnalysisHelper {
 
         let parameters: RepositoryAnalysisParameters = new RepositoryAnalysisParameters();
         repositoryAnalysisResponse.languageSettingsList.forEach((analysis) => {
+            if(Object.keys(SupportedLanguage).indexOf(analysis.language.toUpperCase()) > -1){
+                let settings: LanguageSettings = new LanguageSettings();
+                settings.buildTargetName = analysis.buildTargetName;
+                settings.deployTargetName = analysis.deployTargetName;
 
-            if (!!analysis.language && parameters.languages.indexOf(analysis.language) === -1) {
-                parameters.languages.push(analysis.language);
-            }
+                let buildSettings;
+                if (analysis.language === SupportedLanguage.NODE) {
+                    settings.language = SupportedLanguage.NODE;
 
-            if (!!analysis.buildTargetName && parameters.buildTargets.indexOf(analysis.buildTargetName) === -1) {
-                parameters.buildTargets.push(analysis.buildTargetName);
-            }
-
-            if (!!analysis.deployTargetName && parameters.deployTargets.indexOf(analysis.deployTargetName) === -1) {
-                parameters.deployTargets.push(analysis.deployTargetName);
-            }
-
-            if (analysis.language === SupportedLanguage.NODE) {
-                if (analysis.buildTargetName === RepoAnalysis.Gulp) {
-                    if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysis.Gulp]) {
-                        parameters.gulpFilePath = analysis.buildSettings[RepoAnalysis.GulpFilePath];
+                    buildSettings = new NodeBuildSettings();
+                    if (analysis.buildTargetName === RepoAnalysis.Gulp) {
+                        if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysis.GulpFilePath]) {
+                            buildSettings.gulpFilePath = analysis.buildSettings[RepoAnalysis.GulpFilePath];
+                        }
+                    }
+                    if (analysis.buildTargetName === RepoAnalysis.Grunt) {
+                        if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysis.GruntFilePath]) {
+                            buildSettings.gruntFilePath = analysis.buildSettings[RepoAnalysis.GruntFilePath];
+                        }
                     }
                 }
-                if (analysis.buildTargetName === RepoAnalysis.Grunt) {
-                    if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysis.GruntFilePath]) {
-                        parameters.gruntFilePath = analysis.buildSettings[RepoAnalysis.GruntFilePath];
+                else if (analysis.language === SupportedLanguage.PYTHON) {
+                    settings.language = SupportedLanguage.PYTHON;
+
+                    buildSettings = new PythonBuildSettings();
+                    if (analysis.buildTargetName === RepoAnalysis.Django) {
+                        if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysis.RequirementsFilePath]) {
+                            buildSettings.requirementsFilePath = analysis.buildSettings[RepoAnalysis.RequirementsFilePath];
+                        }
                     }
                 }
-            }
-            else if (analysis.language === SupportedLanguage.PYTHON) {
-                if (analysis.buildTargetName === RepoAnalysis.Django) {
-                    if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysis.RequirementsFilePath]) {
-                        parameters.requirementsFilePath = analysis.buildSettings[RepoAnalysis.RequirementsFilePath];
-                    }
-                }
+                settings.buildSettings = buildSettings;
+                parameters.languageSettingsList.push(settings);
             }
         });
-
-        if(parameters.languages.length == 0){
-            parameters.languages.push(SupportedLanguage.NONE);
-        }
-
         return parameters;;
     }
 }

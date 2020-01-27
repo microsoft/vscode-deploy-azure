@@ -29,21 +29,41 @@ export class WizardInputs {
     isNewOrganization: boolean;
     sourceRepository: GitRepositoryParameters;
     targetResource: AzureParameters = new AzureParameters();
-    repoAnalysisParameters: RepositoryAnalysisParameters = new RepositoryAnalysisParameters();
+    repoAnalysisParameters: LanguageSettings = new LanguageSettings();
     pipelineConfiguration: PipelineConfiguration = new PipelineConfiguration();
     azureSession: AzureSession;
     subscriptionId: string;
     githubPATToken?: string;
 }
 
-//VS Code side model to extract information in any format from RepoAnalysis service result.
 export class RepositoryAnalysisParameters {
-    languages: SupportedLanguage[] = [];
-    buildTargets: string[] = [];
-    deployTargets: string[] = [];
+    languageSettingsList: LanguageSettings[] = [];
+}
+
+//VS Code side model to extract information in any format from RepoAnalysis service result.
+export class LanguageSettings {
+    language: SupportedLanguage;
+    buildTargetName: string;
+    deployTargetName: string;
+    buildSettings: BuildSettings = {};
+    deploySettings: DeploySettings = {};
+}
+
+export class BuildSettings {}
+
+export class DeploySettings {}
+
+export class NodeBuildSettings extends BuildSettings {
     gulpFilePath?: string = "gulpfile.js";
     gruntFilePath?: string = "gruntfile.js";
+}
+
+export class PythonBuildSettings extends BuildSettings {
     requirementsFilePath?: string = "requirements.txt";
+}
+
+export class AzureFunctionDeploySettings extends DeploySettings {
+    hostFilePath?: string = "host.json";
 }
 
 export class AzureParameters {
