@@ -17,7 +17,7 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, LanguageSettings, SupportedLanguage, NodeBuildSettings, PythonBuildSettings, RepositoryAnalysisParameters, BuildSettings } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, LanguageSettings, SupportedLanguage, NodeBuildSettings, PythonBuildSettings, BuildSettings } from './model/models';
 import { PipelineTemplate } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';

@@ -12,7 +12,6 @@ export class PortalExtensionClient {
 
     public async getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<any> {
 
-        //TODO Need to do few things once Repo Analysis service gets live 1. Update url and 2. Add and Test the Authorization header
         return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
             url: `https://peprodscussu2.portalext.visualstudio.com/_apis/RepositoryAnalysis`,
             headers: {
