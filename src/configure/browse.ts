@@ -82,9 +82,10 @@ async function browseAzurePipeline(resourceId: string, appServiceClient: AppServ
 
 async function browseGitHubWorkflow(resourceId: string, appServiceClient: AppServiceClient): Promise<void> {
     let webAppSourceControl = await appServiceClient.getSourceControl(resourceId);
+    let webAppMetaData = await appServiceClient.getAppServiceMetadata(resourceId);
 
     if (!!webAppSourceControl && !!webAppSourceControl.properties && webAppSourceControl.properties.isGitHubAction) {
-        let url = `${webAppSourceControl.properties.repoUrl}/actions?query=branch=${webAppSourceControl.properties.branch}`;
+        let url = `${webAppSourceControl.properties.repoUrl}/actions?query=${encodeURI("workflow:\"" + (!!webAppMetaData.properties.configName ? webAppMetaData.properties.configName : webAppMetaData.properties.configPath)  + "\"")}`;
         await vscode.env.openExternal(vscode.Uri.parse(url));
         telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
     }
