@@ -17,7 +17,7 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, LanguageSettings, SupportedLanguage, NodeBuildSettings, PythonBuildSettings } from './model/models';
 import { PipelineTemplate } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -431,13 +431,28 @@ class Orchestrator {
                 return pipeline.label === selectedOption.label;
             });
 
-            if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github
-                && !!repoAnalysisResult && !!repoAnalysisResult.languageSettingsList) {
+            if (extensionVariables.enableRepoAnalysis
+                && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github
+                && !!repoAnalysisResult
+                && !!repoAnalysisResult.languageSettingsList) {
                 repoAnalysisResult.languageSettingsList.forEach((languageSettings) => {
                     if(languageSettings.language === this.inputs.pipelineConfiguration.template.language){
                         this.inputs.repoAnalysisParameters = languageSettings;
                     }
                 })
+            }
+            else {
+                this.inputs.repoAnalysisParameters = new LanguageSettings();
+                switch (this.inputs.pipelineConfiguration.template.language) {
+                    case SupportedLanguage.NODE:
+                        this.inputs.repoAnalysisParameters.buildSettings = new NodeBuildSettings();
+                        break;
+                    case SupportedLanguage.PYTHON:
+                        this.inputs.repoAnalysisParameters.buildSettings = new PythonBuildSettings();
+                        break;
+                    default:
+                        throw new Error(Messages.cannotIdentifyRespositoryDetails);
+                }
             }
         }
         else {

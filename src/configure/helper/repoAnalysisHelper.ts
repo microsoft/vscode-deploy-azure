@@ -1,5 +1,5 @@
 import { PortalExtensionClient } from "../clients/portalExtensionClient";
-import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, NodeBuildSettings, PythonBuildSettings, RepositoryAnalysisParameters, LanguageSettings } from "../model/models";
+import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, NodeBuildSettings, PythonBuildSettings, RepositoryAnalysisParameters, LanguageSettings, extensionVariables } from "../model/models";
 import { RepoAnalysis } from "../resources/constants";
 
 export class RepoAnalysisHelper {
@@ -12,7 +12,7 @@ export class RepoAnalysisHelper {
     public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters): Promise<RepositoryAnalysisParameters> {
 
         //As of now this solution has support only for github
-        if (sourceRepositoryDetails.repositoryProvider != RepositoryProvider.Github) {
+        if (!extensionVariables.enableRepoAnalysis && sourceRepositoryDetails.repositoryProvider != RepositoryProvider.Github) {
             return null;
         }
 
