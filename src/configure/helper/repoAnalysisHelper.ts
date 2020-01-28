@@ -1,6 +1,6 @@
 import { PortalExtensionClient } from "../clients/portalExtensionClient";
-import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, NodeBuildSettings, PythonBuildSettings, RepositoryAnalysisParameters, LanguageSettings, extensionVariables } from "../model/models";
-import { RepoAnalysis } from "../resources/constants";
+import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, NodeBuildSettings, PythonBuildSettings, RepositoryAnalysisParameters, LanguageSettings, extensionVariables, RepositoryDetails, BuildSettings } from "../model/models";
+import { RepoAnalysisConstants } from "../resources/constants";
 
 export class RepoAnalysisHelper {
     private portalExtensionClient: PortalExtensionClient;
@@ -16,13 +16,17 @@ export class RepoAnalysisHelper {
             return null;
         }
 
-        var repositoryAnalysisResponse;
+        let repositoryAnalysisResponse;
         try{
-            let request: RepositoryAnalysisRequest = new RepositoryAnalysisRequest();
-            request.id = sourceRepositoryDetails.repositoryId;
-            request.defaultbranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysis.Master;
+            let repositoryDetails: RepositoryDetails = new RepositoryDetails();
+            repositoryDetails.id = sourceRepositoryDetails.repositoryId;
+            repositoryDetails.defaultbranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysisConstants.Master;
+            repositoryDetails.type = RepositoryProvider.Github;
 
-            repositoryAnalysisResponse = await this.portalExtensionClient.getRepositoryAnalysis(request);
+            let repositoryAnalysisRequestBody = new RepositoryAnalysisRequest;
+            repositoryAnalysisRequestBody.Repository = repositoryDetails;
+
+            repositoryAnalysisResponse = await this.portalExtensionClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             if (!!repositoryAnalysisResponse && repositoryAnalysisResponse.length === 0) {
                 return null;
             }
@@ -34,38 +38,38 @@ export class RepoAnalysisHelper {
 
         let parameters: RepositoryAnalysisParameters = new RepositoryAnalysisParameters();
         repositoryAnalysisResponse.languageSettingsList.forEach((analysis) => {
+
+            //Process only for VSCode Supported Languages
             if(Object.keys(SupportedLanguage).indexOf(analysis.language.toUpperCase()) > -1){
                 let settings: LanguageSettings = new LanguageSettings();
+                settings.language = analysis.language;
                 settings.buildTargetName = analysis.buildTargetName;
                 settings.deployTargetName = analysis.deployTargetName;
+                settings.buildSettings = new BuildSettings();
 
-                let buildSettings;
                 if (analysis.language === SupportedLanguage.NODE) {
-                    settings.language = SupportedLanguage.NODE;
-
-                    buildSettings = new NodeBuildSettings();
-                    if (analysis.buildTargetName === RepoAnalysis.Gulp) {
-                        if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysis.GulpFilePath]) {
-                            buildSettings.gulpFilePath = analysis.buildSettings[RepoAnalysis.GulpFilePath];
+                    let nodeBuildSettings = new NodeBuildSettings();
+                    if (analysis.buildTargetName === RepoAnalysisConstants.Gulp) {
+                        if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysisConstants.GulpFilePath]) {
+                            nodeBuildSettings.gulpFilePath = analysis.buildSettings[RepoAnalysisConstants.GulpFilePath];
                         }
                     }
-                    if (analysis.buildTargetName === RepoAnalysis.Grunt) {
-                        if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysis.GruntFilePath]) {
-                            buildSettings.gruntFilePath = analysis.buildSettings[RepoAnalysis.GruntFilePath];
+                    if (analysis.buildTargetName === RepoAnalysisConstants.Grunt) {
+                        if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysisConstants.GruntFilePath]) {
+                            nodeBuildSettings.gruntFilePath = analysis.buildSettings[RepoAnalysisConstants.GruntFilePath];
                         }
                     }
+                    settings.buildSettings = nodeBuildSettings;
                 }
                 else if (analysis.language === SupportedLanguage.PYTHON) {
-                    settings.language = SupportedLanguage.PYTHON;
-
-                    buildSettings = new PythonBuildSettings();
-                    if (analysis.buildTargetName === RepoAnalysis.Django) {
-                        if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysis.RequirementsFilePath]) {
-                            buildSettings.requirementsFilePath = analysis.buildSettings[RepoAnalysis.RequirementsFilePath];
+                    let pythonBuildSettings = new PythonBuildSettings();
+                    if (analysis.buildTargetName === RepoAnalysisConstants.Django) {
+                        if (!!analysis.buildSettings && !!analysis.buildSettings[RepoAnalysisConstants.RequirementsFilePath]) {
+                            pythonBuildSettings.requirementsFilePath = analysis.buildSettings[RepoAnalysisConstants.RequirementsFilePath];
                         }
                     }
+                    settings.buildSettings = pythonBuildSettings;
                 }
-                settings.buildSettings = buildSettings;
                 parameters.languageSettingsList.push(settings);
             }
         });

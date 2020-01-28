@@ -165,7 +165,7 @@ export const Browse = 'Browse';
 export const TargetResource = 'targetResource'
 
 //RepoAnalysis constants
-export const RepoAnalysis = {
+export const RepoAnalysisConstants = {
     //Common
     Master: 'master',
 

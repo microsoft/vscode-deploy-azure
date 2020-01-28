@@ -156,7 +156,12 @@ export class ParsedAzureResourceId {
     }
 }
 
+//For multiple application we need to add Working directory here in future
 export class RepositoryAnalysisRequest {
+    Repository: RepositoryDetails
+}
+
+export class RepositoryDetails {
     id: string;
     type: string;
     defaultbranch: string;

@@ -5,24 +5,34 @@ import * as path from 'path';
 import * as Q from 'q';
 import { AzureConnectionType, extensionVariables, RepositoryProvider, TargetKind, TargetResourceType, WizardInputs, SupportedLanguage, RepositoryAnalysisParameters } from '../model/models';
 import { PipelineTemplate, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
-import { PipelineTemplateLabels, RepoAnalysis } from '../resources/constants';
+import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
 
 export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters,  targetResource?: GenericResource): Promise<PipelineTemplate[]> {
-    let analysisResult: AnalysisResult = new AnalysisResult();
+    let localRepoAnalysisResult = await analyzeRepo(repoPath);
+    let analysisResult = localRepoAnalysisResult;
 
     //If Repo analysis fails then we'll go with the basic existing analysis
     if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.languageSettingsList) {
+        analysisResult = new AnalysisResult();
         repoAnalysisParameters.languageSettingsList.forEach((settings) => {
             analysisResult.languages.push(settings.language);
-            analysisResult.isFunctionApp = analysisResult.isFunctionApp || settings.deployTargetName.indexOf(RepoAnalysis.AzureFunctions) > -1 ? true : false;
+
+            //Check if Azure:Functions is value of any deployTargetName property
+            analysisResult.isFunctionApp =
+                analysisResult.isFunctionApp || settings.deployTargetName == RepoAnalysisConstants.AzureFunctions ? true : false;
         });
+
+        //Languages not supported by RepoAnalysisService should be considered and taken from LocalRepoAnalysis
+        localRepoAnalysisResult.languages.forEach((language)=>{
+            if(analysisResult.languages.indexOf(language) == -1){
+                analysisResult.languages.push(language);
+            }
+        });
+
         if(analysisResult.languages.length == 0){
             analysisResult.languages.push(SupportedLanguage.NONE);
         }
-    }
-    else {
-        analysisResult = await analyzeRepo(repoPath);
     }
 
     let templateList: { [key: string]: PipelineTemplate[] } = {};

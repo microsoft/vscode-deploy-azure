@@ -10,19 +10,19 @@ export class PortalExtensionClient {
         this.restClient = new RestClient(credentials);
     }
 
-    public async getRepositoryAnalysis(request: RepositoryAnalysisRequest): Promise<any> {
+    public async getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<any> {
 
         //TODO Need to do few things once Repo Analysis service gets live 1. Update url and 2. Add and Test the Authorization header
         return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
-            url: `https://portalext.codedev.ms/_apis/RepositoryAnalysis?api-version=5.2-preview.1`,
-            method: "POST",
+            url: `https://peprodscussu2.portalext.visualstudio.com/_apis/RepositoryAnalysis`,
             headers: {
                 "Content-Type": "application/json"
             },
+            method: "POST",
             queryParameters: {
-                'api-version': '5.2-preview.1'
+                "api-version": "5.2-preview.1",
             },
-            body: request,
+            body: body,
             serializationMapper: null,
             deserializationMapper: null
         });
