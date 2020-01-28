@@ -17,7 +17,7 @@ variables:
   vmImageName: 'ubuntu-latest'
 
   # Working Directory
-  workingDirectory: '{{{ pipelineParameters.workingDirectory }}}'
+  workingDirectory: '{{{ pipelineConfiguration.workingDirectory }}}'
 
 stages:
 - stage: Build
