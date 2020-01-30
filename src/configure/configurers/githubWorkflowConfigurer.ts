@@ -1,9 +1,9 @@
 import * as fs from 'fs';
+import * as ymlconfig from 'js-yaml';
 import * as path from 'path';
 import * as Q from 'q';
 import * as utils from 'util';
 import * as vscode from 'vscode';
-import * as ymlconfig from 'js-yaml';
 const uuid = require('uuid/v4');
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
@@ -13,14 +13,13 @@ import { ControlProvider } from '../helper/controlProvider';
 import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
-import { AzureConnectionType, AzureSession, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, AzureSession, extensionVariables, TargetResourceType, WizardInputs } from "../model/models";
 import { TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
-import { extensionVariables } from "../model/models";
 
 const Layer = 'GitHubWorkflowConfigurer';
 
@@ -62,8 +61,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                             case AzureConnectionType.None:
                                 return null;
                             case AzureConnectionType.AzureRMPublishProfile:
-                                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
-                                return await appServiceClient.getWebAppPublishProfileXml(inputs.targetResource.resource.id);
+                                return await (azureResourceClient as AppServiceClient).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
                             case AzureConnectionType.AzureRMServicePrincipal:
                             default:
                                 return await this.getAzureSPNSecret(inputs);
@@ -84,7 +82,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                             title: Messages.settingUpGithubSecrets
                         },
                         async () => {
-                            await this.processAsset(inputs.targetResource.serviceConnectionId, TemplateAssetType.GitHubARM, azureConnectionSecret, inputs);
+                            await this.createAsset(inputs.targetResource.serviceConnectionId, TemplateAssetType.GitHubARM, azureConnectionSecret, inputs);
                         });
                 } catch (error) {
                     telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -94,16 +92,15 @@ export class GitHubWorkflowConfigurer implements Configurer {
         }
     }
 
-    public async processAsset(
+    public async createAsset(
         name: string,
         type: TemplateAssetType,
         data: any,
-        inputs: WizardInputs,
-        metadata?: { [key: string]: any }): Promise<string> {
+        inputs: WizardInputs): Promise<string> {
         let secret: string = null;
         switch (type) {
             case TemplateAssetType.GitHubARM:
-            case TemplateAssetType.AKSKubeConfigServiceConnection:
+            case TemplateAssetType.GitHubAKSKubeConfig:
             case TemplateAssetType.GitHubRegistryUsername:
             case TemplateAssetType.GitHubRegistryPassword:
                 secret = data;
@@ -171,22 +168,20 @@ export class GitHubWorkflowConfigurer implements Configurer {
         return this.queuedPipelineUrl;
     }
 
-    public async executePostPipelineCreationSteps(inputs: WizardInputs): Promise<void> {
+    public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
         if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
             try {
-                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
-
                 // Update web app sourceControls as GitHubAction
                 let sourceControlProperties = {
                     "isGitHubAction": true,
                     "repoUrl": `https://github.com/${inputs.sourceRepository.repositoryId}`,
                     "branch": inputs.sourceRepository.branch,
                 };
-                await appServiceClient.setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
+                await (azureResourceClient as AppServiceClient).setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
 
                 // Update web app metadata
                 let updateMetadataPromise = new Promise<void>(async (resolve) => {
-                    let metadata = await appServiceClient.getAppServiceMetadata(inputs.targetResource.resource.id);
+                    let metadata = await (azureResourceClient as AppServiceClient).getAppServiceMetadata(inputs.targetResource.resource.id);
                     metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
 
                     let repositoryPath = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getGitRootDirectory();
@@ -198,7 +193,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     }
                     metadata["properties"]["configPath"] = `${configPath}`;
 
-                    await appServiceClient.updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
+                    await (azureResourceClient as AppServiceClient).updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
                     resolve();
                 });
 
@@ -208,7 +203,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     message: Messages.deploymentLogMessage
                 });
 
-                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage);
+                let updateDeploymentLogPromise = (azureResourceClient as AppServiceClient).publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage);
 
                 Q.all([updateMetadataPromise, updateDeploymentLogPromise])
                     .then(() => {

@@ -18,7 +18,7 @@ import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
 import { BuildSettings, extensionVariables, GitBranchDetails, GitRepositoryParameters, LanguageSettings, MustacheContext, NodeBuildSettings, ParsedAzureResourceId, PythonBuildSettings, QuickPickItemWithData, RepositoryProvider, SourceOptions, SupportedLanguage, TargetKind, TargetResourceType, WizardInputs } from './model/models';
-import { PipelineTemplate } from './model/templateModels';
+import { PipelineTemplate, TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
@@ -95,7 +95,7 @@ class Orchestrator {
             await pipelineConfigurer.createPreRequisites(this.inputs, this.azureResourceClient);
 
             telemetryHelper.setCurrentStep('CreateAssets');
-            await new AssetHandler().createAssets(this.inputs.pipelineConfiguration.template.assets, this.inputs, pipelineConfigurer);
+            await new AssetHandler().createAssets(this.inputs.pipelineConfiguration.template.assets, this.inputs, (name: string, type: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, type, data, inputs); });
 
             telemetryHelper.setCurrentStep('CheckInPipeline');
             await this.checkInPipelineFileToRepository(pipelineConfigurer);
@@ -105,7 +105,7 @@ class Orchestrator {
 
             telemetryHelper.setCurrentStep('PostPipelineCreation');
             // This step should be determined by the resoruce target provider (azure app service, function app, aks) type and pipelineProvider(azure pipeline vs github)
-            pipelineConfigurer.executePostPipelineCreationSteps(this.inputs);
+            pipelineConfigurer.executePostPipelineCreationSteps(this.inputs, this.azureResourceClient);
 
             telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
             pipelineConfigurer.browseQueuedPipeline();
@@ -328,15 +328,15 @@ class Orchestrator {
         if (!!node.fullId) {
             this.inputs.subscriptionId = node.root.subscriptionId;
             this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
-            let appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
+            this.azureResourceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
 
             try {
-                let azureResource: GenericResource = await appServiceClient.getAppServiceResource(node.fullId);
+                let azureResource: GenericResource = await (this.azureResourceClient as AppServiceClient).getAppServiceResource(node.fullId);
                 telemetryHelper.setTelemetry(TelemetryKeys.resourceType, azureResource.type);
                 telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, azureResource.kind);
                 AzureResourceClient.validateTargetResourceType(azureResource);
                 if (azureResource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
-                    if (await appServiceClient.isScmTypeSet(node.fullId)) {
+                    if (await (this.azureResourceClient as AppServiceClient).isScmTypeSet(node.fullId)) {
                         this.continueOrchestration = false;
                         await openBrowseExperience(node.fullId);
                     }

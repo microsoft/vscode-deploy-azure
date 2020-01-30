@@ -1,10 +1,9 @@
 import * as utils from 'util';
 import * as vscode from 'vscode';
 import { AppServiceClient } from '../clients/azure/appServiceClient';
-import { RestClient } from '../clients/restClient';
+import { ArmRestClient } from '../clients/azure/armRestClient';
 import { UniqueResourceNameSuffix } from '../configure';
-import { Configurer } from "../configurers/configurerBase";
-import { ParsedAzureResourceId, TargetResourceType, WizardInputs } from "../model/models";
+import { TargetResourceType, WizardInputs } from "../model/models";
 import { TemplateAsset, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
@@ -16,17 +15,17 @@ import { TemplateParameterHelper } from './templateParameterHelper';
 const Layer = "AssetCreationHandler";
 
 export class AssetHandler {
-    public async createAssets(assets: TemplateAsset[], inputs: WizardInputs, configurer: Configurer): Promise<void> {
+    public async createAssets(assets: TemplateAsset[], inputs: WizardInputs, createAsset: (name: string, type: TemplateAssetType, data: any, inputs: WizardInputs) => Promise<string>): Promise<void> {
         if (inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
             if (!!assets && assets.length > 0) {
                 for (let asset of assets) {
-                    await this.createAssetInternal(asset, inputs, configurer);
+                    await this.createAssetInternal(asset, inputs, createAsset);
                 }
             }
         }
     }
 
-    private async createAssetInternal(asset: TemplateAsset, inputs: WizardInputs, configurer: Configurer): Promise<void> {
+    private async createAssetInternal(asset: TemplateAsset, inputs: WizardInputs, createAsset: (name: string, type: TemplateAssetType, data: any, inputs: WizardInputs) => Promise<string>): Promise<void> {
         if (!!asset) {
             switch (asset.type) {
                 case TemplateAssetType.AzureARMServiceConnection:
@@ -43,7 +42,7 @@ export class AssetHandler {
                                 let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
                                 // Use param name for first azure resource param
                                 let serviceConnectionName = `${inputs.pipelineConfiguration.params[inputs.pipelineConfiguration.template.parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${UniqueResourceNameSuffix}`;
-                                return await configurer.processAsset(serviceConnectionName, asset.type, { "aadApp": aadApp, "scope": scope }, inputs);
+                                return await createAsset(serviceConnectionName, asset.type, { "aadApp": aadApp, "scope": scope }, inputs);
                             }
                             catch (error) {
                                 telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -64,7 +63,7 @@ export class AssetHandler {
                                 let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
                                 let publishProfile = await appServiceClient.getWebAppPublishProfileXml(inputs.targetResource.resource.id);
                                 let serviceConnectionName = `${targetWebAppResource.name}-${UniqueResourceNameSuffix}`;
-                                return await configurer.processAsset(serviceConnectionName, asset.type, publishProfile, inputs, { targetResource: targetWebAppResource });
+                                return await createAsset(serviceConnectionName, asset.type, publishProfile, inputs);
                             }
                             catch (error) {
                                 telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
@@ -74,6 +73,7 @@ export class AssetHandler {
                     break;
                 // uses azure resource client to get the required details, and then calls into configurer.createServiceConnection(serviceConnectionType, properties: property bag with all the required information that are needed/available to create service connection.)
                 case TemplateAssetType.AKSKubeConfigServiceConnection:
+                case TemplateAssetType.GitHubAKSKubeConfig:
                     let targetAksResource = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.AKS);
                     inputs.pipelineConfiguration.assets[asset.id] = await vscode.window.withProgress(
                         {
@@ -82,21 +82,10 @@ export class AssetHandler {
                         },
                         async () => {
                             try {
-                                let restClient = new RestClient(inputs.azureSession.credentials);
-                                let parsedResourceId = new ParsedAzureResourceId(targetAksResource.id);
-                                let base64EncodedKubeConfig: { kubeconfigs: Array<{ name: string, value: string }> } = await restClient.sendRequest(
-                                    {
-                                        url: inputs.azureSession.environment.resourceManagerEndpointUrl + `/subscriptions/${parsedResourceId.subscriptionId}/resourceGroups/${parsedResourceId.resourceGroup}/providers/Microsoft.ContainerService/managedClusters/${parsedResourceId.resourceName}/listClusterAdminCredential?api-version=2020-01-01`,
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json"
-                                        },
-                                        deserializationMapper: null,
-                                        serializationMapper: null
-                                    });
-
+                                let armClient = new ArmRestClient(inputs.azureSession);
+                                let base64EncodedKubeConfig: { kubeconfigs: Array<{ name: string, value: string }> } = await armClient.getAksKubeConfig(targetAksResource.id);
                                 let assetName = AssetHandler.getSanitizedUniqueAssetName(targetAksResource.name);
-                                return await configurer.processAsset(assetName, asset.type, SodiumLibHelper.decodeFromBase64(JSON.stringify(base64EncodedKubeConfig.kubeconfigs[0].value)), inputs, { targetResource: targetAksResource });
+                                return await createAsset(assetName, asset.type, SodiumLibHelper.decodeFromBase64(JSON.stringify(base64EncodedKubeConfig.kubeconfigs[0].value)), inputs);
                             }
                             catch (error) {
                                 telemetryHelper.logError(Layer, TracePoints.AssetCreationFailure, error);
@@ -109,25 +98,14 @@ export class AssetHandler {
                     inputs.pipelineConfiguration.assets[asset.id] = await vscode.window.withProgress(
                         {
                             location: vscode.ProgressLocation.Notification,
-                            title: utils.format(Messages.creatingKubernetesConnection, targetAcrResource.name)
+                            title: utils.format(Messages.creatingContainerRegistryConnection, targetAcrResource.name)
                         },
                         async () => {
                             try {
-                                let restClient = new RestClient(inputs.azureSession.credentials);
-                                let parsedResourceId = new ParsedAzureResourceId(targetAcrResource.id);
-                                let registryCreds: { username: string, passwords: Array<{ name: string, value: string }> } = await restClient.sendRequest(
-                                    {
-                                        url: inputs.azureSession.environment.resourceManagerEndpointUrl + `/subscriptions/${parsedResourceId.subscriptionId}/resourceGroups/${parsedResourceId.resourceGroup}/providers/Microsoft.ContainerRegistry/registries/${parsedResourceId.resourceName}/listCredentials?api-version=2019-05-01`,
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json"
-                                        },
-                                        deserializationMapper: null,
-                                        serializationMapper: null
-                                    });
-
+                                let armClient = new ArmRestClient(inputs.azureSession);
+                                let registryCreds: { username: string, passwords: Array<{ name: string, value: string }> } = await armClient.getAcrCredentials(targetAcrResource.id);
                                 let assetName = AssetHandler.getSanitizedUniqueAssetName(targetAcrResource.name);
-                                await configurer.processAsset(assetName, asset.type, registryCreds, inputs, { targetResource: targetAcrResource });
+                                await createAsset(assetName, asset.type, registryCreds, inputs);
                             }
                             catch (error) {
                                 telemetryHelper.logError(Layer, TracePoints.AssetCreationFailure, error);
@@ -137,30 +115,19 @@ export class AssetHandler {
                     break;
                 case TemplateAssetType.GitHubRegistryUsername:
                 case TemplateAssetType.GitHubRegistryPassword:
-                    targetAcrResource = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.ACR);
+                    let acrResource = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.ACR);
                     inputs.pipelineConfiguration.assets[asset.id] = await vscode.window.withProgress(
                         {
                             location: vscode.ProgressLocation.Notification,
-                            title: utils.format(Messages.creatingKubernetesConnection, targetAcrResource.name)
+                            title: utils.format(Messages.creatingContainerRegistryConnection, acrResource.name)
                         },
                         async () => {
                             try {
-                                let restClient = new RestClient(inputs.azureSession.credentials);
-                                let parsedResourceId = new ParsedAzureResourceId(targetAcrResource.id);
-                                let registryCreds: { username: string, passwords: Array<{ name: string, value: string }> } = await restClient.sendRequest(
-                                    {
-                                        url: inputs.azureSession.environment.resourceManagerEndpointUrl + `/subscriptions/${parsedResourceId.subscriptionId}/resourceGroups/${parsedResourceId.resourceGroup}/providers/Microsoft.ContainerRegistry/registries/${parsedResourceId.resourceName}/listCredentials?api-version=2019-05-01`,
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json"
-                                        },
-                                        deserializationMapper: null,
-                                        serializationMapper: null
-                                    });
-
-                                let assetName = AssetHandler.getSanitizedUniqueAssetName(targetAcrResource.name);
+                                let armClient = new ArmRestClient(inputs.azureSession);
+                                let registryCreds: { username: string, passwords: Array<{ name: string, value: string }> } = await armClient.getAcrCredentials(acrResource.id);
+                                let assetName = AssetHandler.getSanitizedUniqueAssetName(acrResource.name);
                                 if (asset.type === TemplateAssetType.GitHubRegistryUsername) {
-                                    await configurer.processAsset(assetName + "_username", asset.type, registryCreds.username, inputs, { targetResource: targetAcrResource });
+                                    await createAsset(assetName + "_username", asset.type, registryCreds.username, inputs);
                                 }
                                 else {
                                     let password = !!registryCreds.passwords && registryCreds.passwords.length > 0 ? registryCreds.passwords[0].value : null;
@@ -168,7 +135,7 @@ export class AssetHandler {
                                         throw Messages.unableToFetchPasswordOfContainerRegistry;
                                     }
 
-                                    await configurer.processAsset(assetName + "_password", asset.type, password, inputs, { targetResource: targetAcrResource });
+                                    await createAsset(assetName + "_password", asset.type, password, inputs);
                                 }
                             }
                             catch (error) {
@@ -191,13 +158,7 @@ export class AssetHandler {
      */
     public static getSanitizedUniqueAssetName(assetName: string): string {
         assetName = assetName + "_" + UniqueResourceNameSuffix;
-        let sanitizedAssetName = '';
-        for (let i = 0; i < assetName.length; i++) {
-            if ((assetName[i] > '0' || assetName[i] < '9') || (assetName[i] > 'A' || assetName[i] < 'Z') && (assetName[i] > 'a' || assetName[i] < 'z')) {
-                sanitizedAssetName = sanitizedAssetName + assetName[i];
-            }
-        }
-
-        return sanitizedAssetName;
+        assetName = assetName.replace(/\W/, '');
+        return assetName;
     }
 }

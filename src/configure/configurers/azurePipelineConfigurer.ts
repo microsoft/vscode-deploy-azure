@@ -194,12 +194,11 @@ export class AzurePipelineConfigurer implements Configurer {
         }
     }
 
-    public async processAsset(
+    public async createAsset(
         name: string,
         type: TemplateAssetType,
         data: any,
-        inputs: WizardInputs,
-        metadata?: { [key: string]: any }): Promise<string> {
+        inputs: WizardInputs): Promise<string> {
         let serviceConnectionHelper = new ServiceConnectionHelper(inputs.organizationName, inputs.project.name, this.azureDevOpsClient);
 
         switch (type) {
@@ -304,21 +303,20 @@ export class AzurePipelineConfigurer implements Configurer {
         return this.queuedPipeline._links.web.href;
     }
 
-    public async executePostPipelineCreationSteps(inputs: WizardInputs): Promise<void> {
+    public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
         if (inputs.pipelineConfiguration.template.targetType === TargetResourceType.WebApp) {
             try {
-                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
                 // update SCM type
                 let targetResource: GenericResource = AzurePipelineConfigurer.getTargetResource(inputs);
 
-                let updateScmPromise = appServiceClient.updateScmType(targetResource.id);
+                let updateScmPromise = (azureResourceClient as AppServiceClient).updateScmType(targetResource.id);
 
                 let buildDefinitionUrl = this.azureDevOpsClient.getOldFormatBuildDefinitionUrl(inputs.organizationName, inputs.project.id, this.queuedPipeline.definition.id);
                 let buildUrl = this.azureDevOpsClient.getOldFormatBuildUrl(inputs.organizationName, inputs.project.id, this.queuedPipeline.id);
 
                 // update metadata of app service to store information about the pipeline deploying to web app.
                 let updateMetadataPromise = new Promise<void>(async (resolve) => {
-                    let metadata = await appServiceClient.getAppServiceMetadata(targetResource.id);
+                    let metadata = await (azureResourceClient as AppServiceClient).getAppServiceMetadata(targetResource.id);
                     metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
                     metadata["properties"]["VSTSRM_ProjectId"] = `${inputs.project.id}`;
                     metadata["properties"]["VSTSRM_AccountId"] = await this.azureDevOpsClient.getOrganizationIdFromName(inputs.organizationName);
@@ -327,7 +325,7 @@ export class AzurePipelineConfigurer implements Configurer {
                     metadata["properties"]["VSTSRM_ConfiguredCDEndPoint"] = '';
                     metadata["properties"]["VSTSRM_ReleaseDefinitionId"] = '';
 
-                    appServiceClient.updateAppServiceMetadata(targetResource.id, metadata);
+                    (azureResourceClient as AppServiceClient).updateAppServiceMetadata(targetResource.id, metadata);
                     resolve();
                 });
 
@@ -340,7 +338,7 @@ export class AzurePipelineConfigurer implements Configurer {
                     VSTSRM_BuildWebAccessUrl: `${buildUrl}`,
                 });
 
-                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(
+                let updateDeploymentLogPromise = (azureResourceClient as AppServiceClient).publishDeploymentToAppService(
                     targetResource.id, deploymentMessage);
 
                 Q.all([updateScmPromise, updateMetadataPromise, updateDeploymentLogPromise])
@@ -380,8 +378,7 @@ export class AzurePipelineConfigurer implements Configurer {
     }
 
     private async createAzurePublishProfileEndpoint(serviceConnectionHelper: ServiceConnectionHelper, azureResourceClient: AzureResourceClient, serviceConnectionName: string, inputs: WizardInputs): Promise<string> {
-        let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
-        let publishProfile = await appServiceClient.getWebAppPublishProfileXml(inputs.targetResource.resource.id);
+        let publishProfile = await (azureResourceClient as AppServiceClient).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
         return await serviceConnectionHelper.createAzurePublishProfileServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.targetResource.resource.id, publishProfile);
     }
 

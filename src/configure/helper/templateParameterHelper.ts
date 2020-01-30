@@ -14,11 +14,13 @@ import { ControlProvider } from "./controlProvider";
 
 export class TemplateParameterHelper {
     public static getParameterForTargetResourceType(parameters: TemplateParameter[], targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): TemplateParameter {
-        return parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(targetResourceKind ? targetResourceType + ':' + targetResourceKind : targetResourceType)); });
+        let dataSourceIdForResourceType = TemplateParameterHelper.convertAzureResourceToDataSourceId(targetResourceType, targetResourceKind);
+        return parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(dataSourceIdForResourceType)); });
     }
 
     public static getParameterValueForTargetResourceType(pipelineConfiguration: PipelineConfiguration, targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): GenericResource {
-        let resourceTemplateParameter = pipelineConfiguration.template.parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(targetResourceKind ? targetResourceType + ':' + targetResourceKind : targetResourceType)); });
+        let dataSourceIdForResourceType = TemplateParameterHelper.convertAzureResourceToDataSourceId(targetResourceType, targetResourceKind);
+        let resourceTemplateParameter = pipelineConfiguration.template.parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(dataSourceIdForResourceType)); });
         if (!resourceTemplateParameter) {
             throw utils.format(Messages.azureResourceTemplateParameterCouldNotBeFound, targetResourceType);
         }
@@ -67,7 +69,7 @@ export class TemplateParameterHelper {
     }
 
     private static convertAzureResourceToDataSourceId(targetType: TargetResourceType, targetKind: TargetKind): string {
-        return targetKind ? "resource:" + targetType + ":" + targetKind : "resource:" + targetType;
+        return targetKind ? targetType + ":" + targetKind : targetType;
     }
 
     private async getParameterValue(parameter: TemplateParameter, inputs: WizardInputs): Promise<void> {

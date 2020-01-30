@@ -28,9 +28,10 @@ export interface TemplateAsset {
 }
 
 export enum GitHubSecretType {
+    AKSKubeConfigSecret = 'aksKubeConfig',
     AzureRM = 'arm',
-    RegistryUsername = "regsitryUsername",
-    RegistryPassword = "regsitryPassword"
+    ContainerRegistryUsername = "containerRegistryUsername",
+    ContainerRegistryPassword = "containerRegistryPassword"
 }
 
 export enum TemplateParameterType {
@@ -48,8 +49,9 @@ export enum TemplateAssetType {
 
     GitHubARM = "gitHubSecret:" + GitHubSecretType.AzureRM,
     GitHubARMPublishProfile = "gitHubSecret:" + GitHubSecretType.AzureRM + ":publishProfile",
-    GitHubRegistryUsername = "gitHubSecret:" + GitHubSecretType.RegistryUsername,
-    GitHubRegistryPassword = "gitHubSecret:" + GitHubSecretType.RegistryPassword
+    GitHubAKSKubeConfig = "gitHubSecret:" + GitHubSecretType.AKSKubeConfigSecret + ":kubeconfig",
+    GitHubRegistryUsername = "gitHubSecret:" + GitHubSecretType.ContainerRegistryUsername,
+    GitHubRegistryPassword = "gitHubSecret:" + GitHubSecretType.ContainerRegistryPassword
 }
 
 export let PreDefinedDataSourceIds = {

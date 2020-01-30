@@ -17,8 +17,8 @@ export class Messages {
     public static couldNotAuthorizeEndpoint: string = 'Couldn\'t authorize endpoint for use in Azure Pipelines.';
     public static creatingAzureDevOpsOrganization: string = 'Creating Azure DevOps organization.';
     public static creatingAzureServiceConnection: string = 'Creating Azure deployment credentials with your subscription: %s';
-    public static creatingKubernetesConnection: string = 'Creating connection with kubernetes resource chosen by you: %s';
-    public static creatingContainerRegistryConnection: string = 'Creating connection with container registry resource chosen by you: %s';
+    public static creatingKubernetesConnection: string = 'Creating connection with kubernetes resource: %s';
+    public static creatingContainerRegistryConnection: string = 'Creating connection with container registry resource: %s';
     public static creatingGitHubServiceConnection: string = 'Creating GitHub service connection';
     public static discardPipeline: string = 'Discard pipeline';
     public static enterAzureDevOpsOrganizationName: string = 'Azure DevOps organization name where your pipeline will be hosted';

@@ -611,11 +611,11 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             ],
             assets: [
                 {
-                    "id": "aKSEndpoint",
+                    "id": "aksEndpoint",
                     "type": TemplateAssetType.AKSKubeConfigServiceConnection
                 },
                 {
-                    "id": "aCREndpoint",
+                    "id": "acrEndpoint",
                     "type": TemplateAssetType.ACRServiceConnection
                 }
             ]
@@ -648,15 +648,15 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             ],
             assets: [
                 {
-                    "id": "aKSEndpoint",
-                    "type": TemplateAssetType.AKSKubeConfigServiceConnection
+                    "id": "aksKubeConfig",
+                    "type": TemplateAssetType.GitHubAKSKubeConfig
                 },
                 {
-                    "id": "registryUsername",
+                    "id": "containerRegistryUsername",
                     "type": TemplateAssetType.GitHubRegistryUsername
                 },
                 {
-                    "id": "registryPassword",
+                    "id": "containerRegistryPassword",
                     "type": TemplateAssetType.GitHubRegistryPassword
                 }
             ]
