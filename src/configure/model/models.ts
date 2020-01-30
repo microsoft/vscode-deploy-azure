@@ -69,7 +69,6 @@ export class AzureFunctionDeploySettings extends DeploySettings {
 }
 
 export class AzureParameters {
-    subscriptionId: string;
     resource: GenericResource;
     serviceConnectionId: string;
 }
@@ -95,6 +94,24 @@ export class PipelineConfiguration {
     workingDirectory: string;
     params: { [key: string]: any } = {};
     assets: { [key: string]: any } = {};
+}
+
+export class MustacheContext {
+    constructor(inputs: WizardInputs) {
+        this.inputs = inputs.pipelineConfiguration.params;
+        this.assets = inputs.pipelineConfiguration.assets;
+        this.workingDirectory = inputs.pipelineConfiguration.workingDirectory;
+        this.sourceRepository = inputs.sourceRepository;
+        this.targetResource = inputs.targetResource;
+    }
+
+    inputs: { [key: string]: any } = {};
+    assets: { [key: string]: any } = {};
+    // we also need to remove working directory and make it an explicit parameter of template, which will be present as part of inputs.
+    workingDirectory: string;
+    // the below two properties will be removed during transition to parameterized templates.
+    sourceRepository: GitRepositoryParameters;
+    targetResource: AzureParameters;
 }
 
 export class QuickPickItemWithData implements QuickPickItem {
@@ -158,7 +175,7 @@ export class ParsedAzureResourceId {
 
 //For multiple application we need to add Working directory here in future
 export class RepositoryAnalysisRequest {
-    Repository: RepositoryDetails
+    Repository: RepositoryDetails;
 }
 
 export class RepositoryDetails {
@@ -170,7 +187,7 @@ export class RepositoryDetails {
         parameters:{
             accesstoken: string;
         }
-    }
+    };
 }
 
 export interface AzureAccountExtensionExports {

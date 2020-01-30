@@ -15,22 +15,22 @@ jobs:
     steps:
     # checkout the repo
     - uses: actions/checkout@master
-    
+
     - uses: actions/setup-node@v1
       with:
         node-version: '10.x'
 
     # install dependencies, build, and test
     - name: npm install, build
-      working-directory: {{{ pipelineParameters.workingDirectory }}}
+      working-directory: {{{ workingDirectory }}}
       run: |
         npm install -g @angular/cli
         npm install
         ng build --prod
 
-    # deploy web app 
+    # deploy web app
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ pipelineParameters.workingDirectory }}}
+        package: {{{ workingDirectory }}}
         publish-profile: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>

@@ -9,7 +9,7 @@ trigger:
 variables:
   # Azure Resource Manager connection created during pipeline creation
   azureServiceConnectionId: '{{{ targetResource.serviceConnectionId }}}'
-  
+
   # Web app name
   webAppName: '{{{ targetResource.resource.name }}}'
 
@@ -20,7 +20,7 @@ variables:
   environmentName: '{{{ targetResource.resource.name }}}'
 
   # Project root folder. Point to the folder containing manage.py file.
-  projectRoot: '{{{ pipelineParameters.workingDirectory }}}'
+  projectRoot: '{{{ workingDirectory }}}'
 
 stages:
 - stage: Build
@@ -34,7 +34,7 @@ stages:
       inputs:
         versionSpec: '3.7'
       displayName: 'Use Python 3.7'
-    
+
     - script: |
         python -m venv --copies antenv
         source antenv/bin/activate
@@ -70,7 +70,7 @@ stages:
       runOnce:
         deploy:
           steps:
-          
+
           - task: UsePythonVersion@0
             inputs:
               versionSpec: '3.7'

@@ -38,4 +38,9 @@ export class ControlProvider {
         }
 
     }
+
+    public async showErrorMessage(informationIdentifier: string, errorMessage: string): Promise<void> {
+        telemetryHelper.setTelemetry(TelemetryKeys.CurrentUserInput, informationIdentifier);
+        await window.showErrorMessage(errorMessage);
+    }
 }

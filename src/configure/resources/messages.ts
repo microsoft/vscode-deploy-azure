@@ -17,6 +17,8 @@ export class Messages {
     public static couldNotAuthorizeEndpoint: string = 'Couldn\'t authorize endpoint for use in Azure Pipelines.';
     public static creatingAzureDevOpsOrganization: string = 'Creating Azure DevOps organization.';
     public static creatingAzureServiceConnection: string = 'Creating Azure deployment credentials with your subscription: %s';
+    public static creatingKubernetesConnection: string = 'Creating connection with kubernetes resource: %s';
+    public static creatingContainerRegistryConnection: string = 'Creating connection with container registry resource: %s';
     public static creatingGitHubServiceConnection: string = 'Creating GitHub service connection';
     public static discardPipeline: string = 'Discard pipeline';
     public static enterAzureDevOpsOrganizationName: string = 'Azure DevOps organization name where your pipeline will be hosted';
@@ -72,6 +74,14 @@ export class Messages {
     public static settingUpGithubSecrets = 'Setting up GitHub Workflow secrets';
     public static parameterOfTypeNotSupported = 'Parameter of type %s is not supported.';
     public static parameterWithDataSourceOfTypeNotSupported = 'Parameter with data source Id: %s is not supported.';
+    public static assetOfTypeNotSupportedForGitHub = 'Asset of type %s is not supported for GitHub workflows.';
+    public static assetOfTypeNotSupportedForAzurePipelines = 'Asset of type %s is not supported for Azure Pipelines.';
     public static assetOfTypeNotSupported = 'Asset of type %s is not supported.';
     public static couldNotFindTargetResourceValueInParams = 'Could not find corresponding parameter value for template\'s target resource type: %s.';
+    public static assetCreationOfTypeFailedWithError = 'Creation of asset of type: %s, failed with error: %s';
+    public static azureResourceTemplateParameterCouldNotBeFound = 'Template has no parameter of type %s.';
+    public static parameterWithNameNotSet = 'Parameter with name: %s has not yet been set, hence its value could not be found.';
+    public static unableToFetchPasswordOfContainerRegistry = 'Password for container registry is could not be fetched. It is required for setting up AUTH with registry.';
+    public static onlyAdminEnabledRegistriesAreAllowed = 'The chosen Container registry doesn\'t have admin user access enabled (allows access to registry with username password). Kindly choose a registry which has admin user access enabled.';
+    public static unableToGetSelectedResource = "Unable to fetch the selected azure resource: %s";
 }

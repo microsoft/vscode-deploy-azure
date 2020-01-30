@@ -52,8 +52,12 @@ export class AzureResourceClient {
         return resourceListResult;
     }
 
-    public async getResource(resourceId: string, apiVersion: string): Promise<GenericResource> {
+    public async getResource(resourceId: string, apiVersion: string = '2019-10-01'): Promise<GenericResource> {
         let resource: GenericResource = await this.azureRmClient.resources.getById(resourceId, apiVersion);
         return resource;
     }
 }
+
+export let ApiVersions: Map<TargetResourceType, string> = new Map<TargetResourceType, string>();
+ApiVersions.set(TargetResourceType.ACR, '2019-05-01');
+ApiVersions.set(TargetResourceType.AKS, '2019-10-01');

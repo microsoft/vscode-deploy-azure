@@ -162,7 +162,8 @@ export const BrowseNotAvailableConfigurePipeline =  'BrowseNotAvailableConfigure
 export const DeploymentMessageType = 'CDDeploymentConfiguration';
 export const SetupAlreadyExists =  'SetupAlreadyExists';
 export const Browse = 'Browse';
-export const TargetResource = 'targetResource'
+export const TargetResource = 'targetResource';
+export const AcrDoesNotHaveAdminAccessEnabled = 'AcrDoesNotHaveAdminAccessEnabled';
 
 //RepoAnalysis constants
 export const RepoAnalysisConstants = {
