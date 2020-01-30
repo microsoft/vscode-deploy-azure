@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as Q from 'q';
 import * as utils from 'util';
 import * as vscode from 'vscode';
+import * as ymlconfig from 'js-yaml';
 const uuid = require('uuid/v4');
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
@@ -19,6 +20,7 @@ import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
+import { extensionVariables } from "../model/models";
 
 const Layer = 'GitHubWorkflowConfigurer';
 
@@ -146,7 +148,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 inputs.sourceRepository.commitId = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
                     try {
                         // handle when the branch is not upto date with remote branch and push fails
-                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineConfiguration.filePath, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
+                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineConfiguration.filePath, inputs.sourceRepository, extensionVariables.enableGitHubWorkflow ? Messages.addGitHubWorkflowYmlFile : Messages.addAzurePipelinesYmlFile );
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);
@@ -189,6 +191,11 @@ export class GitHubWorkflowConfigurer implements Configurer {
 
                     let repositoryPath = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getGitRootDirectory();
                     let configPath = path.relative(repositoryPath, inputs.pipelineConfiguration.filePath);
+
+                    const doc = ymlconfig.safeLoad(fs.readFileSync(inputs.pipelineConfiguration.filePath, 'utf8'))
+                    if(!!doc["name"]) {
+                        metadata["properties"]["configName"] = `${doc["name"]}`
+                    }
                     metadata["properties"]["configPath"] = `${configPath}`;
 
                     await appServiceClient.updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);

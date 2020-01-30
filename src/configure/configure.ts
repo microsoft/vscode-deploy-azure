@@ -13,10 +13,11 @@ import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
+import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { BuildSettings, extensionVariables, GitBranchDetails, GitRepositoryParameters, LanguageSettings, MustacheContext, NodeBuildSettings, ParsedAzureResourceId, PythonBuildSettings, QuickPickItemWithData, RepositoryProvider, SourceOptions, SupportedLanguage, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { PipelineTemplate } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -116,6 +117,7 @@ class Orchestrator {
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
+            await this.getAzureSession();
             await this.getSelectedPipeline();
 
             if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
@@ -361,7 +363,7 @@ class Orchestrator {
         return resource;
     }
 
-    private async getAzureResourceDetails(): Promise<void> {
+    private async getAzureSession(): Promise<void> {
         // show available subscriptions and get the chosen one
         let subscriptionList = extensionVariables.azureAccountExtensionApi.filters.map((subscriptionObject) => {
             return <QuickPickItemWithData>{
@@ -373,7 +375,9 @@ class Orchestrator {
         let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
         this.inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
         this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+    }
 
+    private async getAzureResourceDetails(): Promise<void> {
         // show available resources and get the chosen one
         switch (this.inputs.pipelineConfiguration.template.targetType) {
             case TargetResourceType.None:
@@ -405,11 +409,15 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(): Promise<void> {
+        var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
+        var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
+
         let appropriatePipelines: PipelineTemplate[] = await vscode.window.withProgress(
             { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
             () => templateHelper.analyzeRepoAndListAppropriatePipeline(
                 this.inputs.sourceRepository.localPath,
                 this.inputs.sourceRepository.repositoryProvider,
+                repoAnalysisResult,
                 this.inputs.pipelineConfiguration.params[constants.TargetResource])
         );
 
@@ -423,6 +431,33 @@ class Orchestrator {
             this.inputs.pipelineConfiguration.template = appropriatePipelines.find((pipeline) => {
                 return pipeline.label === selectedOption.label;
             });
+
+            //Post selecting the template update this.inputs.repoAnalysisParameters with corresponding languageSettings
+            if (extensionVariables.enableRepoAnalysis
+                && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github
+                && !!repoAnalysisResult
+                && !!repoAnalysisResult.languageSettingsList) {
+
+                //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
+                this.inputs.repoAnalysisParameters = repoAnalysisResult.languageSettingsList.find(languageSettings => {
+                    return languageSettings.language === this.inputs.pipelineConfiguration.template.language;
+                });
+            }
+
+            //If RepoAnalysis is disabled or didn't provided response related to language of selected template
+            if(!this.inputs.repoAnalysisParameters){
+                this.inputs.repoAnalysisParameters = new LanguageSettings();
+                switch (this.inputs.pipelineConfiguration.template.language) {
+                    case SupportedLanguage.NODE:
+                        this.inputs.repoAnalysisParameters.buildSettings = new NodeBuildSettings();
+                        break;
+                    case SupportedLanguage.PYTHON:
+                        this.inputs.repoAnalysisParameters.buildSettings = new PythonBuildSettings();
+                        break;
+                    default:
+                        this.inputs.repoAnalysisParameters.buildSettings = new BuildSettings();
+                }
+            }
         }
         else {
             this.inputs.pipelineConfiguration.template = appropriatePipelines[0];
