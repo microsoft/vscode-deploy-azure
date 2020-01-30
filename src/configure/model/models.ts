@@ -14,9 +14,11 @@ class ExtensionVariables implements UIExtensionVariables {
     public reporter: ITelemetryReporter;
     public ui: IAzureUserInput;
     public enableGitHubWorkflow: boolean;
+    public enableRepoAnalysis: boolean;
 
     constructor() {
         this.enableGitHubWorkflow = true;
+        this.enableRepoAnalysis = false;
     }
 }
 
@@ -29,10 +31,41 @@ export class WizardInputs {
     isNewOrganization: boolean;
     sourceRepository: GitRepositoryParameters;
     targetResource: AzureParameters = new AzureParameters();
+    repoAnalysisParameters: LanguageSettings = new LanguageSettings();
     pipelineConfiguration: PipelineConfiguration = new PipelineConfiguration();
     azureSession: AzureSession;
     subscriptionId: string;
     githubPATToken?: string;
+}
+
+export class RepositoryAnalysisParameters {
+    languageSettingsList: LanguageSettings[] = [];
+}
+
+//VS Code side model to extract information in any format from RepoAnalysis service result.
+export class LanguageSettings {
+    language: SupportedLanguage;
+    buildTargetName: string;
+    deployTargetName: string;
+    buildSettings: BuildSettings = {};
+    deploySettings: DeploySettings = {};
+}
+
+export class BuildSettings {}
+
+export class DeploySettings {}
+
+export class NodeBuildSettings extends BuildSettings {
+    gulpFilePath?: string = "gulpfile.js";
+    gruntFilePath?: string = "gruntfile.js";
+}
+
+export class PythonBuildSettings extends BuildSettings {
+    requirementsFilePath?: string = "requirements.txt";
+}
+
+export class AzureFunctionDeploySettings extends DeploySettings {
+    hostFilePath?: string = "host.json";
 }
 
 export class AzureParameters {
@@ -119,6 +152,23 @@ export class ParsedAzureResourceId {
                             break;
                 }
             }
+        }
+    }
+}
+
+//For multiple application we need to add Working directory here in future
+export class RepositoryAnalysisRequest {
+    Repository: RepositoryDetails
+}
+
+export class RepositoryDetails {
+    id: string;
+    type: string;
+    defaultbranch: string;
+    authorizationInfo:{
+        scheme: string;
+        parameters:{
+            accesstoken: string;
         }
     }
 }
@@ -212,4 +262,12 @@ export enum TargetKind {
     FunctionAppLinuxContainer = 'functionapp,linux,container',
     LinuxApp = 'app,linux',
     LinuxContainerApp = 'app,linux,container'
+}
+
+export enum SupportedLanguage {
+    NONE = 'none',
+    NODE = 'node',
+    PYTHON = 'python',
+    DOTNETCORE = 'dotnetcore',
+    DOCKER = 'docker'
 }

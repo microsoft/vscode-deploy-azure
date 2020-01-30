@@ -164,3 +164,21 @@ export const SetupAlreadyExists =  'SetupAlreadyExists';
 export const Browse = 'Browse';
 export const TargetResource = 'targetResource'
 
+//RepoAnalysis constants
+export const RepoAnalysisConstants = {
+    //Common
+    Master: 'master',
+
+    //Node
+    Gulp: 'gulp',
+    Grunt: 'grunt',
+    GulpFilePath: 'gulpFilePath',
+    GruntFilePath: 'gruntFilePath',
+
+    //Python
+    Django: 'django',
+    RequirementsFilePath: 'requirementsFilePath',
+
+    //Functions
+    AzureFunctions: 'azure:functions'
+}
