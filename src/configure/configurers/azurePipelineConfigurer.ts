@@ -293,7 +293,7 @@ export class AzurePipelineConfigurer implements Configurer {
     public async executePostPipelineCreationSteps(inputs: WizardInputs): Promise<void> {
         if (inputs.pipelineConfiguration.template.targetType === TargetResourceType.WebApp) {
             try {
-                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
+                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId);
                 // update SCM type
                 let targetResource: GenericResource = AzurePipelineConfigurer.getTargetResource(inputs);
 
