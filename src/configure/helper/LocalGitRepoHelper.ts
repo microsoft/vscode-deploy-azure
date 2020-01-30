@@ -28,7 +28,12 @@ export class LocalGitRepoHelper {
     }
 
     public async getUsername() : Promise<string> {
-        let username = 
+        let username = await this.gitReference.raw([
+            'config',
+            'user.name'
+        ]);
+
+        return username
     }
 
     public static async GetAvailableFileName(fileName:string, repoPath: string): Promise<string> {
