@@ -62,5 +62,7 @@ export let PreDefinedDataSourceIds = {
     LinuxContainerApp: TargetResourceType.WebApp + ":" + TargetKind.LinuxContainerApp,
     LinuxFunctionApp: TargetResourceType.WebApp + ":" + TargetKind.FunctionAppLinux,
     LinuxContainerFunctionApp: TargetResourceType.WebApp + ":" + TargetKind.FunctionAppLinuxContainer,
-    WindowsApp: TargetResourceType.WebApp + ":" + TargetKind.WindowsApp
+    WindowsApp: TargetResourceType.WebApp + ":" + TargetKind.WindowsApp,
+
+    RepoAnalysis: 'RepoAnalysis'
 };

@@ -210,11 +210,24 @@ export class TemplateParameterHelper {
             );
         }
         else {
-            inputs.pipelineConfiguration.params[parameter.name] = await controlProvider.showQuickPick(
-                parameter.name,
-                parameter.options ? parameter.options.map(x => { return { label: x.key, data: x.value }; }) : [],
-                { placeHolder: parameter.displayName },
-                utils.format(TelemetryKeys.pickListCount, parameter.name));
+            switch (parameter.dataSourceId) {
+                case PreDefinedDataSourceIds.RepoAnalysis:
+                    if (parameter.name.toLowerCase() === 'containerport') {
+                        var port = templateHelper.getDockerPort(inputs.sourceRepository.localPath);
+                        port = port ? port : parameter.defaultValue;
+
+                        inputs.pipelineConfiguration.params[parameter.name] = port;
+                    }
+                    break;
+                default:
+                    if (parameter.options) {
+                        inputs.pipelineConfiguration.params[parameter.name] = await controlProvider.showQuickPick(
+                            parameter.name,
+                            parameter.options ? parameter.options.map(x => { return { label: x.key, data: x.value }; }) : [],
+                            { placeHolder: parameter.displayName },
+                            utils.format(TelemetryKeys.pickListCount, parameter.name));
+                    }
+            }
         }
     }
 }
