@@ -204,7 +204,9 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     message: Messages.deploymentLogMessage
                 });
 
-                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage);
+                let authorName = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getUsername();
+                let deployerName = 'GITHUBACTION'
+                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage, authorName, deployerName);
 
                 Q.all([updateMetadataPromise, updateDeploymentLogPromise])
                     .then(() => {

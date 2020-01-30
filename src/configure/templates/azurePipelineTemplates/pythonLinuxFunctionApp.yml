@@ -17,7 +17,7 @@ variables:
   vmImageName: 'ubuntu-latest'
 
   # Working Directory
-  workingDirectory: '{{{ pipelineParameters.workingDirectory }}}'
+  workingDirectory: '{{{ pipelineConfiguration.workingDirectory }}}'
 
   # Python Version
   pythonVersion: 3.6 # Functions V2 supports Python 3.6 as of today

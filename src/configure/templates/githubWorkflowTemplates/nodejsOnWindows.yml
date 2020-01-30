@@ -18,7 +18,7 @@ jobs:
 
     # install dependencies, build, and test
     - name: npm install, build, and test
-      working-directory: {{{ pipelineParameters.workingDirectory }}}
+      working-directory: {{{ pipelineConfiguration.workingDirectory }}}
       run: |
         npm install
         npm run build --if-present
@@ -28,5 +28,5 @@ jobs:
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ pipelineParameters.workingDirectory }}}
+        package: {{{ pipelineConfiguration.workingDirectory }}}
         publish-profile: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>

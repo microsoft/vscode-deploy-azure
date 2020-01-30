@@ -27,7 +27,7 @@ jobs:
 
     - name: 'Run pip'
       shell: bash
-      working-directory: {{{ pipelineParameters.workingDirectory }}}
+      working-directory: {{{ pipelineConfiguration.workingDirectory }}}
       run: |
         python -m pip install --upgrade pip
         python -m venv --copies worker_venv
@@ -39,7 +39,7 @@ jobs:
       uses: Azure/functions-action@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ pipelineParameters.workingDirectory }}}
+        package: {{{ pipelineConfiguration.workingDirectory }}}
 
     # Azure logout
     - name: logout

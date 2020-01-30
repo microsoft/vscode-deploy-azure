@@ -22,7 +22,7 @@ jobs:
 
     # install dependencies, build, and test
     - name: npm install, build
-      working-directory: {{{ pipelineParameters.workingDirectory }}}
+      working-directory: {{{ pipelineConfiguration.workingDirectory }}}
       run: |
         npm install
         grunt --gruntfile Gruntfile.js
@@ -31,5 +31,5 @@ jobs:
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ pipelineParameters.workingDirectory }}}
+        package: {{{ pipelineConfiguration.workingDirectory }}}
         publish-profile: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>

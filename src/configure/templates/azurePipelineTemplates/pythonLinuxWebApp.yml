@@ -20,7 +20,7 @@ variables:
   environmentName: '{{{ targetResource.resource.name }}}'
 
   # Project root folder. Point to the folder containing manage.py file.
-  projectRoot: '{{{ pipelineParameters.workingDirectory }}}'
+  projectRoot: '{{{ pipelineConfiguration.workingDirectory }}}'
 
 stages:
 - stage: Build
