@@ -17,7 +17,7 @@ class ExtensionVariables implements UIExtensionVariables {
     public enableRepoAnalysis: boolean;
 
     constructor() {
-        this.enableGitHubWorkflow = workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub');
+        this.enableGitHubWorkflow = !workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub');
         this.enableRepoAnalysis = false;
     }
 }
