@@ -68,6 +68,16 @@
                     "when": "never"
                 }
             ]
+        },
+        "configuration": {
+            "title": "Deploy to Azure",
+            "properties": {
+                "deployToAzure.UseAzurePipelinesForGithub": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Setup CI/CD in Azure Pipelines for Github Repository"
+                }
+            }
         }
     },
     "scripts": {
