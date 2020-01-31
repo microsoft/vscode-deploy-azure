@@ -20,29 +20,29 @@ jobs:
     - uses: azure/login@v1
       with:
         creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
-    
+
     - uses: actions/setup-node@v1
       with:
         node-version: '10.x'
 
     # install dependencies, build, and test
     - name: npm install, build
-      working-directory: {{{ pipelineConfiguration.workingDirectory }}}
+      working-directory: {{{ workingDirectory }}}
       run: |
         npm install -g webpack webpack-cli --save-dev
         npm install
         npx webpack --config webpack.config.js
-    
+
     - uses: azure/appservice-settings@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
         general-settings-json: '{"linuxFxVersion": "NODE|10.10"}' #'General configuration settings as Key Value pairs'
 
-    # deploy web app 
+    # deploy web app
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ pipelineConfiguration.workingDirectory }}}
+        package: {{{ workingDirectory }}}
 
     # Azure logout
     - name: logout

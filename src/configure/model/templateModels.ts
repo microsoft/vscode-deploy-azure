@@ -9,7 +9,8 @@ export interface PipelineTemplate {
     enabled: boolean;
     parameters?: TemplateParameter[];
     assets?: TemplateAsset[];
-    azureConnectionType: AzureConnectionType;
+    // this should be removed as we will have endpoints/secrets as assets and not a first class property
+    azureConnectionType?: AzureConnectionType;
 }
 
 export interface TemplateParameter {
@@ -27,7 +28,10 @@ export interface TemplateAsset {
 }
 
 export enum GitHubSecretType {
+    AKSKubeConfigSecret = 'aksKubeConfig',
     AzureRM = 'arm',
+    ContainerRegistryUsername = "containerRegistryUsername",
+    ContainerRegistryPassword = "containerRegistryPassword"
 }
 
 export enum TemplateParameterType {
@@ -44,7 +48,10 @@ export enum TemplateAssetType {
     AKSKubeConfigServiceConnection = "endpoint:" + ServiceConnectionType.AKS + ":kubeconfig",
 
     GitHubARM = "gitHubSecret:" + GitHubSecretType.AzureRM,
-    GitHubARMPublishProfile = "gitHubSecret:" + GitHubSecretType.AzureRM + ":publishProfile"
+    GitHubARMPublishProfile = "gitHubSecret:" + GitHubSecretType.AzureRM + ":publishProfile",
+    GitHubAKSKubeConfig = "gitHubSecret:" + GitHubSecretType.AKSKubeConfigSecret + ":kubeconfig",
+    GitHubRegistryUsername = "gitHubSecret:" + GitHubSecretType.ContainerRegistryUsername,
+    GitHubRegistryPassword = "gitHubSecret:" + GitHubSecretType.ContainerRegistryPassword
 }
 
 export let PreDefinedDataSourceIds = {

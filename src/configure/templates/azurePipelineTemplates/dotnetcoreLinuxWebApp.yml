@@ -17,7 +17,7 @@ variables:
   vmImageName: 'ubuntu-latest'
 
   # Working Directory
-  workingDirectory: '{{{ pipelineConfiguration.workingDirectory }}}'
+  workingDirectory: '{{{ workingDirectory }}}'
 
   # Build Configuration
   buildConfiguration: 'Release'
@@ -47,7 +47,7 @@ stages:
       inputs:
         packageType: sdk
         version: $(dotnetCoreVersion)
-        
+
     - task: DotNetCoreCLI@2
       displayName: Restore
       inputs:
@@ -61,7 +61,7 @@ stages:
         command: 'build'
         projects: $(buildProjects)
         arguments: --configuration $(buildConfiguration)
-    
+
     - task: DotNetCoreCLI@2
       displayName: Test
       inputs:
@@ -105,4 +105,4 @@ stages:
               WebAppKind: webAppLinux
               Package: $(Pipeline.Workspace)/**/*.zip
               DeploymentType: "webDeploy"
-              RuntimeStack: "DOTNETCORE|2.2" 
+              RuntimeStack: "DOTNETCORE|2.2"

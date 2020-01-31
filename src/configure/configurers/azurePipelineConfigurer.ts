@@ -17,7 +17,8 @@ import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
 import { Build } from '../model/azureDevOps';
-import { AzureConnectionType, AzureSession, RepositoryProvider, ServiceConnectionType, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, AzureSession, RepositoryProvider, TargetResourceType, WizardInputs } from "../model/models";
+import { TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
@@ -41,7 +42,7 @@ export class AzurePipelineConfigurer implements Configurer {
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
         try {
-            if(inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+            if (inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
                 inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
                     placeHolder: Messages.enterGitHubPat,
                     prompt: Messages.githubPatTokenHelpMessage,
@@ -170,7 +171,7 @@ export class AzurePipelineConfigurer implements Configurer {
             inputs.targetResource.serviceConnectionId = await vscode.window.withProgress(
                 {
                     location: vscode.ProgressLocation.Notification,
-                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.targetResource.subscriptionId)
+                    title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
                 },
                 async () => {
                     try {
@@ -193,20 +194,32 @@ export class AzurePipelineConfigurer implements Configurer {
         }
     }
 
-    public async createSecretOrServiceConnection(
+    public async createAsset(
         name: string,
-        type: ServiceConnectionType,
+        type: TemplateAssetType,
         data: any,
         inputs: WizardInputs): Promise<string> {
         let serviceConnectionHelper = new ServiceConnectionHelper(inputs.organizationName, inputs.project.name, this.azureDevOpsClient);
 
         switch (type) {
-            case ServiceConnectionType.AzureRM:
-                return await serviceConnectionHelper.createAzureSPNServiceConnection(name, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId, data.scope, data.aadApp);
-            case ServiceConnectionType.ACR:
-            case ServiceConnectionType.AKS:
+            case TemplateAssetType.AzureARMServiceConnection:
+                return await serviceConnectionHelper.createAzureSPNServiceConnection(name, inputs.azureSession.tenantId, inputs.subscriptionId, data.scope, data.aadApp);
+            case TemplateAssetType.AzureARMPublishProfileServiceConnection:
+                let targetWebApp = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.WebApp);
+                return await serviceConnectionHelper.createAzurePublishProfileServiceConnection(name, inputs.azureSession.tenantId, targetWebApp.id, data);
+            case TemplateAssetType.AKSKubeConfigServiceConnection:
+                let targetAks = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.AKS);
+                let serverUrl = targetAks.properties ? targetAks.properties.fqdn : '';
+                serverUrl = !!serverUrl  && !serverUrl.startsWith('https://') ? 'https://' + serverUrl : serverUrl;
+                return await serviceConnectionHelper.createKubeConfigServiceConnection(name, data, serverUrl);
+            case TemplateAssetType.ACRServiceConnection:
+                let targetAcr = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.ACR);
+                let registryUrl: string = targetAcr.properties ? targetAcr.properties.loginServer : '';
+                registryUrl = !!registryUrl && !registryUrl.startsWith('https://') ? 'https://' + registryUrl : registryUrl;
+                let password = !!data.passwords && data.passwords.length > 0 ? data.passwords[0].value : null;
+                return await serviceConnectionHelper.createContainerRegistryServiceConnection(name, registryUrl, data.username, password);
             default:
-                throw new Error(utils.format(Messages.assetOfTypeNotSupported, type));
+                throw new Error(utils.format(Messages.assetOfTypeNotSupportedForAzurePipelines, type));
         }
     }
 
@@ -290,21 +303,20 @@ export class AzurePipelineConfigurer implements Configurer {
         return this.queuedPipeline._links.web.href;
     }
 
-    public async executePostPipelineCreationSteps(inputs: WizardInputs): Promise<void> {
+    public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
         if (inputs.pipelineConfiguration.template.targetType === TargetResourceType.WebApp) {
             try {
-                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId);
                 // update SCM type
                 let targetResource: GenericResource = AzurePipelineConfigurer.getTargetResource(inputs);
 
-                let updateScmPromise = appServiceClient.updateScmType(targetResource.id);
+                let updateScmPromise = (azureResourceClient as AppServiceClient).updateScmType(targetResource.id);
 
                 let buildDefinitionUrl = this.azureDevOpsClient.getOldFormatBuildDefinitionUrl(inputs.organizationName, inputs.project.id, this.queuedPipeline.definition.id);
                 let buildUrl = this.azureDevOpsClient.getOldFormatBuildUrl(inputs.organizationName, inputs.project.id, this.queuedPipeline.id);
 
                 // update metadata of app service to store information about the pipeline deploying to web app.
                 let updateMetadataPromise = new Promise<void>(async (resolve) => {
-                    let metadata = await appServiceClient.getAppServiceMetadata(targetResource.id);
+                    let metadata = await (azureResourceClient as AppServiceClient).getAppServiceMetadata(targetResource.id);
                     metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
                     metadata["properties"]["VSTSRM_ProjectId"] = `${inputs.project.id}`;
                     metadata["properties"]["VSTSRM_AccountId"] = await this.azureDevOpsClient.getOrganizationIdFromName(inputs.organizationName);
@@ -313,7 +325,7 @@ export class AzurePipelineConfigurer implements Configurer {
                     metadata["properties"]["VSTSRM_ConfiguredCDEndPoint"] = '';
                     metadata["properties"]["VSTSRM_ReleaseDefinitionId"] = '';
 
-                    appServiceClient.updateAppServiceMetadata(targetResource.id, metadata);
+                    (azureResourceClient as AppServiceClient).updateAppServiceMetadata(targetResource.id, metadata);
                     resolve();
                 });
 
@@ -326,7 +338,7 @@ export class AzurePipelineConfigurer implements Configurer {
                     VSTSRM_BuildWebAccessUrl: `${buildUrl}`,
                 });
 
-                let updateDeploymentLogPromise = appServiceClient.publishDeploymentToAppService(
+                let updateDeploymentLogPromise = (azureResourceClient as AppServiceClient).publishDeploymentToAppService(
                     targetResource.id, deploymentMessage);
 
                 Q.all([updateScmPromise, updateMetadataPromise, updateDeploymentLogPromise])
@@ -350,7 +362,7 @@ export class AzurePipelineConfigurer implements Configurer {
             });
     }
 
-    private static getTargetResource(inputs: WizardInputs) : GenericResource {
+    private static getTargetResource(inputs: WizardInputs): GenericResource {
         let targetResource = !!inputs.targetResource.resource ? inputs.targetResource.resource : null;
         if (!targetResource) {
             let targetParam = TemplateParameterHelper.getParameterForTargetResourceType(inputs.pipelineConfiguration.template.parameters, inputs.pipelineConfiguration.template.targetType);
@@ -374,6 +386,6 @@ export class AzurePipelineConfigurer implements Configurer {
         let scope = inputs.targetResource.resource.id;
         let aadAppName = GraphHelper.generateAadApplicationName(inputs.organizationName, inputs.project.name);
         let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
-        return await serviceConnectionHelper.createAzureSPNServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.targetResource.subscriptionId, scope, aadApp);
+        return await serviceConnectionHelper.createAzureSPNServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.subscriptionId, scope, aadApp);
     }
 }

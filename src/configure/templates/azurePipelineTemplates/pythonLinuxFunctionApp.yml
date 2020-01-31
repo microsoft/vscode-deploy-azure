@@ -17,7 +17,7 @@ variables:
   vmImageName: 'ubuntu-latest'
 
   # Working Directory
-  workingDirectory: '{{{ pipelineConfiguration.workingDirectory }}}'
+  workingDirectory: '{{{ workingDirectory }}}'
 
   # Python Version
   pythonVersion: 3.6 # Functions V2 supports Python 3.6 as of today
@@ -89,5 +89,5 @@ stages:
               appType: functionAppLinux
               appName: $(functionAppName)
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-              runtimeStack: 'DOCKER|microsoft/azure-functions/python:2.0' 
+              runtimeStack: 'DOCKER|microsoft/azure-functions/python:2.0'
               appSettings: '-FUNCTIONS_WORKER_RUNTIME python'

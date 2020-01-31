@@ -17,17 +17,17 @@ variables:
   vmImageName: 'vs2017-win2016'
 
   # Working Directory
-  workingDirectory: '{{{ pipelineConfiguration.workingDirectory }}}'
+  workingDirectory: '{{{ workingDirectory }}}'
 
 stages:
 - stage: Build
   displayName: Build stage
-  jobs:  
+  jobs:
   - job: Build
     displayName: Build
     pool:
       vmImage: $(vmImageName)
-      
+
     steps:
     - task: NodeTool@0
       inputs:
@@ -47,7 +47,7 @@ stages:
         npm run test --if-present
       displayName: 'Prepare binaries'
       workingDirectory: $(workingDirectory)
-      
+
     - task: ArchiveFiles@2
       displayName: 'Archive files'
       inputs:
@@ -68,12 +68,12 @@ stages:
   - deployment: Deploy
     displayName: Deploy
     environment: $(functionAppName)
-    pool: 
+    pool:
       vmImage: $(vmImageName)
     strategy:
       runOnce:
         deploy:
-          steps:            
+          steps:
           - task: AzureFunctionApp@1
             displayName: 'Deploy Azure Functions App: $(functionAppName)'
             inputs:

@@ -11,10 +11,10 @@ jobs:
     steps:
     # checkout the repo
     - uses: actions/checkout@master
-    
+
     # deploy web app using publish profile credentials
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ pipelineConfiguration.workingDirectory }}}
+        package: {{{ workingDirectory }}}
         publish-profile: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>

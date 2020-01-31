@@ -1,8 +1,8 @@
 import { IActionContext, ITelemetryReporter, parseError } from "vscode-azureextensionui";
 
+import * as logger from '../../logger';
 import { extensionVariables } from "../model/models";
 import { TelemetryKeys } from '../resources/telemetryKeys';
-import * as logger from '../../logger';
 
 const uuid = require('uuid/v4');
 
