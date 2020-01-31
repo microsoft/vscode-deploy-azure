@@ -1,39 +1,37 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as fs from 'fs';
 import * as Mustache from 'mustache';
-import * as os from 'os';
 import * as path from 'path';
 import * as Q from 'q';
-import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
+import { AzureConnectionType, extensionVariables, RepositoryProvider, TargetKind, TargetResourceType, WizardInputs, SupportedLanguage, RepositoryAnalysisParameters } from '../model/models';
 import { PipelineTemplate, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
-import { TracePoints } from '../resources/tracePoints';
-import { telemetryHelper } from './telemetryHelper';
+import { MustacheHelper } from './mustacheHelper';
 
-export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters,  targetResource?: GenericResource): Promise<PipelineTemplate[]> {
     let localRepoAnalysisResult = await analyzeRepo(repoPath);
     let analysisResult = localRepoAnalysisResult;
 
     //If Repo analysis fails then we'll go with the basic existing analysis
-    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.repositoryAnalysisApplicationSettingsList) {
+    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.languageSettingsList) {
         analysisResult = new AnalysisResult();
-        repoAnalysisParameters.repositoryAnalysisApplicationSettingsList.forEach((settings) => {
+        repoAnalysisParameters.languageSettingsList.forEach((settings) => {
             analysisResult.languages.push(settings.language);
 
             //Check if Azure:Functions is value of any deployTargetName property
             analysisResult.isFunctionApp =
-                analysisResult.isFunctionApp || settings.deployTargetName === RepoAnalysisConstants.AzureFunctions ? true : false;
+                analysisResult.isFunctionApp || settings.deployTargetName == RepoAnalysisConstants.AzureFunctions ? true : false;
         });
 
         //Languages not supported by RepoAnalysisService should be considered and taken from LocalRepoAnalysis
-        localRepoAnalysisResult.languages.forEach((language) => {
-            if (analysisResult.languages.indexOf(language) === -1) {
+        localRepoAnalysisResult.languages.forEach((language)=>{
+            if(analysisResult.languages.indexOf(language) == -1){
                 analysisResult.languages.push(language);
             }
         });
 
-        if (analysisResult.languages.length === 0) {
+        if(analysisResult.languages.length == 0){
             analysisResult.languages.push(SupportedLanguage.NONE);
         }
     }
@@ -69,7 +67,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
                 }
                 break;
             case SupportedLanguage.DOTNETCORE:
-                if (templateList[SupportedLanguage.DOTNETCORE] && templateList[SupportedLanguage.DOTNETCORE].length > 0) {
+                if (templateList[SupportedLanguage.DOTNETCORE] && templateList[SupportedLanguage.DOTNETCORE].length > 0 ) {
                     templateResult = templateResult.concat(templateList[SupportedLanguage.DOTNETCORE]);
                 }
                 break;
@@ -87,8 +85,8 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
         templateResult = templateList[SupportedLanguage.NONE];
     }
 
-    if (analysisResult.isFunctionApp) {
-        switch (repositoryProvider) {
+    if(analysisResult.isFunctionApp) {
+        switch(repositoryProvider) {
             case RepositoryProvider.AzureRepos:
                 templateResult = azurePipelineTargetBasedTemplates[AzureTarget.FunctionApp].concat(templateResult);
                 break;
@@ -130,7 +128,7 @@ export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: Reposit
     });
 }
 
-export async function renderContent(templateFilePath: string, context: MustacheContext): Promise<string> {
+export async function renderContent(templateFilePath: string, context: WizardInputs): Promise<string> {
     let deferred: Q.Deferred<string> = Q.defer();
     fs.readFile(templateFilePath, { encoding: "utf8" }, async (error, data) => {
         if (error) {
@@ -144,32 +142,6 @@ export async function renderContent(templateFilePath: string, context: MustacheC
     });
 
     return deferred.promise;
-}
-
-export function getDockerPort(repoPath: string, relativeDockerFilePath?: string): string {
-    let dockerfilePath = relativeDockerFilePath;
-    if (!dockerfilePath) {
-        let files = fs.readdirSync(repoPath);
-        files.some((fileName) => { if (fileName.toLowerCase().endsWith('dockerfile')) { dockerfilePath = fileName; return true; } return false; });
-        if (!dockerfilePath) {
-            return null;
-        }
-    }
-
-    try {
-        let dockerContent = fs.readFileSync(path.join(repoPath, dockerfilePath), 'utf8');
-        let index = dockerContent.toLowerCase().indexOf('expose ');
-        if (index) {
-            let temp = dockerContent.substring(index + 'expose '.length);
-            let port = temp.substr(0, temp.indexOf(' ',) ? temp.indexOf(' ') : temp.indexOf(os.EOL));
-            return port;
-        }
-    }
-    catch (err) {
-        telemetryHelper.logError('TemplateHelper', TracePoints.ReadingDockerFileFailed, err);
-    }
-
-    return null;
 }
 
 async function analyzeRepo(repoPath: string): Promise<AnalysisResult> {
@@ -224,7 +196,7 @@ function isFunctionApp(files: string[]): boolean {
     });
 }
 
-export function isFunctionAppType(targetKind: TargetKind): boolean {
+function isFunctionAppType(targetKind: TargetKind): boolean {
     return targetKind === TargetKind.FunctionApp || targetKind === TargetKind.FunctionAppLinux || targetKind === TargetKind.FunctionAppLinuxContainer;
 }
 
@@ -273,7 +245,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -321,7 +293,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -344,7 +316,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -367,7 +339,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -390,7 +362,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -413,7 +385,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -588,7 +560,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -627,85 +599,34 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: false,
             parameters: [
                 {
-                    "name": "aksCluster",
+                    "name": "cluster",
                     "displayName": "Select Azure Kubernetes cluster to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
                     "dataSourceId": PreDefinedDataSourceIds.AKS
                 },
                 {
-                    "name": "containerRegistry",
+                    "name": "acr",
                     "displayName": "Select Azure Container Registry to store docker image",
                     "type": TemplateParameterType.GenericAzureResource,
                     "dataSourceId": PreDefinedDataSourceIds.ACR
-                },
-                {
-                    "name": "containerPort",
-                    "displayName": null,
-                    "type": TemplateParameterType.String,
-                    "dataSourceId": PreDefinedDataSourceIds.RepoAnalysis,
-                    "defaultValue": '8080'
                 }
             ],
             assets: [
                 {
-                    "id": "kubernetesServiceConnection ",
+                    "id": "aKSEndpoint",
                     "type": TemplateAssetType.AKSKubeConfigServiceConnection
                 },
                 {
-                    "id": "containerRegistryServiceConnection",
+                    "id": "aCREndpoint",
                     "type": TemplateAssetType.ACRServiceConnection
                 }
-            ]
+            ],
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         }
     ]
 };
 
 let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } = {
-    'docker': [
-        {
-            label: 'Containerized application to AKS',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/AksWithReuseACR.yml'),
-            language: SupportedLanguage.DOCKER,
-            targetType: TargetResourceType.AKS,
-            targetKind: null,
-            enabled: false,
-            parameters: [
-                {
-                    "name": "aksCluster",
-                    "displayName": "Select Azure Kubernetes cluster to deploy your application",
-                    "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.AKS
-                },
-                {
-                    "name": "containerRegistry",
-                    "displayName": "Select Azure Container Registry to store docker image",
-                    "type": TemplateParameterType.GenericAzureResource,
-                    "dataSourceId": PreDefinedDataSourceIds.ACR
-                },
-                {
-                    "name": "containerPort",
-                    "displayName": null,
-                    "type": TemplateParameterType.String,
-                    "dataSourceId": PreDefinedDataSourceIds.RepoAnalysis,
-                    "defaultValue": "8080"
-                }
-            ],
-            assets: [
-                {
-                    "id": "kubeConfig",
-                    "type": TemplateAssetType.GitHubAKSKubeConfig
-                },
-                {
-                    "id": "containerRegistryUsername",
-                    "type": TemplateAssetType.GitHubRegistryUsername
-                },
-                {
-                    "id": "containerRegistryPassword",
-                    "type": TemplateAssetType.GitHubRegistryPassword
-                }
-            ]
-        }
-    ],
     'node': [
         {
             label: PipelineTemplateLabels.NodeJSWithNpmToAppService,
@@ -725,7 +646,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -771,7 +692,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -817,7 +738,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -863,7 +784,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -909,7 +830,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -957,7 +878,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             assets: [
                 {
                     "id": "endpoint",
-                    "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
+                    "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile
@@ -1011,7 +932,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
         },
     ],
-    'dotnetcore': []
+    'dotnetcore': [],
+    'docker': []
 };
 
 const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplate[] } =
