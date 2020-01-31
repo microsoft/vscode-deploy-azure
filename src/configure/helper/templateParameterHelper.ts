@@ -1,6 +1,7 @@
 import { GenericResource } from "azure-arm-resource/lib/resource/models";
 import * as utils from 'util';
 import { AppServiceClient } from "../clients/azure/appServiceClient";
+import { ArmRestClient } from "../clients/azure/armRestClient";
 import { ApiVersions, AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { openBrowseExperience } from '../configure';
 import * as templateHelper from '../helper/templateHelper';
@@ -93,21 +94,7 @@ export class TemplateParameterHelper {
         let controlProvider = new ControlProvider();
 
         if (!inputs.subscriptionId) {
-            // show available subscriptions and get the chosen one
-            let subscriptionList = extensionVariables.azureAccountExtensionApi.filters.map((subscriptionObject) => {
-                return <QuickPickItemWithData>{
-                    label: `${<string>subscriptionObject.subscription.displayName}`,
-                    data: subscriptionObject,
-                    description: `${<string>subscriptionObject.subscription.subscriptionId}`
-                };
-            });
-            let selectedSubscription: QuickPickItemWithData = await controlProvider.showQuickPick(
-                constants.SelectSubscription,
-                subscriptionList,
-                { placeHolder: Messages.selectSubscription },
-                TelemetryKeys.SubscriptionListCount);
-            inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
-            inputs.azureSession = getSubscriptionSession(inputs.subscriptionId);
+            await this.setSubscription(inputs);
         }
 
         let azureResourceClient = new AzureResourceClient(inputs.azureSession.credentials, inputs.subscriptionId);
@@ -133,8 +120,20 @@ export class TemplateParameterHelper {
                         }
 
                         if (parameter.dataSourceId === PreDefinedDataSourceIds.ACR) {
+                            // dynamic validation for ACR
                             if (detailedResource.properties.adminUserEnabled === false) {
-                                controlProvider.showErrorMessage(constants.AcrDoesNotHaveAdminAccessEnabled, Messages.onlyAdminEnabledRegistriesAreAllowed);
+                                controlProvider.showErrorMessage(constants.ResourceDynamicValidationFailure, Messages.onlyAdminEnabledRegistriesAreAllowed);
+                                continue;
+                            }
+                        }
+                        else {
+                            // dynamic validation for AKS cluster
+                            try {
+                                let armRestClient = new ArmRestClient(inputs.azureSession);
+                                await armRestClient.getAksKubeConfig(detailedResource.id);
+                            }
+                            catch (error) {
+                                controlProvider.showErrorMessage(constants.ResourceDynamicValidationFailure, Messages.unableToGetAksKubeConfig);
                                 continue;
                             }
                         }
@@ -174,6 +173,25 @@ export class TemplateParameterHelper {
                     throw new Error(utils.format(Messages.parameterWithDataSourceOfTypeNotSupported, parameter.dataSourceId));
             }
         }
+    }
+
+    private async setSubscription(inputs: WizardInputs): Promise<void> {
+        // show available subscriptions and get the chosen one
+        let subscriptionList = extensionVariables.azureAccountExtensionApi.filters.map((subscriptionObject) => {
+            return <QuickPickItemWithData>{
+                label: `${<string>subscriptionObject.subscription.displayName}`,
+                data: subscriptionObject,
+                description: `${<string>subscriptionObject.subscription.subscriptionId}`
+            };
+        });
+
+        let selectedSubscription: QuickPickItemWithData = await new ControlProvider().showQuickPick(
+            constants.SelectSubscription,
+            subscriptionList,
+            { placeHolder: Messages.selectSubscription },
+            TelemetryKeys.SubscriptionListCount);
+        inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
+        inputs.azureSession = getSubscriptionSession(inputs.subscriptionId);
     }
 
     private async tryGetSelectedResourceById(selectedResourceId: string, azureResourceClient: AzureResourceClient, getResourceApiVersion?: string): Promise<GenericResource> {
