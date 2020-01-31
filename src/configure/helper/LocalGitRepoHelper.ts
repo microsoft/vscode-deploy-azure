@@ -27,6 +27,15 @@ export class LocalGitRepoHelper {
         return repoService;
     }
 
+    public async getUsername() : Promise<string> {
+        let username = await this.gitReference.raw([
+            'config',
+            'user.name'
+        ]);
+
+        return username
+    }
+
     public static async GetAvailableFileName(fileName:string, repoPath: string): Promise<string> {
         let deferred: Q.Deferred<string> = Q.defer();
         fs.readdir(repoPath, (err, files: string[]) => {

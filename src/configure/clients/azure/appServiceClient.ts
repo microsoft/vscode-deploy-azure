@@ -101,12 +101,12 @@ export class AppServiceClient extends AzureResourceClient {
         return this.webSiteManagementClient.webApps.updateMetadata(parsedResourceId.resourceGroup, parsedResourceId.resourceName, metadata);
     }
 
-    public async publishDeploymentToAppService(resourceId: string, deploymentMessage: string): Promise<Deployment> {
+    public async publishDeploymentToAppService(resourceId: string, deploymentMessage: string, author: string = 'VSTS', deployer: string = 'VSTS'): Promise<Deployment> {
         let parsedResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(resourceId);
 
         // create deployment object
         let deploymentId = uuid();
-        let deployment = this.createDeploymentObject(deploymentId, deploymentMessage);
+        let deployment = this.createDeploymentObject(deploymentId, deploymentMessage, author, deployer);
         return this.webSiteManagementClient.webApps.createDeployment(parsedResourceId.resourceGroup, parsedResourceId.resourceName, deploymentId, deployment);
     }
 
@@ -148,12 +148,12 @@ export class AppServiceClient extends AzureResourceClient {
         return false;
     }
 
-    private createDeploymentObject(deploymentId: string, deploymentMessage: string): Deployment {
+    private createDeploymentObject(deploymentId: string, deploymentMessage: string, author: string, deployer: string): Deployment {
         let deployment: Deployment = {
             id: deploymentId,
             status: 4,
-            author: 'VSTS',
-            deployer: 'VSTS',
+            author: author,
+            deployer: deployer,
             message: deploymentMessage
         };
 
