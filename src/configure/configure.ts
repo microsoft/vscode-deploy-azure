@@ -448,6 +448,11 @@ class Orchestrator {
                 this.inputs.repoAnalysisParameters = new ApplicationSettings();
                 this.inputs.repoAnalysisParameters.settings = new BuildAndDeploySettings();
             }
+
+            //If application settings doesn't have working directory especially in Non Function App scenarios then update it with pipelineconfiguration.workingDirectory
+            if(!this.inputs.repoAnalysisParameters.workingDirectory){
+                this.inputs.repoAnalysisParameters.workingDirectory = this.inputs.pipelineConfiguration.workingDirectory;
+            }
         }
         else {
             this.inputs.pipelineConfiguration.template = appropriatePipelines[0];

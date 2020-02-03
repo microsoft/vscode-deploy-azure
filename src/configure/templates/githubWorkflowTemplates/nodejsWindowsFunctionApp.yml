@@ -37,7 +37,7 @@ jobs:
       uses: Azure/functions-action@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ pipelineParameters.workingDirectory }}}
+        package: {{{ repoAnalysisParameters.workingDirectory }}}
 
     # Azure logout
     - name: logout

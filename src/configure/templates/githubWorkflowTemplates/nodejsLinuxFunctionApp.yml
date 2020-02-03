@@ -15,11 +15,11 @@ jobs:
     steps:
     # checkout the repo
     - uses: actions/checkout@master
-    
+
     - uses: actions/setup-node@v1
       with:
         node-version: '10.x'
-        
+
     - uses: azure/login@v1
       with:
         creds: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
@@ -37,7 +37,7 @@ jobs:
       uses: Azure/functions-action@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ pipelineParameters.workingDirectory }}}
+        package: {{{ repoAnalysisParameters.workingDirectory }}}
 
     # Azure logout
     - name: logout
