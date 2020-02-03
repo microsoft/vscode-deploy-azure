@@ -3,6 +3,10 @@ All notable changes to the Deploy to Azure extension will be documented in this 
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/). Versioning follows an internal Azure DevOps format that is not compatible with SemVer.
 
+## 1.0.3
+### Added
+- Finer detection of Code Repository
+
 ## 1.0.2
 ### Added
 - Configure CI/CD for Github Workflow for Github Repositories
