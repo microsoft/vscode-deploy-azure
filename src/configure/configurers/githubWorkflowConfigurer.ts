@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as Q from 'q';
 import * as utils from 'util';
 import * as vscode from 'vscode';
+import * as ymlconfig from 'js-yaml';
 const uuid = require('uuid/v4');
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
@@ -186,6 +187,11 @@ export class GitHubWorkflowConfigurer implements Configurer {
 
                     let repositoryPath = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getGitRootDirectory();
                     let configPath = path.relative(repositoryPath, inputs.pipelineConfiguration.filePath);
+
+                    const doc = ymlconfig.safeLoad(fs.readFileSync(inputs.pipelineConfiguration.filePath, 'utf8'))
+                    if(!!doc["name"]) {
+                        metadata["properties"]["configName"] = `${doc["name"]}`
+                    }
                     metadata["properties"]["configPath"] = `${configPath}`;
 
                     await appServiceClient.updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
