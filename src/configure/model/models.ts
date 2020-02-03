@@ -31,7 +31,7 @@ export class WizardInputs {
     isNewOrganization: boolean;
     sourceRepository: GitRepositoryParameters;
     targetResource: AzureParameters = new AzureParameters();
-    repoAnalysisParameters: LanguageSettings = new LanguageSettings();
+    repoAnalysisParameters: ApplicationSettings = new ApplicationSettings();
     pipelineConfiguration: PipelineConfiguration = new PipelineConfiguration();
     azureSession: AzureSession;
     subscriptionId: string;
@@ -39,33 +39,23 @@ export class WizardInputs {
 }
 
 export class RepositoryAnalysisParameters {
-    languageSettingsList: LanguageSettings[] = [];
+    applicationSettingsList: ApplicationSettings[] = [];
 }
 
 //VS Code side model to extract information in any format from RepoAnalysis service result.
-export class LanguageSettings {
+export class ApplicationSettings {
+    workingDirectory: string;
     language: SupportedLanguage;
     buildTargetName: string;
     deployTargetName: string;
-    buildSettings: BuildSettings = {};
-    deploySettings: DeploySettings = {};
+    settings: BuildAndDeploySettings;
 }
 
-export class BuildSettings {}
-
-export class DeploySettings {}
-
-export class NodeBuildSettings extends BuildSettings {
-    gulpFilePath?: string = "gulpfile.js";
-    gruntFilePath?: string = "gruntfile.js";
-}
-
-export class PythonBuildSettings extends BuildSettings {
-    requirementsFilePath?: string = "requirements.txt";
-}
-
-export class AzureFunctionDeploySettings extends DeploySettings {
-    hostFilePath?: string = "host.json";
+export class BuildAndDeploySettings {
+    nodeGulpFilePath?: string = "gulpfile.js";
+    nodeGruntFilePath?: string = "gruntfile.js";
+    pythonRequirementsFilePath?: string = "requirements.txt";
+    azureFunctionsHostFilePath?: string = "host.json";
 }
 
 export class AzureParameters {

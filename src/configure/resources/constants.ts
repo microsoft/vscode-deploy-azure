@@ -164,7 +164,7 @@ export const SetupAlreadyExists =  'SetupAlreadyExists';
 export const Browse = 'Browse';
 export const TargetResource = 'targetResource'
 
-//RepoAnalysis constants
+//RepoAnalysis constants expected in response of Repository Analysis Service
 export const RepoAnalysisConstants = {
     //Common
     Master: 'master',
@@ -180,5 +180,6 @@ export const RepoAnalysisConstants = {
     RequirementsFilePath: 'requirementsFilePath',
 
     //Functions
-    AzureFunctions: 'azure:functions'
+    AzureFunctions: 'azure:functions',
+    HostFilePath: 'hostFilePath'
 }

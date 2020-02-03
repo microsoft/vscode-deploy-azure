@@ -32,7 +32,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m venv --copies worker_venv
         source worker_venv/bin/activate
-        pip install -r {{{ repoAnalysisParameters.buildSettings.requirementsFilePath }}}
+        pip install -r {{{ repoAnalysisParameters.settings.pythonRequirementsFilePath }}}
 
     # deploy web app using publish profile credentials
     - name: 'Run Azure Functions Action'
