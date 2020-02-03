@@ -13,9 +13,9 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     let analysisResult = localRepoAnalysisResult;
 
     //If Repo analysis fails then we'll go with the basic existing analysis
-    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.languageSettingsList) {
+    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.applicationSettingsList) {
         analysisResult = new AnalysisResult();
-        repoAnalysisParameters.languageSettingsList.forEach((settings) => {
+        repoAnalysisParameters.applicationSettingsList.forEach((settings) => {
             analysisResult.languages.push(settings.language);
 
             //Check if Azure:Functions is value of any deployTargetName property

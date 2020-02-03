@@ -17,7 +17,7 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { BuildSettings, extensionVariables, GitBranchDetails, GitRepositoryParameters, LanguageSettings, MustacheContext, NodeBuildSettings, ParsedAzureResourceId, PythonBuildSettings, QuickPickItemWithData, RepositoryProvider, SourceOptions, SupportedLanguage, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, ApplicationSettings, BuildAndDeploySettings } from './model/models';
 import { PipelineTemplate, TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -436,27 +436,18 @@ class Orchestrator {
             if (extensionVariables.enableRepoAnalysis
                 && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github
                 && !!repoAnalysisResult
-                && !!repoAnalysisResult.languageSettingsList) {
+                && !!repoAnalysisResult.applicationSettingsList) {
 
                 //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
-                this.inputs.repoAnalysisParameters = repoAnalysisResult.languageSettingsList.find(languageSettings => {
-                    return languageSettings.language === this.inputs.pipelineConfiguration.template.language;
+                this.inputs.repoAnalysisParameters = repoAnalysisResult.applicationSettingsList.find(applicationSettings => {
+                    return applicationSettings.language === this.inputs.pipelineConfiguration.template.language
                 });
             }
 
             //If RepoAnalysis is disabled or didn't provided response related to language of selected template
             if(!this.inputs.repoAnalysisParameters){
-                this.inputs.repoAnalysisParameters = new LanguageSettings();
-                switch (this.inputs.pipelineConfiguration.template.language) {
-                    case SupportedLanguage.NODE:
-                        this.inputs.repoAnalysisParameters.buildSettings = new NodeBuildSettings();
-                        break;
-                    case SupportedLanguage.PYTHON:
-                        this.inputs.repoAnalysisParameters.buildSettings = new PythonBuildSettings();
-                        break;
-                    default:
-                        this.inputs.repoAnalysisParameters.buildSettings = new BuildSettings();
-                }
+                this.inputs.repoAnalysisParameters = new ApplicationSettings();
+                this.inputs.repoAnalysisParameters.settings = new BuildAndDeploySettings();
             }
         }
         else {

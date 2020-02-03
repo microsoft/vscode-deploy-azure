@@ -165,7 +165,7 @@ export const Browse = 'Browse';
 export const TargetResource = 'targetResource';
 export const AcrDoesNotHaveAdminAccessEnabled = 'AcrDoesNotHaveAdminAccessEnabled';
 
-//RepoAnalysis constants
+//RepoAnalysis constants expected in response of Repository Analysis Service
 export const RepoAnalysisConstants = {
     //Common
     Master: 'master',
@@ -181,5 +181,6 @@ export const RepoAnalysisConstants = {
     RequirementsFilePath: 'requirementsFilePath',
 
     //Functions
-    AzureFunctions: 'azure:functions'
+    AzureFunctions: 'azure:functions',
+    HostFilePath: 'hostFilePath'
 }

@@ -30,7 +30,7 @@ jobs:
       working-directory: {{{ workingDirectory }}}
       run: |
         npm install
-        gulp default --gulpfile {{{ repoAnalysisParameters.buildSettings.gulpFilePath }}}
+        gulp default --gulpfile {{{ repoAnalysisParameters.settings.nodeGulpFilePath }}}
 
     - uses: azure/appservice-settings@v1
       with:
