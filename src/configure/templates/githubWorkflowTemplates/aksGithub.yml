@@ -3,11 +3,11 @@ jobs:
   build-and-deploy:
     env:
       REGISTRY_URL: {{#toLower}} {{{inputs.containerRegistry}}} {{/toLower}}.azurecr.io
-      SERVICE_NAME: {{#sanitizeString}} {{{ inputs.AKSresource.name 50}}} {{/sanitizeString}}
+      SERVICE_NAME: {{#sanitizeString}} {{#substring}} {{{ inputs.aksCluster.name 0 50}}} {{/substring}} {{/sanitizeString}}
       NAMESPACE: $SERVICE_NAME{{#tinyguid}}{{/tinyguid}}
       IMAGE_NAME: $SERVICE_NAME{{#tinyguid}}{{/tinyguid}}
       APP_NAME: $(SERVICE_NAME)_{{#tinyguid}}{{/tinyguid}} 
-      SECRET_NAME: {{#sanitizeString}} {{{ inputs.AKSresource.name 12}}} {{/sanitizeString}}dockerauth
+      SECRET_NAME: {{#sanitizeString}} {{#substring}} {{{ inputs.aksCluster.name 0 12}}} {{/substring}} {{/sanitizeString}}dockerauth
 
     runs-on: ubuntu-latest
     steps:
@@ -16,8 +16,8 @@ jobs:
     - uses: azure/docker-login@v1
       with:
         login-server: $REGISTRY_URL
-        username: ${{ assets.REGISTRY_USERNAME }}
-        password: ${{ assets.REGISTRY_PASSWORD }}
+        username: ${{ assets.containerRegistryUsername  }}
+        password: ${{ assets.containerRegistryPassword  }}
     
     - name: Build and push image to ACR
       id: build-image
@@ -27,7 +27,7 @@ jobs:
     
     - uses: azure/k8s-set-context@v1
       with:
-         kubeconfig: ${{ secrets.KUBE_CONFIG }}
+         kubeconfig: ${{ secrets.aksKubeConfig }}
       id: login
     
     - name: Create namespace
@@ -42,8 +42,8 @@ jobs:
       with:
         namespace: $NAMESPACE
         container-registry-url: $REGISTRY_URL
-        container-registry-username: ${{ assets.REGISTRY_USERNAME }}
-        container-registry-password: ${{ assets.REGISTRY_PASSWORD }}
+        container-registry-username: ${{ assets.containerRegistryUsername  }}
+        container-registry-password: ${{ assets.containerRegistryPassword  }}
         secret-name: $SECRET_NAME
        
     - name: Generate Kubernetes Manifest file
@@ -66,7 +66,8 @@ jobs:
                     ports:
                     - containerPort: {{{ inputs.containerPort }}}
                   
-              {{#if}} {{{inputs.AKSresource.properties.addonProfiles.httpapplicationrouting.enabled}}}    
+              {{#inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}}     
+              {{/inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}} 
 
                 apiVersion: v1
                 kind: Service
@@ -94,7 +95,7 @@ jobs:
                         kubernetes.io/ingress.class: addon-http-application-routing
                 spec:
                     rules:
-                        - host: $NAMESPACE-$APP_NAME.{{{inputs.AKSresource.properties.fqdn}}}
+                        - host: $NAMESPACE-$APP_NAME.{{{inputs.aksCluster.properties.fqdn}}}
                           http:
                             paths:
                             - path: /
@@ -102,7 +103,7 @@ jobs:
                                 serviceName: "$APP_NAME"
                                 servicePort: {{{ inputs.containerPort }}}"
                   
-              {{#else}}
+              {{^inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}} 
 
                 apiVersion: v1
                 kind: Service
@@ -120,7 +121,7 @@ jobs:
                     selector:
                         app: "$APP_NAME"
                         
-                {{/if}}"  > manifest_{{{IMAGE_NAME}}}.yml
+                {{/inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}} "  > manifest_{{{IMAGE_NAME}}}.yml
 
 
     - uses: azure/k8s-deploy@v1
