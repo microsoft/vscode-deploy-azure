@@ -11,7 +11,7 @@ variables:
   azureSubscription: '{{{ assets.serviceConnectionId }}}'
 
   # Kubernetes Service name
-  serviceName: '{{ #sanitizeString }} {{{ inputs.AKSresource.name }}} {{ /sanitizeString }}'
+  serviceName: '{{ #sanitizeString }} {{{ inputs.aksCluster.name }}} {{ /sanitizeString }}'
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
@@ -50,7 +50,7 @@ stages:
     dockerFile: $(dockerFile)                                                       
     imageName: $(imageName) 
     useDefaultContext: false
-    buildContext: Application
+    buildContext: $(workingDirectory)
 
     - task: Docker@1
   displayName: 'Push an image'
@@ -116,7 +116,7 @@ stages:
                   
                   ---
                   
-                  {{#if}} {{{inputs.AKSresource.properties.addonProfiles.httpapplicationrouting.enabled}}}      
+                  {{#inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}}      
 
                   # $(appName)/service.yaml
                   apiVersion: v1
@@ -148,7 +148,7 @@ stages:
                           kubernetes.io/ingress.class: addon-http-application-routing
                   spec:
                       rules:
-                          - host: $(namespace)-$(appName).{{{inputs.AKSresource.properties.fqdn}}}
+                          - host: $(namespace)-$(appName).{{{inputs.aksCluster.properties.fqdn}}}
                             http:
                               paths:
                               - path: /
@@ -156,7 +156,8 @@ stages:
                                   serviceName: $(appName)
                                   servicePort: {{{ inputs.containerPort }}}'
 
-                  {{#else}}
+                  {{/inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}}    
+                  {{^inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}}    
 
                      # $(appName)/service.yaml
                     apiVersion: v1
@@ -175,7 +176,7 @@ stages:
                       selector:
                         app: $(appName)'
 
-                  {{/if}}    
+                  {{/inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}}    
                       
                       | 
 
