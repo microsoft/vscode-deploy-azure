@@ -1,14 +1,17 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as fs from 'fs';
 import * as Mustache from 'mustache';
+import * as os from 'os';
 import * as path from 'path';
 import * as Q from 'q';
 import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
 import { PipelineTemplate, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
+import { TracePoints } from '../resources/tracePoints';
+import { telemetryHelper } from './telemetryHelper';
 
-export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters,  targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
     let localRepoAnalysisResult = await analyzeRepo(repoPath);
     let analysisResult = localRepoAnalysisResult;
 
@@ -24,13 +27,13 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
         });
 
         //Languages not supported by RepoAnalysisService should be considered and taken from LocalRepoAnalysis
-        localRepoAnalysisResult.languages.forEach((language)=>{
-            if(analysisResult.languages.indexOf(language) === -1){
+        localRepoAnalysisResult.languages.forEach((language) => {
+            if (analysisResult.languages.indexOf(language) === -1) {
                 analysisResult.languages.push(language);
             }
         });
 
-        if(analysisResult.languages.length === 0){
+        if (analysisResult.languages.length === 0) {
             analysisResult.languages.push(SupportedLanguage.NONE);
         }
     }
@@ -66,7 +69,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
                 }
                 break;
             case SupportedLanguage.DOTNETCORE:
-                if (templateList[SupportedLanguage.DOTNETCORE] && templateList[SupportedLanguage.DOTNETCORE].length > 0 ) {
+                if (templateList[SupportedLanguage.DOTNETCORE] && templateList[SupportedLanguage.DOTNETCORE].length > 0) {
                     templateResult = templateResult.concat(templateList[SupportedLanguage.DOTNETCORE]);
                 }
                 break;
@@ -84,8 +87,8 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
         templateResult = templateList[SupportedLanguage.NONE];
     }
 
-    if(analysisResult.isFunctionApp) {
-        switch(repositoryProvider) {
+    if (analysisResult.isFunctionApp) {
+        switch (repositoryProvider) {
             case RepositoryProvider.AzureRepos:
                 templateResult = azurePipelineTargetBasedTemplates[AzureTarget.FunctionApp].concat(templateResult);
                 break;
@@ -140,6 +143,32 @@ export async function renderContent(templateFilePath: string, context: MustacheC
     });
 
     return deferred.promise;
+}
+
+export function getDockerPort(repoPath: string, relativeDockerFilePath?: string): string {
+    let dockerfilePath = relativeDockerFilePath;
+    if (!dockerfilePath) {
+        let files = fs.readdirSync(repoPath);
+        files.some((fileName) => { if (fileName.toLowerCase().endsWith('dockerfile')) { dockerfilePath = fileName; return true; } return false; });
+        if (!dockerfilePath) {
+            return null;
+        }
+    }
+
+    try {
+        let dockerContent = fs.readFileSync(path.join(repoPath, dockerfilePath), 'utf8');
+        let index = dockerContent.toLowerCase().indexOf('expose ');
+        if (index) {
+            let temp = dockerContent.substring(index + 'expose '.length);
+            let port = temp.substr(0, temp.indexOf(' ',) ? temp.indexOf(' ') : temp.indexOf(os.EOL));
+            return port;
+        }
+    }
+    catch (err) {
+        telemetryHelper.logError('TemplateHelper', TracePoints.ReadingDockerFileFailed, err);
+    }
+
+    return null;
 }
 
 async function analyzeRepo(repoPath: string): Promise<AnalysisResult> {
@@ -597,25 +626,32 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: false,
             parameters: [
                 {
-                    "name": "cluster",
+                    "name": "aksCluster",
                     "displayName": "Select Azure Kubernetes cluster to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
                     "dataSourceId": PreDefinedDataSourceIds.AKS
                 },
                 {
-                    "name": "acr",
+                    "name": "containerRegistry",
                     "displayName": "Select Azure Container Registry to store docker image",
                     "type": TemplateParameterType.GenericAzureResource,
                     "dataSourceId": PreDefinedDataSourceIds.ACR
+                },
+                {
+                    "name": "containerPort",
+                    "displayName": null,
+                    "type": TemplateParameterType.String,
+                    "dataSourceId": PreDefinedDataSourceIds.RepoAnalysis,
+                    "defaultValue": '8080'
                 }
             ],
             assets: [
                 {
-                    "id": "aksEndpoint",
+                    "id": "kubernetesServiceConnection ",
                     "type": TemplateAssetType.AKSKubeConfigServiceConnection
                 },
                 {
-                    "id": "acrEndpoint",
+                    "id": "containerRegistryServiceConnection",
                     "type": TemplateAssetType.ACRServiceConnection
                 }
             ]
@@ -634,21 +670,28 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
             enabled: false,
             parameters: [
                 {
-                    "name": "cluster",
+                    "name": "aksCluster",
                     "displayName": "Select Azure Kubernetes cluster to deploy your application",
                     "type": TemplateParameterType.GenericAzureResource,
                     "dataSourceId": PreDefinedDataSourceIds.AKS
                 },
                 {
-                    "name": "acr",
+                    "name": "containerRegistry",
                     "displayName": "Select Azure Container Registry to store docker image",
                     "type": TemplateParameterType.GenericAzureResource,
                     "dataSourceId": PreDefinedDataSourceIds.ACR
+                },
+                {
+                    "name": "containerPort",
+                    "displayName": null,
+                    "type": TemplateParameterType.String,
+                    "dataSourceId": PreDefinedDataSourceIds.RepoAnalysis,
+                    "defaultValue": "8080"
                 }
             ],
             assets: [
                 {
-                    "id": "aksKubeConfig",
+                    "id": "kubeConfig",
                     "type": TemplateAssetType.GitHubAKSKubeConfig
                 },
                 {

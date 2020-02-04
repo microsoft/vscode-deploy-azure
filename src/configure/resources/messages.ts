@@ -83,5 +83,6 @@ export class Messages {
     public static parameterWithNameNotSet = 'Parameter with name: %s has not yet been set, hence its value could not be found.';
     public static unableToFetchPasswordOfContainerRegistry = 'Password for container registry is could not be fetched. It is required for setting up AUTH with registry.';
     public static onlyAdminEnabledRegistriesAreAllowed = 'The chosen Container registry doesn\'t have admin user access enabled (allows access to registry with username password). Kindly choose a registry which has admin user access enabled.';
-    public static unableToGetSelectedResource = "Unable to fetch the selected azure resource: %s";
+    public static unableToGetSelectedResource = 'Unable to fetch the selected azure resource: %s';
+    public static unableToGetAksKubeConfig = 'We are unable to fetch kube config for the AKS cluster: %s, due to permission issues. Kindly choose a different one, over which you have access.';
 }
