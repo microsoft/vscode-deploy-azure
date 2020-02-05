@@ -163,7 +163,7 @@ export const DeploymentMessageType = 'CDDeploymentConfiguration';
 export const SetupAlreadyExists =  'SetupAlreadyExists';
 export const Browse = 'Browse';
 export const TargetResource = 'targetResource';
-export const AcrDoesNotHaveAdminAccessEnabled = 'AcrDoesNotHaveAdminAccessEnabled';
+export const ResourceDynamicValidationFailure = 'ResourceDynamicValidationFailure';
 
 //RepoAnalysis constants expected in response of Repository Analysis Service
 export const RepoAnalysisConstants = {
