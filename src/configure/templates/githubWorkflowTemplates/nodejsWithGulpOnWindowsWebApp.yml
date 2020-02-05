@@ -22,14 +22,14 @@ jobs:
 
     # install dependencies, build, and test
     - name: npm install, build
-      working-directory: {{{ workingDirectory }}}
+      working-directory: {{{ repositoryAnalysisApplicationSettings.settings.nodePackageFileDirectory }}}
       run: |
         npm install
-        gulp default --gulpfile {{{ repoAnalysisParameters.settings.nodeGulpFilePath }}}
+        gulp default --gulpfile gulpfile.js
 
     # deploy web app
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ workingDirectory }}}
+        package: {{{ repositoryAnalysisApplicationSettings.settings.nodePackageFileDirectory }}}
         publish-profile: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>

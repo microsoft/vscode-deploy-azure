@@ -22,7 +22,7 @@ jobs:
 
     - name: 'Run npm'
       shell: bash
-      working-directory: {{{ workingDirectory }}}
+      working-directory: {{{ repositoryAnalysisApplicationSettings.settings.nodePackageFileDirectory }}}
       run: |
         # If your function app project is not located in your repository's root
         # Please change your directory for npm in pushd
@@ -37,7 +37,7 @@ jobs:
       uses: Azure/functions-action@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ repoAnalysisParameters.workingDirectory }}}
+        package: {{{ repositoryAnalysisApplicationSettings.settings.azureFunctionsHostFileDirectory }}}
 
     # Azure logout
     - name: logout

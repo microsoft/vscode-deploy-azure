@@ -175,6 +175,7 @@ export const RepoAnalysisConstants = {
     Grunt: 'grunt',
     GulpFilePath: 'gulpFilePath',
     GruntFilePath: 'gruntFilePath',
+    PackageFilePath: 'packageFilePath',
 
     //Python
     Django: 'django',

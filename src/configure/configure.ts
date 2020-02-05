@@ -17,7 +17,7 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, ApplicationSettings, BuildAndDeploySettings } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, RepositoryAnalysisApplicationSettings, BuildAndDeploySettings } from './model/models';
 import { PipelineTemplate, TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -431,32 +431,23 @@ class Orchestrator {
             this.inputs.pipelineConfiguration.template = appropriatePipelines.find((pipeline) => {
                 return pipeline.label === selectedOption.label;
             });
-
-            //Post selecting the template update this.inputs.repoAnalysisParameters with corresponding languageSettings
-            if (extensionVariables.enableRepoAnalysis
-                && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github
-                && !!repoAnalysisResult
-                && !!repoAnalysisResult.applicationSettingsList) {
-
-                //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
-                this.inputs.repoAnalysisParameters = repoAnalysisResult.applicationSettingsList.find(applicationSettings => {
-                    return applicationSettings.language === this.inputs.pipelineConfiguration.template.language
-                });
-            }
-
-            //If RepoAnalysis is disabled or didn't provided response related to language of selected template
-            if(!this.inputs.repoAnalysisParameters){
-                this.inputs.repoAnalysisParameters = new ApplicationSettings();
-                this.inputs.repoAnalysisParameters.settings = new BuildAndDeploySettings();
-            }
-
-            //If application settings doesn't have working directory especially in Non Function App scenarios then update it with pipelineconfiguration.workingDirectory
-            if(!this.inputs.repoAnalysisParameters.workingDirectory){
-                this.inputs.repoAnalysisParameters.workingDirectory = this.inputs.pipelineConfiguration.workingDirectory;
-            }
         }
         else {
             this.inputs.pipelineConfiguration.template = appropriatePipelines[0];
+        }
+
+        //If RepoAnalysis is disabled or didn't provided response related to language of selected template
+        this.inputs.repositoryAnalysisApplicationSettings = new RepositoryAnalysisApplicationSettings();
+
+        //Post selecting the template update this.inputs.repositoryAnalysisApplicationSettings with corresponding languageSettings
+        if (extensionVariables.enableRepoAnalysis
+            && !!repoAnalysisResult
+            && !!repoAnalysisResult.repositoryAnalysisApplicationSettingsList) {
+
+            //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
+            this.inputs.repositoryAnalysisApplicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
+                return applicationSettings.language === this.inputs.pipelineConfiguration.template.language
+            });
         }
 
         telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);

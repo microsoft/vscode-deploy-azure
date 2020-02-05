@@ -17,8 +17,8 @@ class ExtensionVariables implements UIExtensionVariables {
     public enableRepoAnalysis: boolean;
 
     constructor() {
-        this.enableGitHubWorkflow = !workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub');
-        this.enableRepoAnalysis = false;
+        this.enableGitHubWorkflow = true;
+        this.enableRepoAnalysis = true;
     }
 }
 
@@ -31,7 +31,7 @@ export class WizardInputs {
     isNewOrganization: boolean;
     sourceRepository: GitRepositoryParameters;
     targetResource: AzureParameters = new AzureParameters();
-    repoAnalysisParameters: ApplicationSettings = new ApplicationSettings();
+    repositoryAnalysisApplicationSettings: RepositoryAnalysisApplicationSettings;
     pipelineConfiguration: PipelineConfiguration = new PipelineConfiguration();
     azureSession: AzureSession;
     subscriptionId: string;
@@ -39,23 +39,26 @@ export class WizardInputs {
 }
 
 export class RepositoryAnalysisParameters {
-    applicationSettingsList: ApplicationSettings[] = [];
+    repositoryAnalysisApplicationSettingsList: RepositoryAnalysisApplicationSettings[];
 }
 
 //VS Code side model to extract information in any format from RepoAnalysis service result.
-export class ApplicationSettings {
-    workingDirectory: string;
+export class RepositoryAnalysisApplicationSettings {
     language: SupportedLanguage;
     buildTargetName: string;
     deployTargetName: string;
-    settings: BuildAndDeploySettings;
+    settings: BuildAndDeploySettings = new BuildAndDeploySettings();
 }
 
 export class BuildAndDeploySettings {
     nodeGulpFilePath?: string = "gulpfile.js";
     nodeGruntFilePath?: string = "gruntfile.js";
+    nodePackageFilePath?: string = "package.json";
+    nodePackageFileDirectory?: string = ".";
     pythonRequirementsFilePath?: string = "requirements.txt";
+    pythonRequirementsFileDirectory?: string = ".";
     azureFunctionsHostFilePath?: string = "host.json";
+    azureFunctionsHostFileDirectory?: string = ".";
 }
 
 export class AzureParameters {
@@ -93,6 +96,7 @@ export class MustacheContext {
         this.workingDirectory = inputs.pipelineConfiguration.workingDirectory;
         this.sourceRepository = inputs.sourceRepository;
         this.targetResource = inputs.targetResource;
+        this.repositoryAnalysisApplicationSettings = inputs.repositoryAnalysisApplicationSettings;
     }
 
     inputs: { [key: string]: any } = {};
@@ -102,6 +106,7 @@ export class MustacheContext {
     // the below two properties will be removed during transition to parameterized templates.
     sourceRepository: GitRepositoryParameters;
     targetResource: AzureParameters;
+    repositoryAnalysisApplicationSettings: RepositoryAnalysisApplicationSettings;
 }
 
 export class QuickPickItemWithData implements QuickPickItem {

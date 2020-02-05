@@ -1,5 +1,5 @@
 import { PortalExtensionClient } from "../clients/portalExtensionClient";
-import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, RepositoryAnalysisParameters, ApplicationSettings, extensionVariables, RepositoryDetails, BuildAndDeploySettings } from "../model/models";
+import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, RepositoryAnalysisParameters, RepositoryAnalysisApplicationSettings, extensionVariables, RepositoryDetails } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
 import * as path from 'path';
 
@@ -38,40 +38,43 @@ export class RepoAnalysisHelper {
         }
 
         let parameters: RepositoryAnalysisParameters = new RepositoryAnalysisParameters();
-        repositoryAnalysisResponse.languageSettingsList.forEach((analysis) => {
+        parameters.repositoryAnalysisApplicationSettingsList = [];
+        repositoryAnalysisResponse.applicationSettingsList.forEach((analysis) => {
 
             //Process only for VSCode Supported Languages
             if(Object.keys(SupportedLanguage).indexOf(analysis.language.toUpperCase()) > -1) {
-                let applicationSettings: ApplicationSettings = new ApplicationSettings();
+                let applicationSettings: RepositoryAnalysisApplicationSettings = new RepositoryAnalysisApplicationSettings();
                 applicationSettings.language = analysis.language;
-                applicationSettings.settings = new BuildAndDeploySettings();
 
                 if(!!analysis.settings && !!analysis.buildTargetName) {
                     applicationSettings.buildTargetName = analysis.buildTargetName;
                     if (analysis.language === SupportedLanguage.NODE) {
+                        applicationSettings.settings.nodePackageFilePath = analysis.settings[RepoAnalysisConstants.PackageFilePath];
+                        applicationSettings.settings.nodePackageFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.PackageFilePath]);
                         if (analysis.buildTargetName === RepoAnalysisConstants.Gulp && !!analysis.settings[RepoAnalysisConstants.GulpFilePath]) {
-                            applicationSettings.settings.nodeGulpFilePath = analysis.Settings[RepoAnalysisConstants.GulpFilePath];
+                            applicationSettings.settings.nodeGulpFilePath = analysis.settings[RepoAnalysisConstants.GulpFilePath];
                         }
-                        if (analysis.buildTargetName === RepoAnalysisConstants.Grunt && !!analysis.settings[RepoAnalysisConstants.GruntFilePath]) {
-                            applicationSettings.settings.nodeGruntFilePath = analysis.Settings[RepoAnalysisConstants.GruntFilePath];
+                        else if (analysis.buildTargetName === RepoAnalysisConstants.Grunt && !!analysis.settings[RepoAnalysisConstants.GruntFilePath]) {
+                            applicationSettings.settings.nodeGruntFilePath = analysis.settings[RepoAnalysisConstants.GruntFilePath];
                         }
                     }
                     else if (analysis.language === SupportedLanguage.PYTHON) {
                         if (!!analysis.settings[RepoAnalysisConstants.RequirementsFilePath]) {
                             applicationSettings.settings.pythonRequirementsFilePath = analysis.settings[RepoAnalysisConstants.RequirementsFilePath];
+                            applicationSettings.settings.pythonRequirementsFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.RequirementsFilePath]);
                         }
                     }
                 }
-                else if(!!analysis.settings && !!analysis.deployTargetName) {
+                if(!!analysis.settings && !!analysis.deployTargetName) {
                     applicationSettings.deployTargetName = analysis.deployTargetName;
                     if(analysis.deployTargetName == RepoAnalysisConstants.AzureFunctions){
                         applicationSettings.settings.azureFunctionsHostFilePath = analysis.settings[RepoAnalysisConstants.HostFilePath];
-                        applicationSettings.workingDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.HostFilePath]);
+                        applicationSettings.settings.azureFunctionsHostFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.HostFilePath]);
                     }
                 }
-                parameters.applicationSettingsList.push(applicationSettings);
+                parameters.repositoryAnalysisApplicationSettingsList.push(applicationSettings);
             }
         });
-        return parameters;;
+        return parameters;
     }
 }

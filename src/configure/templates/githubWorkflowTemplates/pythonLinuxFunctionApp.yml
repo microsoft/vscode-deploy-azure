@@ -27,19 +27,19 @@ jobs:
 
     - name: 'Run pip'
       shell: bash
-      working-directory: {{{ workingDirectory }}}
+      working-directory: {{{ repositoryAnalysisApplicationSettings.settings.pythonRequirementsFileDirectory }}}
       run: |
         python -m pip install --upgrade pip
         python -m venv --copies worker_venv
         source worker_venv/bin/activate
-        pip install -r {{{ repoAnalysisParameters.settings.pythonRequirementsFilePath }}}
+        pip install -r requirements.txt
 
     # deploy web app using publish profile credentials
     - name: 'Run Azure Functions Action'
       uses: Azure/functions-action@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ repoAnalysisParameters.workingDirectory }}}
+        package: {{{ repositoryAnalysisApplicationSettings.settings.azureFunctionsHostFileDirectory }}}
 
     # Azure logout
     - name: logout
