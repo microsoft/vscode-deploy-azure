@@ -47,7 +47,7 @@ jobs:
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ repositoryAnalysisApplicationSettings.settings.nodePackageFileDirectory }}}
+        package: {{{ repositoryAnalysisApplicationSettings.settings.pythonRequirementsFileDirectory }}}
 
     # Azure logout
     - name: logout
