@@ -1,5 +1,5 @@
 import { PortalExtensionClient } from "../clients/portalExtensionClient";
-import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, RepositoryAnalysisParameters, RepositoryAnalysisApplicationSettings, extensionVariables, RepositoryDetails } from "../model/models";
+import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, RepositoryAnalysisParameters, RepositoryAnalysisApplicationSettings, RepositoryDetails } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
 import * as path from 'path';
 
