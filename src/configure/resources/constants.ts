@@ -165,7 +165,7 @@ export const Browse = 'Browse';
 export const TargetResource = 'targetResource';
 export const ResourceDynamicValidationFailure = 'ResourceDynamicValidationFailure';
 
-//RepoAnalysis constants
+//RepoAnalysis constants expected in response of Repository Analysis Service
 export const RepoAnalysisConstants = {
     //Common
     Master: 'master',
@@ -175,11 +175,13 @@ export const RepoAnalysisConstants = {
     Grunt: 'grunt',
     GulpFilePath: 'gulpFilePath',
     GruntFilePath: 'gruntFilePath',
+    PackageFilePath: 'packageFilePath',
 
     //Python
     Django: 'django',
     RequirementsFilePath: 'requirementsFilePath',
 
     //Functions
-    AzureFunctions: 'azure:functions'
+    AzureFunctions: 'azure:functions',
+    HostFilePath: 'hostFilePath'
 }

@@ -27,10 +27,10 @@ jobs:
 
     # install dependencies, build, and test
     - name: npm install, build
-      working-directory: {{{ workingDirectory }}}
+      working-directory: {{{ repositoryAnalysisApplicationSettings.settings.nodePackageFileDirectory }}}
       run: |
         npm install
-        gulp default --gulpfile {{{ repoAnalysisParameters.buildSettings.gulpFilePath }}}
+        gulp default --gulpfile gulpfile.js
 
     - uses: azure/appservice-settings@v1
       with:
@@ -41,7 +41,7 @@ jobs:
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ workingDirectory }}}
+        package: {{{ repositoryAnalysisApplicationSettings.settings.nodePackageFileDirectory }}}
 
     # Azure logout
     - name: logout
