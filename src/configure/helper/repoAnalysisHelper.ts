@@ -13,7 +13,7 @@ export class RepoAnalysisHelper {
     public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters): Promise<RepositoryAnalysisParameters> {
 
         //As of now this solution has support only for github
-        if (extensionVariables.enableRepoAnalysis == false || sourceRepositoryDetails.repositoryProvider != RepositoryProvider.Github) {
+        if (sourceRepositoryDetails.repositoryProvider != RepositoryProvider.Github) {
             return null;
         }
 

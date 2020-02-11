@@ -14,11 +14,9 @@ class ExtensionVariables implements UIExtensionVariables {
     public reporter: ITelemetryReporter;
     public ui: IAzureUserInput;
     public enableGitHubWorkflow: boolean;
-    public enableRepoAnalysis: boolean;
 
     constructor() {
         this.enableGitHubWorkflow = !workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub');
-        this.enableRepoAnalysis = true;
     }
 }
 

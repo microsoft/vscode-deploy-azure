@@ -440,8 +440,7 @@ class Orchestrator {
         this.inputs.repositoryAnalysisApplicationSettings = new RepositoryAnalysisApplicationSettings();
 
         //Post selecting the template update this.inputs.repositoryAnalysisApplicationSettings with corresponding languageSettings
-        if (extensionVariables.enableRepoAnalysis
-            && !!repoAnalysisResult
+        if (!!repoAnalysisResult
             && !!repoAnalysisResult.repositoryAnalysisApplicationSettingsList) {
 
             //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
