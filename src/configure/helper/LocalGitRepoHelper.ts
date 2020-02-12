@@ -110,6 +110,23 @@ export class LocalGitRepoHelper {
         return pathToFile;
     }
 
+    public async commitAndPushMultipleFiles(commitMessage: string, repositoryDetails: GitRepositoryParameters, ...files: Array<string>): Promise<string> {
+        await this.gitReference.add(files);
+        await this.gitReference.commit(commitMessage, files);
+        let gitLog = await this.gitReference.log();
+
+        if (repositoryDetails.remoteName && repositoryDetails.branch) {
+            await this.gitReference.push(repositoryDetails.remoteName, repositoryDetails.branch, {
+                "--set-upstream": null
+            });
+        }
+        else {
+            throw new Error(Messages.cannotAddFileRemoteMissing);
+        }
+
+        return gitLog.latest.hash;
+    }
+
     /**
      * commits yaml pipeline file into the local repo and pushes the commit to remote branch.
      * @param pipelineYamlPath : local path of yaml pipeline in the repository
