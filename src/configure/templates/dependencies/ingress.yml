@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}
+    labels:
+        app: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}
+    annotations:
+        kubernetes.io/ingress.class: addon-http-application-routing
+spec:
+    rules:
+        - host: {{#toLower}}{{#sanitizeString}}{{{ inputs.namespace }}}{{/sanitizeString}}{{/toLower}}-{{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}.{{{inputs.aksCluster.properties.fqdn}}}
+          http:
+            paths:
+            - path: /
+              backend:
+                serviceName: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}
+                servicePort: {{{ inputs.containerPort }}}

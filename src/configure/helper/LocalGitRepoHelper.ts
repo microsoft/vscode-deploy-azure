@@ -33,7 +33,7 @@ export class LocalGitRepoHelper {
             'user.name'
         ]);
 
-        return username
+        return username;
     }
 
     public static async GetAvailableFileName(fileName:string, repoPath: string): Promise<string> {
@@ -115,7 +115,14 @@ export class LocalGitRepoHelper {
      * @param pipelineYamlPath : local path of yaml pipeline in the repository
      * @returns: thenable string which resolves to commitId once commit is pushed to remote branch, and failure message if unsuccessful
      */
-    public async commitAndPushPipelineFile(pipelineYamlPath: string, repositoryDetails: GitRepositoryParameters, commitMessage: string): Promise<string> {
+    public async commitAndPushPipelineFile(pipelineYamlPath: string[], repositoryDetails: GitRepositoryParameters, commitMessage: string): Promise<string> {
+       // pipelineYamlPath.forEach(async function(file)
+    //    for(let file of pipelineYamlPath)
+    //         {
+    //             console.log("inside loop");
+    //             await this.gitReference.add(file);
+
+    //         }
         await this.gitReference.add(pipelineYamlPath);
         await this.gitReference.commit(commitMessage, pipelineYamlPath);
         let gitLog = await this.gitReference.log();

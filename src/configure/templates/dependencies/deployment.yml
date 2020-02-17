@@ -1,0 +1,16 @@
+apiVersion : apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}
+    spec:
+      containers:
+        - name: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}
+          image: {{#toLower}}{{{inputs.containerRegistry.name}}}{{/toLower}}.azurecr.io/{{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}
+          ports:
+          - containerPort: {{{ inputs.containerPort }}}

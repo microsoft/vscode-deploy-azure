@@ -9,6 +9,7 @@ import { PipelineTemplate, PreDefinedDataSourceIds, TemplateAssetType, TemplateP
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
+import { MustacheHelper } from './mustacheHelper';
 import { telemetryHelper } from './telemetryHelper';
 
 export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
@@ -664,11 +665,11 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
     'docker': [
         {
             label: 'Containerized application to AKS',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/AksWithReuseACR.yml'),
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/AksWithReuseACR.yml'),
             language: SupportedLanguage.DOCKER,
             targetType: TargetResourceType.AKS,
             targetKind: null,
-            enabled: false,
+            enabled: true,
             parameters: [
                 {
                     "name": "aksCluster",
@@ -688,6 +689,13 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateParameterType.String,
                     "dataSourceId": PreDefinedDataSourceIds.RepoAnalysis,
                     "defaultValue": "8080"
+                },
+                {
+                    "name": "namespace",
+                    "displayName": null,
+                    "type": TemplateParameterType.String,
+                    "dataSourceId": "",
+                    "defaultValue": "namespace"
                 }
             ],
             assets: [
@@ -702,6 +710,22 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                 {
                     "id": "containerRegistryPassword",
                     "type": TemplateAssetType.GitHubRegistryPassword
+                },
+                {
+                    "id": "deploymentFile",
+                    "type": TemplateAssetType.File
+                },
+                {
+                    "id": "serviceFile",
+                    "type": TemplateAssetType.File
+                },
+                {
+                    "id": "ingressFile",
+                    "type": TemplateAssetType.File
+                },
+                {
+                    "id": "serviceIngressFile",
+                    "type": TemplateAssetType.File
                 }
             ]
         }

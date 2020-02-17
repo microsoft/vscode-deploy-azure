@@ -216,35 +216,50 @@ export class TemplateParameterHelper {
         return null;
     }
 
+
+    private tinyGuid()
+    {
+        return 'xxx'.replace(/[xy]/g, c => {
+			const r = Math.random() * 16 | 0;
+			const v = (c === 'x') ? r : (r & 0x3 | 0x8);
+			return v.toString(16);
+		});
+    }
+
     private async getStringParameter(parameter: TemplateParameter, inputs: WizardInputs): Promise<void> {
         let controlProvider = new ControlProvider();
+        if (parameter.name.toLowerCase() === "namespace") {
 
-        if (!parameter.dataSourceId) {
-            inputs.pipelineConfiguration.params[parameter.name] = await controlProvider.showInputBox(
-                parameter.name,
-                {
-                    placeHolder: parameter.displayName
-                }
-            );
+            inputs.pipelineConfiguration.params[parameter.name] = inputs.pipelineConfiguration.params.aksCluster.name + this.tinyGuid();
         }
         else {
-            switch (parameter.dataSourceId) {
-                case PreDefinedDataSourceIds.RepoAnalysis:
-                    if (parameter.name.toLowerCase() === 'containerport') {
-                        var port = templateHelper.getDockerPort(inputs.sourceRepository.localPath);
-                        port = port ? port : parameter.defaultValue;
+            if (!parameter.dataSourceId) {
+                inputs.pipelineConfiguration.params[parameter.name] = await controlProvider.showInputBox(
+                    parameter.name,
+                    {
+                        placeHolder: parameter.displayName
+                    }
+                );
+            }
+            else {
+                switch (parameter.dataSourceId) {
+                    case PreDefinedDataSourceIds.RepoAnalysis:
+                        if (parameter.name.toLowerCase() === 'containerport') {
+                            var port = templateHelper.getDockerPort(inputs.sourceRepository.localPath);
+                            port = port ? port : parameter.defaultValue;
 
-                        inputs.pipelineConfiguration.params[parameter.name] = port;
-                    }
-                    break;
-                default:
-                    if (parameter.options) {
-                        inputs.pipelineConfiguration.params[parameter.name] = await controlProvider.showQuickPick(
-                            parameter.name,
-                            parameter.options ? parameter.options.map(x => { return { label: x.key, data: x.value }; }) : [],
-                            { placeHolder: parameter.displayName },
-                            utils.format(TelemetryKeys.pickListCount, parameter.name));
-                    }
+                            inputs.pipelineConfiguration.params[parameter.name] = port;
+                        }
+                        break;
+                    default:
+                        if (parameter.options) {
+                            inputs.pipelineConfiguration.params[parameter.name] = await controlProvider.showQuickPick(
+                                parameter.name,
+                                parameter.options ? parameter.options.map(x => { return { label: x.key, data: x.value }; }) : [],
+                                { placeHolder: parameter.displayName },
+                                utils.format(TelemetryKeys.pickListCount, parameter.name));
+                        }
+                }
             }
         }
     }

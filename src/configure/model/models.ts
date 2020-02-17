@@ -2,7 +2,7 @@ import { SubscriptionModels } from 'azure-arm-resource';
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { ServiceClientCredentials } from 'ms-rest';
 import { AzureEnvironment } from 'ms-rest-azure';
-import { ExtensionContext, OutputChannel, QuickPickItem, workspace } from 'vscode';
+import { ExtensionContext, OutputChannel, QuickPickItem } from 'vscode';
 import { IAzureUserInput, ITelemetryReporter, UIExtensionVariables } from 'vscode-azureextensionui';
 import { Messages } from '../resources/messages';
 import { PipelineTemplate } from './templateModels';
@@ -34,6 +34,14 @@ export class WizardInputs {
     azureSession: AzureSession;
     subscriptionId: string;
     githubPATToken?: string;
+    aksManifests?: AKSManifestFiles = new AKSManifestFiles();
+}
+
+class AKSManifestFiles {
+    deploymentFile?: string;
+    serviceFile?: string;
+    serviceIngressFile?: string;
+    ingressFile?: string;
 }
 
 export class RepositoryAnalysisParameters {

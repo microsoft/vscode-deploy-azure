@@ -133,7 +133,18 @@ export class GitHubWorkflowConfigurer implements Configurer {
         return path.join(workflowDirectoryPath, pipelineFileName);
     }
 
-    public async checkInPipelineFileToRepository(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
+    public async getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string> {
+        // Create .github directory
+        let manifestsDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), 'manifests');
+        if (!fs.existsSync(manifestsDirectoryPath)) {
+            fs.mkdirSync(manifestsDirectoryPath);
+        }
+
+        let manifestFileName = await LocalGitRepoHelper.GetAvailableFileName(fileName, manifestsDirectoryPath);
+        return path.join(manifestsDirectoryPath, manifestFileName);
+    }
+
+    public async checkInPipelineFileToRepository(filesToCommit: string[],inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
 
         while (!inputs.sourceRepository.commitId) {
             let commitOrDiscard = await vscode.window.showInformationMessage(
@@ -145,7 +156,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 inputs.sourceRepository.commitId = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
                     try {
                         // handle when the branch is not upto date with remote branch and push fails
-                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineConfiguration.filePath, inputs.sourceRepository, extensionVariables.enableGitHubWorkflow ? Messages.addGitHubWorkflowYmlFile : Messages.addAzurePipelinesYmlFile );
+                        return await localGitRepoHelper.commitAndPushPipelineFile(filesToCommit, inputs.sourceRepository, extensionVariables.enableGitHubWorkflow ? Messages.addGitHubWorkflowYmlFile : Messages.addAzurePipelinesYmlFile );
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);
