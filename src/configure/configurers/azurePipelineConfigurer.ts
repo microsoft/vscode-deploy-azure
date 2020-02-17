@@ -227,10 +227,13 @@ export class AzurePipelineConfigurer implements Configurer {
         return path.join(inputs.sourceRepository.localPath, await LocalGitRepoHelper.GetAvailableFileName('azure-pipelines.yml', inputs.sourceRepository.localPath));
     }
 
-    public async checkInPipelineFileToRepository(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
+    public async getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string> { return null;}
+
+    public async checkInPipelineFileToRepository(files:string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
 
         let commitMessage: string;
         let initializeGitRepository = !inputs.sourceRepository.remoteUrl;
+        let filesToCommit:string[]  = [];
 
         if (!inputs.sourceRepository.remoteUrl) {
             commitMessage = Messages.modifyAndCommitFileWithGitInitialization;
@@ -268,7 +271,8 @@ export class AzurePipelineConfigurer implements Configurer {
                         }
 
                         // handle when the branch is not upto date with remote branch and push fails
-                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineConfiguration.filePath, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
+                        filesToCommit.push(inputs.pipelineConfiguration.filePath);
+                        return await localGitRepoHelper.commitAndPushPipelineFile(filesToCommit, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);

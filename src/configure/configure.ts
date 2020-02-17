@@ -453,13 +453,57 @@ class Orchestrator {
     }
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
+        let filesToCommit: string[] = [];
+        let manifestPath: string;
+        
         try {
-            this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
+
             let mustacheContext = new MustacheContext(this.inputs);
+            
+            if(this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS" )
+            {   
+                manifestPath = path.join(path.dirname(path.dirname(__dirname)), 'out\\configure\\templates\\dependencies\\');
+
+                this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, 'deployment.yml');
+                this.inputs.pipelineConfiguration.assets['deploymentFile'] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
+                filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
+                await this.localGitRepoHelper.addContentToFile(
+                    await templateHelper.renderContent(manifestPath+"deployment.yml", mustacheContext),
+                    this.inputs.pipelineConfiguration.filePath);
+
+                if(this.inputs.pipelineConfiguration.params.aksCluster.properties.addonProfiles.httpApplicationRouting.enabled)
+                {                    
+                    this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, 'service-ingress.yml');
+                    this.inputs.pipelineConfiguration.assets['serviceFile'] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
+                    filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
+                    await this.localGitRepoHelper.addContentToFile(
+                        await templateHelper.renderContent(manifestPath+"service-ingress", mustacheContext),
+                        this.inputs.pipelineConfiguration.filePath);
+               
+                    this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, 'ingress.yml');
+                    this.inputs.aksManifests.ingressFile = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
+                    filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
+                    await this.localGitRepoHelper.addContentToFile(
+                        await templateHelper.renderContent(manifestPath+"ingress", mustacheContext),
+                        this.inputs.pipelineConfiguration.filePath);
+                }
+                else
+                {
+                    this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, 'service.yml');
+                    this.inputs.pipelineConfiguration.assets['serviceFile'] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
+                    filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
+                    await this.localGitRepoHelper.addContentToFile(
+                        await templateHelper.renderContent(manifestPath+"service.yml", mustacheContext),
+                        this.inputs.pipelineConfiguration.filePath);           
+                }  
+            }
+            this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
+            filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
             await this.localGitRepoHelper.addContentToFile(
                 await templateHelper.renderContent(this.inputs.pipelineConfiguration.template.path, mustacheContext),
                 this.inputs.pipelineConfiguration.filePath);
             await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineConfiguration.filePath));
+
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.AddingContentToPipelineFileFailed, error);
@@ -467,7 +511,7 @@ class Orchestrator {
         }
 
         try {
-            await pipelineConfigurer.checkInPipelineFileToRepository(this.inputs, this.localGitRepoHelper);
+            await pipelineConfigurer.checkInPipelineFileToRepository(filesToCommit, this.inputs, this.localGitRepoHelper);
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.PipelineFileCheckInFailed, error);
