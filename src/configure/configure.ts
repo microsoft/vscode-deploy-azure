@@ -451,7 +451,6 @@ class Orchestrator {
 
         telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
     }
-
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
         let filesToCommit: string[] = [];
         let manifestPath: string;
@@ -470,21 +469,22 @@ class Orchestrator {
                 await this.localGitRepoHelper.addContentToFile(
                     await templateHelper.renderContent(manifestPath+"deployment.yml", mustacheContext),
                     this.inputs.pipelineConfiguration.filePath);
-
-                if(this.inputs.pipelineConfiguration.params.aksCluster.properties.addonProfiles.httpApplicationRouting.enabled)
+                var clusterProperties  =   JSON.parse(JSON.stringify(this.inputs.pipelineConfiguration.params.aksCluster.properties).toLowerCase());
+                //if(this.inputs.pipelineConfiguration.params.aksCluster.properties.getProp("addonProfiles").getProp("httpApplicationRouting").enabled)
+                if(clusterProperties.addonProfiles && clusterProperties.addonprofiles.httpapplicationrouting)
                 {                    
                     this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, 'service-ingress.yml');
-                    this.inputs.pipelineConfiguration.assets['serviceFile'] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
+                    this.inputs.pipelineConfiguration.assets['serviceIngressFile'] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
                     filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
                     await this.localGitRepoHelper.addContentToFile(
-                        await templateHelper.renderContent(manifestPath+"service-ingress", mustacheContext),
+                        await templateHelper.renderContent(manifestPath+"service-ingress.yml", mustacheContext),
                         this.inputs.pipelineConfiguration.filePath);
                
                     this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, 'ingress.yml');
-                    this.inputs.aksManifests.ingressFile = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
+                    this.inputs.pipelineConfiguration.assets['ingressFile'] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
                     filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
                     await this.localGitRepoHelper.addContentToFile(
-                        await templateHelper.renderContent(manifestPath+"ingress", mustacheContext),
+                        await templateHelper.renderContent(manifestPath+"ingress.yml", mustacheContext),
                         this.inputs.pipelineConfiguration.filePath);
                 }
                 else
