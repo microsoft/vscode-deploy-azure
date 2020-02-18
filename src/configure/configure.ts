@@ -17,7 +17,7 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, RepositoryAnalysisApplicationSettings } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { PipelineTemplate, TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -445,56 +445,42 @@ class Orchestrator {
 
             //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
             this.inputs.repositoryAnalysisApplicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
-                return applicationSettings.language === this.inputs.pipelineConfiguration.template.language
+                return applicationSettings.language === this.inputs.pipelineConfiguration.template.language;
             });
         }
 
         telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
     }
-    private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
-        let filesToCommit: string[] = [];
-        let manifestPath: string;
-        
-        try {
 
-            let mustacheContext = new MustacheContext(this.inputs);
-            
+    private async manifestFileHandler(manifestFile:string,pipelineConfigurer: Configurer,filesToCommit:string[])
+    {
+        let manifestPath: string = path.join(path.dirname(path.dirname(__dirname)), 'out\\configure\\templates\\dependencies\\');
+        let mustacheContext = new MustacheContext(this.inputs);
+
+        this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, manifestFile +'.yml');
+        this.inputs.pipelineConfiguration.assets[manifestFile+"File"] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
+        filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
+        await this.localGitRepoHelper.addContentToFile(
+            await templateHelper.renderContent(manifestPath + manifestFile +'.yml', mustacheContext),
+            this.inputs.pipelineConfiguration.filePath);
+    }
+    private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
+        let filesToCommit: string[] = [];       
+        try {
+            let mustacheContext = new MustacheContext(this.inputs);           
             if(this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS" )
             {   
-                manifestPath = path.join(path.dirname(path.dirname(__dirname)), 'out\\configure\\templates\\dependencies\\');
-
-                this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, 'deployment.yml');
-                this.inputs.pipelineConfiguration.assets['deploymentFile'] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
-                filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
-                await this.localGitRepoHelper.addContentToFile(
-                    await templateHelper.renderContent(manifestPath+"deployment.yml", mustacheContext),
-                    this.inputs.pipelineConfiguration.filePath);
-                var clusterProperties  =   JSON.parse(JSON.stringify(this.inputs.pipelineConfiguration.params.aksCluster.properties).toLowerCase());
-                //if(this.inputs.pipelineConfiguration.params.aksCluster.properties.getProp("addonProfiles").getProp("httpApplicationRouting").enabled)
-                if(clusterProperties.addonProfiles && clusterProperties.addonprofiles.httpapplicationrouting)
+                await this.manifestFileHandler("deployment",pipelineConfigurer, filesToCommit);
+                // var clusterProperties  =   JSON.parse(JSON.stringify(this.inputs.pipelineConfiguration.params.aksCluster.properties).toLowerCase());
+                // this.inputs.pipelineConfiguration.params.httpApplicationRouting =   clusterProperties.addonprofiles.httpapplicationrouting.enabled;
+                if(this.inputs.pipelineConfiguration.params.httpApplicationRouting)
                 {                    
-                    this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, 'service-ingress.yml');
-                    this.inputs.pipelineConfiguration.assets['serviceIngressFile'] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
-                    filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
-                    await this.localGitRepoHelper.addContentToFile(
-                        await templateHelper.renderContent(manifestPath+"service-ingress.yml", mustacheContext),
-                        this.inputs.pipelineConfiguration.filePath);
-               
-                    this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, 'ingress.yml');
-                    this.inputs.pipelineConfiguration.assets['ingressFile'] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
-                    filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
-                    await this.localGitRepoHelper.addContentToFile(
-                        await templateHelper.renderContent(manifestPath+"ingress.yml", mustacheContext),
-                        this.inputs.pipelineConfiguration.filePath);
+                    await this.manifestFileHandler("service-ingress",pipelineConfigurer, filesToCommit);
+                    await this.manifestFileHandler("ingress",pipelineConfigurer, filesToCommit);
                 }
                 else
-                {
-                    this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, 'service.yml');
-                    this.inputs.pipelineConfiguration.assets['serviceFile'] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
-                    filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
-                    await this.localGitRepoHelper.addContentToFile(
-                        await templateHelper.renderContent(manifestPath+"service.yml", mustacheContext),
-                        this.inputs.pipelineConfiguration.filePath);           
+                {  
+                    await this.manifestFileHandler("service",pipelineConfigurer, filesToCommit);  
                 }  
             }
             this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);

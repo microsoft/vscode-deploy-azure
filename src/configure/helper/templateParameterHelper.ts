@@ -77,12 +77,12 @@ export class TemplateParameterHelper {
         if (!!parameter) {
             switch (parameter.type) {
                 case TemplateParameterType.String:
+                case TemplateParameterType.Boolean:
                     await this.getStringParameter(parameter, inputs);
                     break;
                 case TemplateParameterType.GenericAzureResource:
                     await this.getAzureResourceParameter(parameter, inputs);
                     break;
-                case TemplateParameterType.Boolean:
                 case TemplateParameterType.SecureString:
                 default:
                     throw new Error(utils.format(Messages.parameterOfTypeNotSupported, parameter.type));
@@ -231,6 +231,10 @@ export class TemplateParameterHelper {
         if (parameter.name.toLowerCase() === "namespace") {
 
             inputs.pipelineConfiguration.params[parameter.name] = inputs.pipelineConfiguration.params.aksCluster.name + this.tinyGuid();
+        }
+        else if(parameter.name.toLowerCase() === "httpapplicationrouting"){
+            var clusterProperties  =   JSON.parse(JSON.stringify(inputs.pipelineConfiguration.params.aksCluster.properties).toLowerCase());
+            inputs.pipelineConfiguration.params[parameter.name] =   clusterProperties.addonprofiles.httpapplicationrouting.enabled;
         }
         else {
             if (!parameter.dataSourceId) {
