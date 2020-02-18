@@ -50,8 +50,8 @@ jobs:
         manifests: |
           {{{assets.deploymentFile}}}
           {{#inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}}
-          .github/dependencies/service-ingress.yml
-          .github/dependencies/ingress.yml
+          {{{assets.serviceIngressFile}}}
+          {{{assets.ingressFile}}}
           {{/inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}}
           {{^inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}}
           {{{assets.serviceFile}}}

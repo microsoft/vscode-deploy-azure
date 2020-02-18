@@ -1,7 +1,6 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as fs from 'fs';
 import * as Mustache from 'mustache';
-import * as os from 'os';
 import * as path from 'path';
 import * as Q from 'q';
 import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
@@ -162,9 +161,12 @@ export function getDockerPort(repoPath: string, relativeDockerFilePath?: string)
         let index = dockerContent.toLowerCase().indexOf('expose ');
         if (index) {
             let temp = dockerContent.substring(index + 'expose '.length);
-            let port = temp.substr(0, temp.indexOf(' ',) ? temp.indexOf(' ') : temp.indexOf(os.EOL));
-            return port;
+            let ports = temp.substr(0, temp.indexOf('\n')).split(' ',).filter(Boolean);
+            if(ports.length) {
+                return ports[0];
+            }
         }
+        return "80";
     }
     catch (err) {
         telemetryHelper.logError('TemplateHelper', TracePoints.ReadingDockerFileFailed, err);
@@ -644,7 +646,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "displayName": null,
                     "type": TemplateParameterType.String,
                     "dataSourceId": PreDefinedDataSourceIds.RepoAnalysis,
-                    "defaultValue": '8080'
+                    "defaultValue": '80'
                 }
             ],
             assets: [
