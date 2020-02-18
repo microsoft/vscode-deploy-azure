@@ -698,7 +698,15 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateParameterType.String,
                     "dataSourceId": "",
                     "defaultValue": "namespace"
-                }
+                },
+                {
+                    "name": "httpApplicationRouting",
+                    "displayName": null,
+                    "type": TemplateParameterType.Boolean,
+                    "dataSourceId": "",
+                    "defaultValue": false
+                },
+
             ],
             assets: [
                 {
@@ -726,7 +734,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateAssetType.File
                 },
                 {
-                    "id": "serviceIngressFile",
+                    "id": "service-ingressFile",
                     "type": TemplateAssetType.File
                 }
             ]
