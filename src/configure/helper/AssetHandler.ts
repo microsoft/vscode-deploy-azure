@@ -146,9 +146,7 @@ export class AssetHandler {
                     break;
 
                 case TemplateAssetType.File:
-                    break;
-
-                    
+                    break;                    
                 case TemplateAssetType.GitHubARM:
                 case TemplateAssetType.GitHubARMPublishProfile:
                 default:
