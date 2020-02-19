@@ -471,8 +471,6 @@ class Orchestrator {
             if(this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS" )
             {   
                 await this.manifestFileHandler("deployment",pipelineConfigurer, filesToCommit);
-                // var clusterProperties  =   JSON.parse(JSON.stringify(this.inputs.pipelineConfiguration.params.aksCluster.properties).toLowerCase());
-                // this.inputs.pipelineConfiguration.params.httpApplicationRouting =   clusterProperties.addonprofiles.httpapplicationrouting.enabled;
                 if(this.inputs.pipelineConfiguration.params.httpApplicationRouting)
                 {                    
                     await this.manifestFileHandler("service-ingress",pipelineConfigurer, filesToCommit);
