@@ -34,14 +34,6 @@ export class WizardInputs {
     azureSession: AzureSession;
     subscriptionId: string;
     githubPATToken?: string;
-    aksManifests?: AKSManifestFiles = new AKSManifestFiles();
-}
-
-class AKSManifestFiles {
-    deploymentFile?: string;
-    serviceFile?: string;
-    serviceIngressFile?: string;
-    ingressFile?: string;
 }
 
 export class RepositoryAnalysisParameters {
