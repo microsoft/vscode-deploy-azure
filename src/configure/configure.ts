@@ -452,13 +452,14 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
     }
 
-    private async manifestFileHandler(manifestFile:string,pipelineConfigurer: Configurer,filesToCommit:string[])
-    {
-        let manifestPath: string = path.join(path.dirname(path.dirname(__dirname)), 'out\\configure\\templates\\dependencies\\');
+    private async manifestFileHandler(manifestFile:string, pipelineConfigurer: Configurer, filesToCommit:string[], targetfileName:string=null)
+    {   
+        let targetFile:string = targetfileName ? targetfileName:manifestFile;
+        let manifestPath: string = path.join(path.dirname(__dirname), "configure/templates/dependencies/");
         let mustacheContext = new MustacheContext(this.inputs);
 
-        this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, manifestFile +'.yml');
-        this.inputs.pipelineConfiguration.assets[manifestFile+"File"] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
+        this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, targetFile +'.yml');
+        this.inputs.pipelineConfiguration.assets[manifestFile] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
         filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
         await this.localGitRepoHelper.addContentToFile(
             await templateHelper.renderContent(manifestPath + manifestFile +'.yml', mustacheContext),
@@ -473,7 +474,7 @@ class Orchestrator {
                 try{
                    await this.manifestFileHandler(constants.deploymentManifest,pipelineConfigurer, filesToCommit);
                    if(this.inputs.pipelineConfiguration.params.httpApplicationRouting) {                    
-                      await this.manifestFileHandler(constants.serviceIngressManifest,pipelineConfigurer, filesToCommit);
+                      await this.manifestFileHandler(constants.serviceIngressManifest,pipelineConfigurer, filesToCommit, constants.serviceManifest);
                       await this.manifestFileHandler(constants.ingressManifest,pipelineConfigurer, filesToCommit);
                     }
                     else {  
@@ -481,7 +482,8 @@ class Orchestrator {
                     } 
                    }
                 catch(error){
-
+                    telemetryHelper.logError(Layer, TracePoints.CreatingManifestsFailed, error);
+                    throw error;
                 }  
             }
             this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
@@ -490,7 +492,6 @@ class Orchestrator {
                 await templateHelper.renderContent(this.inputs.pipelineConfiguration.template.path, mustacheContext),
                 this.inputs.pipelineConfiguration.filePath);
             await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineConfiguration.filePath));
-
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.AddingContentToPipelineFileFailed, error);

@@ -140,7 +140,8 @@ export class GitHubWorkflowConfigurer implements Configurer {
             manifestsDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), 'manifests');
         }
         catch(error){
-
+            telemetryHelper.logError(Layer, TracePoints.ManifestsFolderCreationFailed, error);
+            throw error;
         }
 
         if (!fs.existsSync(manifestsDirectoryPath)) {
