@@ -1,15 +1,15 @@
-import { GitRepositoryParameters, GitBranchDetails } from '../model/models';
-import { Messages } from '../resources/messages';
 import * as fs from 'fs';
-import * as git from 'simple-git/promise';
 import * as path from 'path';
 import * as Q from 'q';
-import * as vscode from 'vscode';
+import * as git from 'simple-git/promise';
 import { RemoteWithoutRefs } from 'simple-git/typings/response';
+import * as vscode from 'vscode';
+import { GitBranchDetails, GitRepositoryParameters } from '../model/models';
+import { Messages } from '../resources/messages';
+import { TelemetryKeys } from "../resources/telemetryKeys";
 import {AzureDevOpsHelper} from './devOps/azureDevOpsHelper';
 import {GitHubProvider} from './gitHubHelper';
 import { telemetryHelper } from "./telemetryHelper";
-import { TelemetryKeys } from "../resources/telemetryKeys";
 
 export class LocalGitRepoHelper {
     private gitReference: git.SimpleGit;
@@ -138,7 +138,7 @@ export class LocalGitRepoHelper {
     }
 
     public async initializeGitRepository(remoteName: string, remoteUrl: string, filesToExcludeRegex?: string): Promise<void> {
-        let isGitRepository = await this.isGitRepository()
+        let isGitRepository = await this.isGitRepository();
 
         if(!isGitRepository) {
             await this.gitReference.init();

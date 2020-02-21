@@ -135,7 +135,14 @@ export class GitHubWorkflowConfigurer implements Configurer {
 
     public async getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string> {
         // Create .github directory
-        let manifestsDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), 'manifests');
+        let manifestsDirectoryPath:string;
+        try{
+            manifestsDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), 'manifests');
+        }
+        catch(error){
+
+        }
+
         if (!fs.existsSync(manifestsDirectoryPath)) {
             fs.mkdirSync(manifestsDirectoryPath);
         }
@@ -198,9 +205,9 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     let repositoryPath = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getGitRootDirectory();
                     let configPath = path.relative(repositoryPath, inputs.pipelineConfiguration.filePath);
 
-                    const doc = ymlconfig.safeLoad(fs.readFileSync(inputs.pipelineConfiguration.filePath, 'utf8'))
+                    const doc = ymlconfig.safeLoad(fs.readFileSync(inputs.pipelineConfiguration.filePath, 'utf8'));
                     if(!!doc["name"]) {
-                        metadata["properties"]["configName"] = `${doc["name"]}`
+                        metadata["properties"]["configName"] = `${doc["name"]}`;
                     }
                     metadata["properties"]["configPath"] = `${configPath}`;
 

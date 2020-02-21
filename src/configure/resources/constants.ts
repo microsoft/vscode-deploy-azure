@@ -184,4 +184,9 @@ export const RepoAnalysisConstants = {
     //Functions
     AzureFunctions: 'azure:functions',
     HostFilePath: 'hostFilePath'
-}
+};
+
+export const deploymentManifest:string = "deployment";
+export const serviceManifest:string = "service";
+export const serviceIngressManifest:string = "service-ingress";
+export const ingressManifest:string = "ingress";

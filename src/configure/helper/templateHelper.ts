@@ -137,8 +137,9 @@ export async function renderContent(templateFilePath: string, context: MustacheC
             throw new Error(error.message);
         }
         else {
-            context = { ...MustacheHelper.getHelperMethods(), ...context };
-            let fileContent = Mustache.render(data, context);
+            let updatedContext:MustacheContext;
+            updatedContext = { ...MustacheHelper.getHelperMethods(), ...context };
+            let fileContent = Mustache.render(data, updatedContext);
             deferred.resolve(fileContent);
         }
     });
@@ -159,7 +160,7 @@ export function getDockerPort(repoPath: string, relativeDockerFilePath?: string)
     try {
         let dockerContent = fs.readFileSync(path.join(repoPath, dockerfilePath), 'utf8');
         let index = dockerContent.toLowerCase().indexOf('expose ');
-        if (index) {
+        if (index!==-1) {
             let temp = dockerContent.substring(index + 'expose '.length);
             let ports = temp.substr(0, temp.indexOf('\n')).split(' ',).filter(Boolean);
             if(ports.length) {

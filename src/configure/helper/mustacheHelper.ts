@@ -17,7 +17,7 @@ export class MustacheHelper {
                         var v = c === "x" ? r : (r & 0x3 | 0x8);
                         return v.toString(16);
                     });
-                }
+                };
             },
 
             "sanitizeString": function () {
@@ -59,7 +59,7 @@ export class MustacheHelper {
     }
 
     public static renderObject(mustacheObject: Object, view: any): any {
-        if (typeof (mustacheObject) == "string") {
+        if (typeof (mustacheObject) === "string") {
             return MustacheHelper.render(mustacheObject, view);
         }
 
@@ -67,7 +67,7 @@ export class MustacheHelper {
         if (Array.isArray(mustacheObject)) {
             mustacheObject.forEach(item => {
                 resultArray.push(MustacheHelper.renderObject(item, view));
-            })
+            });
             return resultArray;
         }
 
@@ -87,8 +87,7 @@ export class MustacheHelper {
         var fetchPartsRegex = new RegExp(/[\'](.+?)[\']|[^ ]+/g);
         var resultArray;
         while ((resultArray = fetchPartsRegex.exec(text)) !== null) {
-            //var part = MsPortalFx.isNullOrUndefined(resultArray[1]) ? resultArray[0] : resultArray[1];
-            var part = (resultArray[1]===undefined||null) ? resultArray[0] : resultArray[1];
+            var part = (resultArray[1]===undefined||resultArray[1]===null) ? resultArray[0] : resultArray[1];
             if (part === "''") {
                 part = "";
             }

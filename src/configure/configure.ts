@@ -468,17 +468,20 @@ class Orchestrator {
         let filesToCommit: string[] = [];       
         try {
             let mustacheContext = new MustacheContext(this.inputs);           
-            if(this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS" )
+            if(this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS )
             {   
-                await this.manifestFileHandler("deployment",pipelineConfigurer, filesToCommit);
-                if(this.inputs.pipelineConfiguration.params.httpApplicationRouting)
-                {                    
-                    await this.manifestFileHandler("service-ingress",pipelineConfigurer, filesToCommit);
-                    await this.manifestFileHandler("ingress",pipelineConfigurer, filesToCommit);
-                }
-                else
-                {  
-                    await this.manifestFileHandler("service",pipelineConfigurer, filesToCommit);  
+                try{
+                   await this.manifestFileHandler(constants.deploymentManifest,pipelineConfigurer, filesToCommit);
+                   if(this.inputs.pipelineConfiguration.params.httpApplicationRouting) {                    
+                      await this.manifestFileHandler(constants.serviceIngressManifest,pipelineConfigurer, filesToCommit);
+                      await this.manifestFileHandler(constants.ingressManifest,pipelineConfigurer, filesToCommit);
+                    }
+                    else {  
+                      await this.manifestFileHandler(constants.serviceManifest,pipelineConfigurer, filesToCommit);  
+                    } 
+                   }
+                catch(error){
+
                 }  
             }
             this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
