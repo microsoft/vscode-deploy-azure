@@ -17,4 +17,6 @@ export class TracePoints {
     public static GithubWorkflowSettingSecretsFailure = 'GithubWorkflowSettingSecretsFailure';
     public static AssetCreationFailure = 'AssetCreationFailure';
     public static ReadingDockerFileFailed = 'ReadingDockerFileFailed';
+    public static CreatingManifestsFailed = 'CreatingManifestsFailed';
+    public static ManifestsFolderCreationFailed = 'ManifestsFolderCreationFailed';
 }

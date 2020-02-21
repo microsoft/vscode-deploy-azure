@@ -691,7 +691,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "displayName": null,
                     "type": TemplateParameterType.String,
                     "dataSourceId": PreDefinedDataSourceIds.RepoAnalysis,
-                    "defaultValue": "8080"
+                    "defaultValue": "80"
                 },
                 {
                     "name": "namespace",
@@ -723,19 +723,19 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateAssetType.GitHubRegistryPassword
                 },
                 {
-                    "id": "deploymentFile",
+                    "id": "deployment",
                     "type": TemplateAssetType.File
                 },
                 {
-                    "id": "serviceFile",
+                    "id": "service",
                     "type": TemplateAssetType.File
                 },
                 {
-                    "id": "ingressFile",
+                    "id": "ingress",
                     "type": TemplateAssetType.File
                 },
                 {
-                    "id": "service-ingressFile",
+                    "id": "service-ingress",
                     "type": TemplateAssetType.File
                 }
             ]
