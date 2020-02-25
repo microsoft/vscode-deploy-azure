@@ -459,7 +459,7 @@ class Orchestrator {
         let mustacheContext = new MustacheContext(this.inputs);
 
         this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, targetFile +'.yml');
-        this.inputs.pipelineConfiguration.assets[manifestFile] = (path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath)).replace("\\","\/");
+        this.inputs.pipelineConfiguration.assets[manifestFile] = path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath);
         filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
         await this.localGitRepoHelper.addContentToFile(
             await templateHelper.renderContent(manifestPath + manifestFile +'.yml', mustacheContext),

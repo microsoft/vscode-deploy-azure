@@ -4,8 +4,6 @@ import * as util from 'util';
 import * as logger from '../../logger';
 import { Messages } from '../resources/messages';
 
-
-
 export async function sleepForMilliSeconds(timeInMs: number): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(() => {
