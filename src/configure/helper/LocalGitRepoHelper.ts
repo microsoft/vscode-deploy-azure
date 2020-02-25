@@ -100,8 +100,8 @@ export class LocalGitRepoHelper {
 
     /**
      *
-     * @param pipelineYamlPath : local path of yaml pipeline in the extension
-     * @param context: inputs required to be filled in the yaml pipelines
+     * @param pathToFile : local path of yaml pipeline in the extension
+     * @param content: inputs required to be filled in the yaml pipelines
      * @returns: thenable object which resolves once all files are added to the repository
      */
     public async addContentToFile(content: string, pathToFile: string): Promise<string> {
@@ -112,7 +112,7 @@ export class LocalGitRepoHelper {
 
     /**
      * commits yaml pipeline file into the local repo and pushes the commit to remote branch.
-     * @param files : local path of yaml pipeline in the repository
+     * @param files : array of local path of yaml files in the repository
      * @returns: thenable string which resolves to commitId once commit is pushed to remote branch, and failure message if unsuccessful
      */
     public async commitAndPushPipelineFile(files: string[], repositoryDetails: GitRepositoryParameters, commitMessage: string): Promise<string> {
