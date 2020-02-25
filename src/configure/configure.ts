@@ -459,11 +459,12 @@ class Orchestrator {
         let mustacheContext = new MustacheContext(this.inputs);
 
         this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, targetFile +'.yml');
-        this.inputs.pipelineConfiguration.assets[manifestFile] = path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath);
+        this.inputs.pipelineConfiguration.assets[manifestFile] = path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath).split(path.sep).join('/');
         filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
         await this.localGitRepoHelper.addContentToFile(
             await templateHelper.renderContent(manifestPath + manifestFile +'.yml', mustacheContext),
             this.inputs.pipelineConfiguration.filePath);
+        await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineConfiguration.filePath));
     }
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
         let filesToCommit: string[] = [];       
