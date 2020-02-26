@@ -34,7 +34,6 @@ export enum GitHubSecretType {
     ContainerRegistryPassword = "containerRegistryPassword"
 }
 
-
 export enum TemplateParameterType {
     GenericAzureResource,
     Boolean,

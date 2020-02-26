@@ -1,6 +1,5 @@
 import * as Mustache from 'mustache';
 
-
 export class MustacheHelper {
     public static getHelperMethods(): any {
         return {
@@ -11,7 +10,7 @@ export class MustacheHelper {
             },
 
             "tinyguid": function () {
-                return function() {
+                return function () {
                     return "yxxx".replace(/[xy]/g, function (c) {
                         var r = Math.random() * 16 | 0;
                         var v = c === "x" ? r : (r & 0x3 | 0x8);
@@ -36,20 +35,16 @@ export class MustacheHelper {
                     var renderedText = render(text);
                     var parts = MustacheHelper.getParts(renderedText);
 
-                    if (parts.length < 3)
-                    { 
+                    if (parts.length < 3) {
                         return render("");
                     }
-                    else
-                    {
-                    var from = +parts[1];
-                    var length = +parts[2];
-                    return render(parts[0].substr(from, length));
+                    else {
+                        var from = +parts[1];
+                        var length = +parts[2];
+                        return render(parts[0].substr(from, length));
                     }
                 };
             }
-
-          
         };
     }
 
@@ -87,7 +82,7 @@ export class MustacheHelper {
         var fetchPartsRegex = new RegExp(/[\'](.+?)[\']|[^ ]+/g);
         var resultArray;
         while ((resultArray = fetchPartsRegex.exec(text)) !== null) {
-            var part = (resultArray[1]===undefined||resultArray[1]===null) ? resultArray[0] : resultArray[1];
+            var part = (resultArray[1] === undefined || resultArray[1] === null) ? resultArray[0] : resultArray[1];
             if (part === "''") {
                 part = "";
             }
