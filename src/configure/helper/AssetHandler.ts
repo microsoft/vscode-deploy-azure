@@ -105,7 +105,7 @@ export class AssetHandler {
                                 let armClient = new ArmRestClient(inputs.azureSession);
                                 let registryCreds: { username: string, passwords: Array<{ name: string, value: string }> } = await armClient.getAcrCredentials(targetAcrResource.id);
                                 let assetName = AssetHandler.getSanitizedUniqueAssetName(targetAcrResource.name);
-                                await createAsset(assetName, asset.type, registryCreds, inputs);
+                                return await createAsset(assetName, asset.type, registryCreds, inputs);
                             }
                             catch (error) {
                                 telemetryHelper.logError(Layer, TracePoints.AssetCreationFailure, error);

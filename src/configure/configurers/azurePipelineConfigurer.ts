@@ -210,7 +210,7 @@ export class AzurePipelineConfigurer implements Configurer {
             case TemplateAssetType.AKSKubeConfigServiceConnection:
                 let targetAks = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.AKS);
                 let serverUrl = targetAks.properties ? targetAks.properties.fqdn : '';
-                serverUrl = !!serverUrl  && !serverUrl.startsWith('https://') ? 'https://' + serverUrl : serverUrl;
+                serverUrl = !!serverUrl && !serverUrl.startsWith('https://') ? 'https://' + serverUrl : serverUrl;
                 return await serviceConnectionHelper.createKubeConfigServiceConnection(name, data, serverUrl);
             case TemplateAssetType.ACRServiceConnection:
                 let targetAcr = TemplateParameterHelper.getParameterValueForTargetResourceType(inputs.pipelineConfiguration, TargetResourceType.ACR);
@@ -227,13 +227,13 @@ export class AzurePipelineConfigurer implements Configurer {
         return path.join(inputs.sourceRepository.localPath, await LocalGitRepoHelper.GetAvailableFileName('azure-pipelines.yml', inputs.sourceRepository.localPath));
     }
 
-    public async getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string> { return null;}
+    public async getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string> { return null; }
 
-    public async checkInPipelineFileToRepository(files:string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
+    public async checkInPipelineFileToRepository(files: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
 
         let commitMessage: string;
         let initializeGitRepository = !inputs.sourceRepository.remoteUrl;
-        let filesToCommit:string[]  = [];
+        let filesToCommit: string[] = [];
 
         if (!inputs.sourceRepository.remoteUrl) {
             commitMessage = Messages.modifyAndCommitFileWithGitInitialization;

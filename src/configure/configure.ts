@@ -457,14 +457,15 @@ class Orchestrator {
         let targetFile:string = targetfileName ? targetfileName:manifestFile;
         let manifestPath: string = path.join(path.dirname(__dirname), "configure/templates/dependencies/");
         let mustacheContext = new MustacheContext(this.inputs);
+        let manifestFilePath: string;
 
-        this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, targetFile +'.yml');
-        this.inputs.pipelineConfiguration.assets[manifestFile] = path.relative(await this.localGitRepoHelper.getGitRootDirectory(),this.inputs.pipelineConfiguration.filePath).split(path.sep).join('/');
-        filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
+        manifestFilePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, targetFile +'.yml');
+        this.inputs.pipelineConfiguration.assets[manifestFile] = path.relative(await this.localGitRepoHelper.getGitRootDirectory(),manifestFilePath).split(path.sep).join('/');
+        filesToCommit.push(manifestFilePath);
         await this.localGitRepoHelper.addContentToFile(
             await templateHelper.renderContent(manifestPath + manifestFile +'.yml', mustacheContext),
-            this.inputs.pipelineConfiguration.filePath);
-        await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineConfiguration.filePath));
+            manifestFilePath);
+        await vscode.window.showTextDocument(vscode.Uri.file(manifestFilePath));
     }
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
         let filesToCommit: string[] = [];       
