@@ -1,4 +1,3 @@
-
 import Q = require('q');
 import * as util from 'util';
 import * as logger from '../../logger';
