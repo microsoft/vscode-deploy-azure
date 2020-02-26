@@ -12,6 +12,7 @@ import { Messages } from "../resources/messages";
 import { TelemetryKeys } from "../resources/telemetryKeys";
 import { getSubscriptionSession } from "./azureSessionHelper";
 import { ControlProvider } from "./controlProvider";
+import * as MustacheHelperFunctions from "./mustacheHelper";
 
 export class TemplateParameterHelper {
     public static getParameterForTargetResourceType(parameters: TemplateParameter[], targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): TemplateParameter {
@@ -216,25 +217,14 @@ export class TemplateParameterHelper {
         return null;
     }
 
-
-    private tinyGuid()
-    {
-        return 'xxx'.replace(/[xy]/g, c => {
-			const r = Math.random() * 16 | 0;
-			const v = (c === 'x') ? r : (r & 0x3 | 0x8);
-			return v.toString(16);
-		});
-    }
-
     private async getStringParameter(parameter: TemplateParameter, inputs: WizardInputs): Promise<void> {
         let controlProvider = new ControlProvider();
         if (parameter.name.toLowerCase() === "namespace") {
-
-            inputs.pipelineConfiguration.params[parameter.name] = inputs.pipelineConfiguration.params.aksCluster.name + this.tinyGuid();
+            inputs.pipelineConfiguration.params[parameter.name] = inputs.pipelineConfiguration.params.aksCluster.name + MustacheHelperFunctions.MustacheHelper.getHelperMethods()["tinyguid"]()();
         }
-        else if(parameter.name.toLowerCase() === "httpapplicationrouting"){
-            var clusterProperties  =   JSON.parse(JSON.stringify(inputs.pipelineConfiguration.params.aksCluster.properties).toLowerCase());
-            inputs.pipelineConfiguration.params[parameter.name] =   clusterProperties.addonprofiles.httpapplicationrouting.enabled;
+        else if (parameter.name.toLowerCase() === "httpapplicationrouting") {
+            var clusterProperties = JSON.parse(JSON.stringify(inputs.pipelineConfiguration.params.aksCluster.properties).toLowerCase());
+            inputs.pipelineConfiguration.params[parameter.name] = clusterProperties.addonprofiles.httpapplicationrouting.enabled;
         }
         else {
             if (!parameter.dataSourceId) {
