@@ -4,12 +4,14 @@ import * as Q from 'q';
 import * as git from 'simple-git/promise';
 import { RemoteWithoutRefs } from 'simple-git/typings/response';
 import * as vscode from 'vscode';
-import { GitBranchDetails, GitRepositoryParameters } from '../model/models';
+import { Configurer } from '../configurers/configurerBase';
+import { GitBranchDetails, GitRepositoryParameters, MustacheContext, WizardInputs } from '../model/models';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from "../resources/telemetryKeys";
-import {AzureDevOpsHelper} from './devOps/azureDevOpsHelper';
-import {GitHubProvider} from './gitHubHelper';
+import { AzureDevOpsHelper } from './devOps/azureDevOpsHelper';
+import { GitHubProvider } from './gitHubHelper';
 import { telemetryHelper } from "./telemetryHelper";
+import * as templateHelper from './templateHelper';
 
 export class LocalGitRepoHelper {
     private gitReference: git.SimpleGit;
@@ -23,11 +25,11 @@ export class LocalGitRepoHelper {
 
         let gitFolderExists = fs.existsSync(path.join(repositoryPath, ".git"));
         telemetryHelper.setTelemetry(TelemetryKeys.GitFolderExists, gitFolderExists.toString());
-        
+
         return repoService;
     }
 
-    public async getUsername() : Promise<string> {
+    public async getUsername(): Promise<string> {
         let username = await this.gitReference.raw([
             'config',
             'user.name'
@@ -36,7 +38,7 @@ export class LocalGitRepoHelper {
         return username;
     }
 
-    public static async GetAvailableFileName(fileName:string, repoPath: string): Promise<string> {
+    public static async GetAvailableFileName(fileName: string, repoPath: string): Promise<string> {
         let deferred: Q.Deferred<string> = Q.defer();
         fs.readdir(repoPath, (err, files: string[]) => {
             if (files.indexOf(fileName) < 0) {
@@ -60,7 +62,7 @@ export class LocalGitRepoHelper {
             await this.gitReference.status();
             return true;
         }
-        catch(error) {
+        catch (error) {
             return false;
         }
     }
@@ -80,7 +82,7 @@ export class LocalGitRepoHelper {
         return this.gitReference.getRemotes(false);
     }
 
-    public async getGitRemoteUrl(remoteName: string): Promise<string|void> {
+    public async getGitRemoteUrl(remoteName: string): Promise<string | void> {
         let remoteUrl = await this.gitReference.remote(["get-url", remoteName]);
         if (remoteUrl) {
             remoteUrl = (<string>remoteUrl).trim();
@@ -140,7 +142,7 @@ export class LocalGitRepoHelper {
     public async initializeGitRepository(remoteName: string, remoteUrl: string, filesToExcludeRegex?: string): Promise<void> {
         let isGitRepository = await this.isGitRepository();
 
-        if(!isGitRepository) {
+        if (!isGitRepository) {
             await this.gitReference.init();
         }
 
@@ -148,7 +150,7 @@ export class LocalGitRepoHelper {
             // Try to see if there are any commits
             await this.gitReference.log();
         }
-        catch(error) {
+        catch (error) {
             // Commit all files if there are not commits on this branch
             await this.gitReference.add(`:!${filesToExcludeRegex}`);
             await this.gitReference.commit("Initialized git repository");
@@ -163,5 +165,20 @@ export class LocalGitRepoHelper {
 
     private initialize(repositoryPath: string): void {
         this.gitReference = git(repositoryPath);
+    }
+
+    public async manifestFileHandler(manifestFile: string, pipelineConfigurer: Configurer, filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, targetfileName: string = null) {
+        let targetFile: string = targetfileName ? targetfileName : manifestFile;
+        let manifestPath: string = path.join(path.dirname(__dirname), "/templates/dependencies/");
+        let mustacheContext = new MustacheContext(inputs);
+        let manifestFilePath: string;
+
+        manifestFilePath = await pipelineConfigurer.getPathToManifestFile(inputs, localGitRepoHelper, targetFile + '.yml');
+        inputs.pipelineConfiguration.assets[manifestFile] = path.relative(await localGitRepoHelper.getGitRootDirectory(), manifestFilePath).split(path.sep).join('/');
+        filesToCommit.push(manifestFilePath);
+        await localGitRepoHelper.addContentToFile(
+            await templateHelper.renderContent(manifestPath + manifestFile + '.yml', mustacheContext),
+            manifestFilePath);
+        await vscode.window.showTextDocument(vscode.Uri.file(manifestFilePath));
     }
 }

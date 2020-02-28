@@ -3,7 +3,7 @@ jobs:
   build-and-deploy:
     env:
       REGISTRY_URL: {{#toLower}}{{{inputs.containerRegistry.name}}}{{/toLower}}.azurecr.io
-      NAMESPACE: {{#toLower}}{{#sanitizeString}}{{{ inputs.namespace }}}{{/sanitizeString}}{{/toLower}}
+      NAMESPACE: {{{ inputs.namespace }}}
       IMAGE_NAME: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}
       SECRET_NAME: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 12{{/substring}}
 
@@ -53,13 +53,8 @@ jobs:
         namespace: {{=<% %>=}}${{ env.NAMESPACE  }}<%={{ }}=%>
         manifests: |
           {{{assets.deployment}}}
-          {{#inputs.httpApplicationRouting}}
-          {{{assets.service-ingress}}}
-          {{{assets.ingress}}}
-          {{/inputs.httpApplicationRouting}}
-          {{^inputs.httpApplicationRouting}}
-          {{{assets.service}}}
-          {{/inputs.httpApplicationRouting}}
+          {{#if}}{{{inputs.httpApplicationRouting}}} {{{assets.service-ingress}}}  {{{assets.service}}} {{/if}}
+          {{#if}}{{{inputs.httpApplicationRouting}}} {{{assets.ingress}}} {{/if}}
 
         images: |
           {{=<% %>=}}${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME  }}:${{ github.sha }}<%={{ }}=%>

@@ -229,11 +229,10 @@ export class AzurePipelineConfigurer implements Configurer {
 
     public async getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string> { return null; }
 
-    public async checkInPipelineFileToRepository(files: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
+    public async checkInPipelineFileToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
 
         let commitMessage: string;
         let initializeGitRepository = !inputs.sourceRepository.remoteUrl;
-        let filesToCommit: string[] = [];
 
         if (!inputs.sourceRepository.remoteUrl) {
             commitMessage = Messages.modifyAndCommitFileWithGitInitialization;
@@ -271,7 +270,6 @@ export class AzurePipelineConfigurer implements Configurer {
                         }
 
                         // handle when the branch is not upto date with remote branch and push fails
-                        filesToCommit.push(inputs.pipelineConfiguration.filePath);
                         return await localGitRepoHelper.commitAndPushPipelineFile(filesToCommit, inputs.sourceRepository, Messages.addAzurePipelinesYmlFile);
                     }
                     catch (error) {
