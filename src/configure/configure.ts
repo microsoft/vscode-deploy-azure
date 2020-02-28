@@ -452,34 +452,19 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
     }
 
-    private async manifestFileHandler(manifestFile: string, pipelineConfigurer: Configurer, filesToCommit: string[], targetfileName: string = null) {
-        let targetFile: string = targetfileName ? targetfileName : manifestFile;
-        let manifestPath: string = path.join(path.dirname(__dirname), "configure/templates/dependencies/");
-        let mustacheContext = new MustacheContext(this.inputs);
-        let manifestFilePath: string;
-
-        manifestFilePath = await pipelineConfigurer.getPathToManifestFile(this.inputs, this.localGitRepoHelper, targetFile + '.yml');
-        this.inputs.pipelineConfiguration.assets[manifestFile] = path.relative(await this.localGitRepoHelper.getGitRootDirectory(), manifestFilePath).split(path.sep).join('/');
-        filesToCommit.push(manifestFilePath);
-        await this.localGitRepoHelper.addContentToFile(
-            await templateHelper.renderContent(manifestPath + manifestFile + '.yml', mustacheContext),
-            manifestFilePath);
-        await vscode.window.showTextDocument(vscode.Uri.file(manifestFilePath));
-    }
-    
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
         let filesToCommit: string[] = [];
         try {
             let mustacheContext = new MustacheContext(this.inputs);
             if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
                 try {
-                    await this.manifestFileHandler(constants.deploymentManifest, pipelineConfigurer, filesToCommit);
-                    if (this.inputs.pipelineConfiguration.params.httpApplicationRouting) {
-                        await this.manifestFileHandler(constants.serviceIngressManifest, pipelineConfigurer, filesToCommit, constants.serviceManifest);
-                        await this.manifestFileHandler(constants.ingressManifest, pipelineConfigurer, filesToCommit);
+                    await this.localGitRepoHelper.manifestFileHandler(constants.deploymentManifest, pipelineConfigurer, filesToCommit, this.inputs, this.localGitRepoHelper);
+                    if (this.inputs.pipelineConfiguration.params.httpApplicationRouting === "true") {
+                        await this.localGitRepoHelper.manifestFileHandler(constants.serviceIngressManifest, pipelineConfigurer, filesToCommit, this.inputs, this.localGitRepoHelper, constants.serviceManifest);
+                        await this.localGitRepoHelper.manifestFileHandler(constants.ingressManifest, pipelineConfigurer, filesToCommit, this.inputs, this.localGitRepoHelper);
                     }
                     else {
-                        await this.manifestFileHandler(constants.serviceManifest, pipelineConfigurer, filesToCommit);
+                        await this.localGitRepoHelper.manifestFileHandler(constants.serviceManifest, pipelineConfigurer, filesToCommit, this.inputs, this.localGitRepoHelper);
                     }
                 }
                 catch (error) {

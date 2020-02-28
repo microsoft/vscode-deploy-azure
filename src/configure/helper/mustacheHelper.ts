@@ -1,8 +1,27 @@
 import * as Mustache from 'mustache';
+//import { MustacheContext } from '../model/models';
 
 export class MustacheHelper {
     public static getHelperMethods(): any {
         return {
+            "if": function () {
+                return function (text: string, render: any) {
+                    let parts = MustacheHelper.getParts(text);
+                    if (parts.length > 1) {
+                        if (render(parts[0]) === "true") {
+                            return render(parts[1]);
+                        }
+                        else {
+                            if (parts[2]) {
+                                return render(parts[2]);
+                            }
+
+                            return "";
+                        }
+                    }
+                };
+            },
+
             "toLower": function () {
                 return function (text: string, render: any) {
                     return render(text).toLowerCase();
