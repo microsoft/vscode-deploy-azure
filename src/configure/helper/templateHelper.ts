@@ -163,7 +163,7 @@ export function getDockerPort(repoPath: string, relativeDockerFilePath?: string)
         if (index !== -1) {
             let temp = dockerContent.substring(index + 'expose '.length);
             let ports = temp.substr(0, temp.indexOf('\n')).split(' ').filter(Boolean);
-            if(ports.length) {
+            if (ports.length) {
                 return ports[0];
             }
         }
