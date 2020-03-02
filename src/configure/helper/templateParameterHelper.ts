@@ -1,5 +1,4 @@
 import { GenericResource } from "azure-arm-resource/lib/resource/models";
-//import Mustache = require("mustache");
 import * as utils from 'util';
 import { AppServiceClient } from "../clients/azure/appServiceClient";
 import { ArmRestClient } from "../clients/azure/armRestClient";
@@ -14,7 +13,6 @@ import { TelemetryKeys } from "../resources/telemetryKeys";
 import { getSubscriptionSession } from "./azureSessionHelper";
 import { ControlProvider } from "./controlProvider";
 import { MustacheHelper } from "./mustacheHelper";
-//import * as MustacheHelperFunctions from "./mustacheHelper";
 
 export class TemplateParameterHelper {
     public static getParameterForTargetResourceType(parameters: TemplateParameter[], targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): TemplateParameter {
