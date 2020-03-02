@@ -152,7 +152,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
         return path.join(manifestsDirectoryPath, manifestFileName);
     }
 
-    public async checkInPipelineFileToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
+    public async checkInPipelineFilesToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
 
         while (!inputs.sourceRepository.commitId) {
             let commitOrDiscard = await vscode.window.showInformationMessage(

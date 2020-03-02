@@ -458,13 +458,13 @@ class Orchestrator {
             let mustacheContext = new MustacheContext(this.inputs);
             if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
                 try {
-                    await this.localGitRepoHelper.manifestFileHandler(constants.deploymentManifest, pipelineConfigurer, filesToCommit, this.inputs, this.localGitRepoHelper);
-                    if (this.inputs.pipelineConfiguration.params.httpApplicationRouting === "true") {
-                        await this.localGitRepoHelper.manifestFileHandler(constants.serviceIngressManifest, pipelineConfigurer, filesToCommit, this.inputs, this.localGitRepoHelper, constants.serviceManifest);
-                        await this.localGitRepoHelper.manifestFileHandler(constants.ingressManifest, pipelineConfigurer, filesToCommit, this.inputs, this.localGitRepoHelper);
+                    await this.localGitRepoHelper.createAndDisplayManifestFile(constants.deploymentManifest, pipelineConfigurer, filesToCommit, this.inputs);
+                    if (this.inputs.pipelineConfiguration.params.httpApplicationRouting.toLowerCase() === "true") {
+                        await this.localGitRepoHelper.createAndDisplayManifestFile(constants.serviceIngressManifest, pipelineConfigurer, filesToCommit, this.inputs, constants.serviceManifest);
+                        await this.localGitRepoHelper.createAndDisplayManifestFile(constants.ingressManifest, pipelineConfigurer, filesToCommit, this.inputs);
                     }
                     else {
-                        await this.localGitRepoHelper.manifestFileHandler(constants.serviceManifest, pipelineConfigurer, filesToCommit, this.inputs, this.localGitRepoHelper);
+                        await this.localGitRepoHelper.createAndDisplayManifestFile(constants.serviceManifest, pipelineConfigurer, filesToCommit, this.inputs);
                     }
                 }
                 catch (error) {
@@ -485,7 +485,7 @@ class Orchestrator {
         }
 
         try {
-            await pipelineConfigurer.checkInPipelineFileToRepository(filesToCommit, this.inputs, this.localGitRepoHelper);
+            await pipelineConfigurer.checkInPipelineFilesToRepository(filesToCommit, this.inputs, this.localGitRepoHelper);
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.PipelineFileCheckInFailed, error);

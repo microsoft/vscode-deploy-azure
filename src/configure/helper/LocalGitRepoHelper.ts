@@ -167,16 +167,16 @@ export class LocalGitRepoHelper {
         this.gitReference = git(repositoryPath);
     }
 
-    public async manifestFileHandler(manifestFile: string, pipelineConfigurer: Configurer, filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, targetfileName: string = null) {
+    public async createAndDisplayManifestFile(manifestFile: string, pipelineConfigurer: Configurer, filesToCommit: string[], inputs: WizardInputs, targetfileName: string = null) {
         let targetFile: string = targetfileName ? targetfileName : manifestFile;
         let manifestPath: string = path.join(path.dirname(__dirname), "/templates/dependencies/");
         let mustacheContext = new MustacheContext(inputs);
         let manifestFilePath: string;
 
-        manifestFilePath = await pipelineConfigurer.getPathToManifestFile(inputs, localGitRepoHelper, targetFile + '.yml');
-        inputs.pipelineConfiguration.assets[manifestFile] = path.relative(await localGitRepoHelper.getGitRootDirectory(), manifestFilePath).split(path.sep).join('/');
+        manifestFilePath = await pipelineConfigurer.getPathToManifestFile(inputs, this, targetFile + '.yml');
+        inputs.pipelineConfiguration.assets[manifestFile] = path.relative(await this.getGitRootDirectory(), manifestFilePath).split(path.sep).join('/');
         filesToCommit.push(manifestFilePath);
-        await localGitRepoHelper.addContentToFile(
+        await this.addContentToFile(
             await templateHelper.renderContent(manifestPath + manifestFile + '.yml', mustacheContext),
             manifestFilePath);
         await vscode.window.showTextDocument(vscode.Uri.file(manifestFilePath));

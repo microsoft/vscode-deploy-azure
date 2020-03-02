@@ -229,7 +229,7 @@ export class AzurePipelineConfigurer implements Configurer {
 
     public async getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string> { return null; }
 
-    public async checkInPipelineFileToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
+    public async checkInPipelineFilesToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
 
         let commitMessage: string;
         let initializeGitRepository = !inputs.sourceRepository.remoteUrl;
