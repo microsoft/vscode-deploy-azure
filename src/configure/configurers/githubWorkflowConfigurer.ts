@@ -134,7 +134,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
     }
 
     public async getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string> {
-        // Create .github directory
+        // Create manifests directory
         let manifestsDirectoryPath: string;
         try {
             manifestsDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), 'manifests');

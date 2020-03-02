@@ -253,9 +253,9 @@ export class TemplateParameterHelper {
                             { placeHolder: parameter.displayName },
                             utils.format(TelemetryKeys.pickListCount, parameter.name));
                     }
-            }
-            if (!inputs.pipelineConfiguration.params[parameter.name]) {
-                inputs.pipelineConfiguration.params[parameter.name] = MustacheHelper.render(parameter.defaultValue, mustacheContext);
+                    else if (!inputs.pipelineConfiguration.params[parameter.name]) {
+                        inputs.pipelineConfiguration.params[parameter.name] = MustacheHelper.render(parameter.defaultValue, mustacheContext);
+                    }
             }
         }
     }
