@@ -1,15 +1,17 @@
-import { GitRepositoryParameters, GitBranchDetails } from '../model/models';
-import { Messages } from '../resources/messages';
 import * as fs from 'fs';
-import * as git from 'simple-git/promise';
 import * as path from 'path';
 import * as Q from 'q';
-import * as vscode from 'vscode';
+import * as git from 'simple-git/promise';
 import { RemoteWithoutRefs } from 'simple-git/typings/response';
-import {AzureDevOpsHelper} from './devOps/azureDevOpsHelper';
-import {GitHubProvider} from './gitHubHelper';
-import { telemetryHelper } from "./telemetryHelper";
+import * as vscode from 'vscode';
+import { Configurer } from '../configurers/configurerBase';
+import { GitBranchDetails, GitRepositoryParameters, MustacheContext, WizardInputs } from '../model/models';
+import { Messages } from '../resources/messages';
 import { TelemetryKeys } from "../resources/telemetryKeys";
+import { AzureDevOpsHelper } from './devOps/azureDevOpsHelper';
+import { GitHubProvider } from './gitHubHelper';
+import { telemetryHelper } from "./telemetryHelper";
+import * as templateHelper from './templateHelper';
 
 export class LocalGitRepoHelper {
     private gitReference: git.SimpleGit;
@@ -23,20 +25,20 @@ export class LocalGitRepoHelper {
 
         let gitFolderExists = fs.existsSync(path.join(repositoryPath, ".git"));
         telemetryHelper.setTelemetry(TelemetryKeys.GitFolderExists, gitFolderExists.toString());
-        
+
         return repoService;
     }
 
-    public async getUsername() : Promise<string> {
+    public async getUsername(): Promise<string> {
         let username = await this.gitReference.raw([
             'config',
             'user.name'
         ]);
 
-        return username
+        return username;
     }
 
-    public static async GetAvailableFileName(fileName:string, repoPath: string): Promise<string> {
+    public static async GetAvailableFileName(fileName: string, repoPath: string): Promise<string> {
         let deferred: Q.Deferred<string> = Q.defer();
         fs.readdir(repoPath, (err, files: string[]) => {
             if (files.indexOf(fileName) < 0) {
@@ -60,7 +62,7 @@ export class LocalGitRepoHelper {
             await this.gitReference.status();
             return true;
         }
-        catch(error) {
+        catch (error) {
             return false;
         }
     }
@@ -80,7 +82,7 @@ export class LocalGitRepoHelper {
         return this.gitReference.getRemotes(false);
     }
 
-    public async getGitRemoteUrl(remoteName: string): Promise<string|void> {
+    public async getGitRemoteUrl(remoteName: string): Promise<string | void> {
         let remoteUrl = await this.gitReference.remote(["get-url", remoteName]);
         if (remoteUrl) {
             remoteUrl = (<string>remoteUrl).trim();
@@ -100,8 +102,8 @@ export class LocalGitRepoHelper {
 
     /**
      *
-     * @param pipelineYamlPath : local path of yaml pipeline in the extension
-     * @param context: inputs required to be filled in the yaml pipelines
+     * @param pathToFile : local path of yaml pipeline in the extension
+     * @param content: inputs required to be filled in the yaml pipelines
      * @returns: thenable object which resolves once all files are added to the repository
      */
     public async addContentToFile(content: string, pathToFile: string): Promise<string> {
@@ -112,12 +114,12 @@ export class LocalGitRepoHelper {
 
     /**
      * commits yaml pipeline file into the local repo and pushes the commit to remote branch.
-     * @param pipelineYamlPath : local path of yaml pipeline in the repository
+     * @param files : array of local path of yaml files in the repository
      * @returns: thenable string which resolves to commitId once commit is pushed to remote branch, and failure message if unsuccessful
      */
-    public async commitAndPushPipelineFile(pipelineYamlPath: string, repositoryDetails: GitRepositoryParameters, commitMessage: string): Promise<string> {
-        await this.gitReference.add(pipelineYamlPath);
-        await this.gitReference.commit(commitMessage, pipelineYamlPath);
+    public async commitAndPushPipelineFile(files: string[], repositoryDetails: GitRepositoryParameters, commitMessage: string): Promise<string> {
+        await this.gitReference.add(files);
+        await this.gitReference.commit(commitMessage, files);
         let gitLog = await this.gitReference.log();
 
         if (repositoryDetails.remoteName && repositoryDetails.branch) {
@@ -138,9 +140,9 @@ export class LocalGitRepoHelper {
     }
 
     public async initializeGitRepository(remoteName: string, remoteUrl: string, filesToExcludeRegex?: string): Promise<void> {
-        let isGitRepository = await this.isGitRepository()
+        let isGitRepository = await this.isGitRepository();
 
-        if(!isGitRepository) {
+        if (!isGitRepository) {
             await this.gitReference.init();
         }
 
@@ -148,7 +150,7 @@ export class LocalGitRepoHelper {
             // Try to see if there are any commits
             await this.gitReference.log();
         }
-        catch(error) {
+        catch (error) {
             // Commit all files if there are not commits on this branch
             await this.gitReference.add(`:!${filesToExcludeRegex}`);
             await this.gitReference.commit("Initialized git repository");
@@ -163,5 +165,20 @@ export class LocalGitRepoHelper {
 
     private initialize(repositoryPath: string): void {
         this.gitReference = git(repositoryPath);
+    }
+
+    public async createAndDisplayManifestFile(manifestFile: string, pipelineConfigurer: Configurer, filesToCommit: string[], inputs: WizardInputs, targetfileName: string = null) {
+        let targetFile: string = targetfileName ? targetfileName : manifestFile;
+        let manifestPath: string = path.join(path.dirname(__dirname), "/templates/dependencies/");
+        let mustacheContext = new MustacheContext(inputs);
+        let manifestFilePath: string;
+
+        manifestFilePath = await pipelineConfigurer.getPathToManifestFile(inputs, this, targetFile + '.yml');
+        inputs.pipelineConfiguration.assets[manifestFile] = path.relative(await this.getGitRootDirectory(), manifestFilePath).split(path.sep).join('/');
+        filesToCommit.push(manifestFilePath);
+        await this.addContentToFile(
+            await templateHelper.renderContent(manifestPath + manifestFile + '.yml', mustacheContext),
+            manifestFilePath);
+        await vscode.window.showTextDocument(vscode.Uri.file(manifestFilePath));
     }
 }

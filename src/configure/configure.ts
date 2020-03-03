@@ -13,11 +13,11 @@ import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
-import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
+//import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, RepositoryAnalysisApplicationSettings } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { PipelineTemplate, TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -409,8 +409,9 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(): Promise<void> {
-        var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
-        var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
+        //var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
+        var repoAnalysisResult = null;
+        //await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
 
         let appropriatePipelines: PipelineTemplate[] = await vscode.window.withProgress(
             { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
@@ -445,7 +446,7 @@ class Orchestrator {
 
             //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
             this.inputs.repositoryAnalysisApplicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
-                return applicationSettings.language === this.inputs.pipelineConfiguration.template.language
+                return applicationSettings.language === this.inputs.pipelineConfiguration.template.language;
             });
         }
 
@@ -453,9 +454,27 @@ class Orchestrator {
     }
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
+        let filesToCommit: string[] = [];
         try {
-            this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
             let mustacheContext = new MustacheContext(this.inputs);
+            if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
+                try {
+                    await this.localGitRepoHelper.createAndDisplayManifestFile(constants.deploymentManifest, pipelineConfigurer, filesToCommit, this.inputs);
+                    if (this.inputs.pipelineConfiguration.params.httpApplicationRouting.toLowerCase() === "true") {
+                        await this.localGitRepoHelper.createAndDisplayManifestFile(constants.serviceIngressManifest, pipelineConfigurer, filesToCommit, this.inputs, constants.serviceManifest);
+                        await this.localGitRepoHelper.createAndDisplayManifestFile(constants.ingressManifest, pipelineConfigurer, filesToCommit, this.inputs);
+                    }
+                    else {
+                        await this.localGitRepoHelper.createAndDisplayManifestFile(constants.serviceManifest, pipelineConfigurer, filesToCommit, this.inputs);
+                    }
+                }
+                catch (error) {
+                    telemetryHelper.logError(Layer, TracePoints.CreatingManifestsFailed, error);
+                    throw error;
+                }
+            }
+            this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
+            filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
             await this.localGitRepoHelper.addContentToFile(
                 await templateHelper.renderContent(this.inputs.pipelineConfiguration.template.path, mustacheContext),
                 this.inputs.pipelineConfiguration.filePath);
@@ -467,7 +486,7 @@ class Orchestrator {
         }
 
         try {
-            await pipelineConfigurer.checkInPipelineFileToRepository(this.inputs, this.localGitRepoHelper);
+            await pipelineConfigurer.checkInPipelineFilesToRepository(filesToCommit, this.inputs, this.localGitRepoHelper);
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.PipelineFileCheckInFailed, error);

@@ -133,7 +133,26 @@ export class GitHubWorkflowConfigurer implements Configurer {
         return path.join(workflowDirectoryPath, pipelineFileName);
     }
 
-    public async checkInPipelineFileToRepository(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
+    public async getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string> {
+        // Create manifests directory
+        let manifestsDirectoryPath: string;
+        try {
+            manifestsDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), inputs.pipelineConfiguration.workingDirectory, 'manifests');
+        }
+        catch (error) {
+            telemetryHelper.logError(Layer, TracePoints.ManifestsFolderCreationFailed, error);
+            throw error;
+        }
+
+        if (!fs.existsSync(manifestsDirectoryPath)) {
+            fs.mkdirSync(manifestsDirectoryPath);
+        }
+
+        let manifestFileName = await LocalGitRepoHelper.GetAvailableFileName(fileName, manifestsDirectoryPath);
+        return path.join(manifestsDirectoryPath, manifestFileName);
+    }
+
+    public async checkInPipelineFilesToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
 
         while (!inputs.sourceRepository.commitId) {
             let commitOrDiscard = await vscode.window.showInformationMessage(
@@ -145,7 +164,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 inputs.sourceRepository.commitId = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
                     try {
                         // handle when the branch is not upto date with remote branch and push fails
-                        return await localGitRepoHelper.commitAndPushPipelineFile(inputs.pipelineConfiguration.filePath, inputs.sourceRepository, extensionVariables.enableGitHubWorkflow ? Messages.addGitHubWorkflowYmlFile : Messages.addAzurePipelinesYmlFile );
+                        return await localGitRepoHelper.commitAndPushPipelineFile(filesToCommit, inputs.sourceRepository, extensionVariables.enableGitHubWorkflow ? Messages.addGitHubWorkflowYmlFile : Messages.addAzurePipelinesYmlFile);
                     }
                     catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);
@@ -187,9 +206,9 @@ export class GitHubWorkflowConfigurer implements Configurer {
                     let repositoryPath = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getGitRootDirectory();
                     let configPath = path.relative(repositoryPath, inputs.pipelineConfiguration.filePath);
 
-                    const doc = ymlconfig.safeLoad(fs.readFileSync(inputs.pipelineConfiguration.filePath, 'utf8'))
-                    if(!!doc["name"]) {
-                        metadata["properties"]["configName"] = `${doc["name"]}`
+                    const doc = ymlconfig.safeLoad(fs.readFileSync(inputs.pipelineConfiguration.filePath, 'utf8'));
+                    if (!!doc["name"]) {
+                        metadata["properties"]["configName"] = `${doc["name"]}`;
                     }
                     metadata["properties"]["configPath"] = `${configPath}`;
 
@@ -206,7 +225,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 let authorName = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getUsername();
                 let deployerName = 'GITHUBACTION';
                 let updateDeploymentLogPromise = (azureResourceClient as AppServiceClient).publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage, authorName, deployerName);
-                
+
                 Q.all([updateMetadataPromise, updateDeploymentLogPromise])
                     .then(() => {
                         telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');

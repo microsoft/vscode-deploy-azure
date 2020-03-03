@@ -13,7 +13,8 @@ export interface Configurer {
         data: any,
         inputs: WizardInputs): Promise<string>;
     getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string>;
-    checkInPipelineFileToRepository(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string>;
+    getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string>;
+    checkInPipelineFilesToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string>;
     createAndQueuePipeline(inputs: WizardInputs): Promise<string>;
     executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void>;
     browseQueuedPipeline(): Promise<void>;

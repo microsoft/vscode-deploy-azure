@@ -105,7 +105,7 @@ export class AssetHandler {
                                 let armClient = new ArmRestClient(inputs.azureSession);
                                 let registryCreds: { username: string, passwords: Array<{ name: string, value: string }> } = await armClient.getAcrCredentials(targetAcrResource.id);
                                 let assetName = AssetHandler.getSanitizedUniqueAssetName(targetAcrResource.name);
-                                await createAsset(assetName, asset.type, registryCreds, inputs);
+                                return await createAsset(assetName, asset.type, registryCreds, inputs);
                             }
                             catch (error) {
                                 telemetryHelper.logError(Layer, TracePoints.AssetCreationFailure, error);
@@ -127,7 +127,7 @@ export class AssetHandler {
                                 let registryCreds: { username: string, passwords: Array<{ name: string, value: string }> } = await armClient.getAcrCredentials(acrResource.id);
                                 let assetName = AssetHandler.getSanitizedUniqueAssetName(acrResource.name);
                                 if (asset.type === TemplateAssetType.GitHubRegistryUsername) {
-                                    await createAsset(assetName + "_username", asset.type, registryCreds.username, inputs);
+                                    return await createAsset(assetName + "_username", asset.type, registryCreds.username, inputs);
                                 }
                                 else {
                                     let password = !!registryCreds.passwords && registryCreds.passwords.length > 0 ? registryCreds.passwords[0].value : null;
@@ -135,7 +135,7 @@ export class AssetHandler {
                                         throw Messages.unableToFetchPasswordOfContainerRegistry;
                                     }
 
-                                    await createAsset(assetName + "_password", asset.type, password, inputs);
+                                    return await createAsset(assetName + "_password", asset.type, password, inputs);
                                 }
                             }
                             catch (error) {
@@ -144,6 +144,9 @@ export class AssetHandler {
                             }
                         });
                     break;
+
+                case TemplateAssetType.File:
+                    break;                    
                 case TemplateAssetType.GitHubARM:
                 case TemplateAssetType.GitHubARMPublishProfile:
                 default:

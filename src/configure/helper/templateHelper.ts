@@ -1,7 +1,6 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as fs from 'fs';
 import * as Mustache from 'mustache';
-import * as os from 'os';
 import * as path from 'path';
 import * as Q from 'q';
 import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
@@ -9,6 +8,7 @@ import { PipelineTemplate, PreDefinedDataSourceIds, TemplateAssetType, TemplateP
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
+import { MustacheHelper } from './mustacheHelper';
 import { telemetryHelper } from './telemetryHelper';
 
 export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
@@ -137,7 +137,9 @@ export async function renderContent(templateFilePath: string, context: MustacheC
             throw new Error(error.message);
         }
         else {
-            let fileContent = Mustache.render(data, context);
+            let updatedContext: MustacheContext;
+            updatedContext = { ...MustacheHelper.getHelperMethods(), ...context };
+            let fileContent = Mustache.render(data, updatedContext);
             deferred.resolve(fileContent);
         }
     });
@@ -158,11 +160,14 @@ export function getDockerPort(repoPath: string, relativeDockerFilePath?: string)
     try {
         let dockerContent = fs.readFileSync(path.join(repoPath, dockerfilePath), 'utf8');
         let index = dockerContent.toLowerCase().indexOf('expose ');
-        if (index) {
+        if (index !== -1) {
             let temp = dockerContent.substring(index + 'expose '.length);
-            let port = temp.substr(0, temp.indexOf(' ',) ? temp.indexOf(' ') : temp.indexOf(os.EOL));
-            return port;
+            let ports = temp.substr(0, temp.indexOf('\n')).split(' ').filter(Boolean);
+            if (ports.length) {
+                return ports[0];
+            }
         }
+        return null;
     }
     catch (err) {
         telemetryHelper.logError('TemplateHelper', TracePoints.ReadingDockerFileFailed, err);
@@ -642,7 +647,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "displayName": null,
                     "type": TemplateParameterType.String,
                     "dataSourceId": PreDefinedDataSourceIds.RepoAnalysis,
-                    "defaultValue": '8080'
+                    "defaultValue": '80'
                 }
             ],
             assets: [
@@ -663,11 +668,11 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
     'docker': [
         {
             label: 'Containerized application to AKS',
-            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/AksWithReuseACR.yml'),
+            path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/AksWithReuseACR.yml'),
             language: SupportedLanguage.DOCKER,
             targetType: TargetResourceType.AKS,
             targetKind: null,
-            enabled: false,
+            enabled: true,
             parameters: [
                 {
                     "name": "aksCluster",
@@ -686,7 +691,21 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "displayName": null,
                     "type": TemplateParameterType.String,
                     "dataSourceId": PreDefinedDataSourceIds.RepoAnalysis,
-                    "defaultValue": "8080"
+                    "defaultValue": "80"
+                },
+                {
+                    "name": "namespace",
+                    "displayName": null,
+                    "type": TemplateParameterType.String,
+                    "dataSourceId": "",
+                    "defaultValue": "{{#toLower}}{{#sanitizeString}}{{{inputs.aksCluster.name}}}{{/sanitizeString}}{{/toLower}}{{#tinyguid}}{{/tinyguid}}"
+                },
+                {
+                    "name": "httpApplicationRouting",
+                    "displayName": null,
+                    "type": TemplateParameterType.Boolean,
+                    "dataSourceId": "",
+                    "defaultValue": "{{#if}}{{inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}} true false{{/if}}"
                 }
             ],
             assets: [
@@ -701,6 +720,22 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                 {
                     "id": "containerRegistryPassword",
                     "type": TemplateAssetType.GitHubRegistryPassword
+                },
+                {
+                    "id": "deployment",
+                    "type": TemplateAssetType.File
+                },
+                {
+                    "id": "service",
+                    "type": TemplateAssetType.File
+                },
+                {
+                    "id": "ingress",
+                    "type": TemplateAssetType.File
+                },
+                {
+                    "id": "service-ingress",
+                    "type": TemplateAssetType.File
                 }
             ]
         }
