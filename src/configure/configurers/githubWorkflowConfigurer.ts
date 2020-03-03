@@ -137,7 +137,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
         // Create manifests directory
         let manifestsDirectoryPath: string;
         try {
-            manifestsDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), 'manifests');
+            manifestsDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), inputs.pipelineConfiguration.workingDirectory, 'manifests');
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.ManifestsFolderCreationFailed, error);
