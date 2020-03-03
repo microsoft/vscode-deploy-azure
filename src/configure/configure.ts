@@ -13,7 +13,7 @@ import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
-import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
+//import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
@@ -409,8 +409,9 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(): Promise<void> {
-        var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
-        var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
+        //var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
+        var repoAnalysisResult = null;
+        //await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
 
         let appropriatePipelines: PipelineTemplate[] = await vscode.window.withProgress(
             { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
