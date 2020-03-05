@@ -5,7 +5,7 @@ jobs:
       REGISTRY_URL: {{#toLower}}{{{inputs.containerRegistry.name}}}{{/toLower}}.azurecr.io
       NAMESPACE: {{{ inputs.namespace }}}
       IMAGE_NAME: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}
-      SECRET_NAME: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 12{{/substring}}
+      SECRET_NAME: {{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 63{{/substring}}
 
     runs-on: ubuntu-latest
     steps:

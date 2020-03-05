@@ -128,6 +128,16 @@ export class TemplateParameterHelper {
                             }
                         }
                         else {
+
+                            //handling case senstivity issue of properties
+                            let properties = JSON.stringify(detailedResource.properties).toLowerCase();
+                            let httpApplicationRouting = JSON.parse(properties).addonprofiles.httpapplicationrouting.enabled;
+                            detailedResource.properties.httpApplicationRouting = httpApplicationRouting;
+
+                            if (httpApplicationRouting) {
+                                let httpApplicationRoutingZoneName = JSON.parse(properties).addonprofiles.httpapplicationrouting.config.httpapplicationroutingzonename;
+                                detailedResource.properties.httpApplicationRoutingZoneName = httpApplicationRoutingZoneName;
+                            }
                             // dynamic validation for AKS cluster
                             try {
                                 let armRestClient = new ArmRestClient(inputs.azureSession);

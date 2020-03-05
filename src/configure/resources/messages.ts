@@ -85,4 +85,5 @@ export class Messages {
     public static onlyAdminEnabledRegistriesAreAllowed = 'The chosen Container registry doesn\'t have admin user access enabled (allows access to registry with username password). Kindly choose a registry which has admin user access enabled.';
     public static unableToGetSelectedResource = 'Unable to fetch the selected azure resource: %s';
     public static unableToGetAksKubeConfig = 'We are unable to fetch kube config for the AKS cluster: %s, due to permission issues. Kindly choose a different one, over which you have access.';
+    public static modifyAndCommitFileAKS: string = 'Modify and save your YAML files. %s will commit these files, push the branch \'%s\' to remote \'%s\' and proceed with deployment.';
 }
