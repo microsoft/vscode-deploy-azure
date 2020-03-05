@@ -59,6 +59,7 @@ export class AzureResourceClient {
 
     public async updateCdSetupResourceTag(resource: GenericResource, repositoryId: string, branch: string, workflowFileName: string, commitId: string, namespaceName: string, apiVersion: string = '2019-10-01'): Promise<GenericResource> {
         let deploymentData: string = "GH" + ":" + repositoryId + ":" + branch + ":" + workflowFileName + ":" + workflowFileName + ":" + commitId + ":" + namespaceName + ":" + Date.now();
+        resource.tags = resource.tags ? resource.tags :  {};
         resource.tags = this.ComputeDeploymentResourceTags(resource.tags, deploymentData);
         return await this.azureRmClient.resources.updateById(resource.id, apiVersion, resource);
     }
