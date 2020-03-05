@@ -157,8 +157,8 @@ export class GitHubWorkflowConfigurer implements Configurer {
         while (!inputs.sourceRepository.commitId) {
 
             let displayMessage = Messages.modifyAndCommitFile;
-            if (inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
-                displayMessage = Messages.modifyAndCommitFileAKS;
+            if (filesToCommit.length > 1) {
+                displayMessage = Messages.modifyAndCommitMultipleFiles;
             }
 
             let commitOrDiscard = await vscode.window.showInformationMessage(

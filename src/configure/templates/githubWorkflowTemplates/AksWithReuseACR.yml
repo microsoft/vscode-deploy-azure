@@ -53,8 +53,8 @@ jobs:
         namespace: {{=<% %>=}}${{ env.NAMESPACE  }}<%={{ }}=%>
         manifests: |
           {{{assets.deployment}}}
-          {{#if}}{{{inputs.httpApplicationRouting}}} {{{assets.service-ingress}}}  {{{assets.service}}} {{/if}}
-          {{#if}}{{{inputs.httpApplicationRouting}}} {{{assets.ingress}}} {{/if}}
+          {{#if}}{{{inputs.aksCluster.properties.addonProfiles.httpApplicationRouting.enabled}}} {{{assets.service-ingress}}}  {{{assets.service}}} {{/if}}
+          {{#if}}{{{inputs.aksCluster.properties.addonProfiles.httpApplicationRouting.enabled}}} {{{assets.ingress}}} {{/if}}
 
         images: |
           {{=<% %>=}}${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME  }}:${{ github.sha }}<%={{ }}=%>
