@@ -5,13 +5,14 @@ import { ArmRestClient } from "../clients/azure/armRestClient";
 import { ApiVersions, AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { openBrowseExperience } from '../configure';
 import * as templateHelper from '../helper/templateHelper';
-import { extensionVariables, PipelineConfiguration, QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs } from "../model/models";
+import { extensionVariables, MustacheContext, PipelineConfiguration, QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs } from "../model/models";
 import { PreDefinedDataSourceIds, TemplateParameter, TemplateParameterType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from "../resources/messages";
 import { TelemetryKeys } from "../resources/telemetryKeys";
 import { getSubscriptionSession } from "./azureSessionHelper";
 import { ControlProvider } from "./controlProvider";
+import { MustacheHelper } from "./mustacheHelper";
 
 export class TemplateParameterHelper {
     public static getParameterForTargetResourceType(parameters: TemplateParameter[], targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): TemplateParameter {
@@ -77,12 +78,12 @@ export class TemplateParameterHelper {
         if (!!parameter) {
             switch (parameter.type) {
                 case TemplateParameterType.String:
+                case TemplateParameterType.Boolean:
                     await this.getStringParameter(parameter, inputs);
                     break;
                 case TemplateParameterType.GenericAzureResource:
                     await this.getAzureResourceParameter(parameter, inputs);
                     break;
-                case TemplateParameterType.Boolean:
                 case TemplateParameterType.SecureString:
                 default:
                     throw new Error(utils.format(Messages.parameterOfTypeNotSupported, parameter.type));
@@ -219,13 +220,20 @@ export class TemplateParameterHelper {
     private async getStringParameter(parameter: TemplateParameter, inputs: WizardInputs): Promise<void> {
         let controlProvider = new ControlProvider();
 
+        let mustacheContext = new MustacheContext(inputs);
         if (!parameter.dataSourceId) {
-            inputs.pipelineConfiguration.params[parameter.name] = await controlProvider.showInputBox(
-                parameter.name,
-                {
-                    placeHolder: parameter.displayName
-                }
-            );
+            if (parameter.defaultValue) {
+                let renderedDefaultValue = MustacheHelper.render(parameter.defaultValue, mustacheContext);
+                inputs.pipelineConfiguration.params[parameter.name] = renderedDefaultValue;
+            }
+            else {
+                inputs.pipelineConfiguration.params[parameter.name] = await controlProvider.showInputBox(
+                    parameter.name,
+                    {
+                        placeHolder: parameter.displayName
+                    }
+                );
+            }
         }
         else {
             switch (parameter.dataSourceId) {
@@ -244,6 +252,9 @@ export class TemplateParameterHelper {
                             parameter.options ? parameter.options.map(x => { return { label: x.key, data: x.value }; }) : [],
                             { placeHolder: parameter.displayName },
                             utils.format(TelemetryKeys.pickListCount, parameter.name));
+                    }
+                    else if (!inputs.pipelineConfiguration.params[parameter.name]) {
+                        inputs.pipelineConfiguration.params[parameter.name] = MustacheHelper.render(parameter.defaultValue, mustacheContext);
                     }
             }
         }

@@ -51,7 +51,8 @@ export enum TemplateAssetType {
     GitHubARMPublishProfile = "gitHubSecret:" + GitHubSecretType.AzureRM + ":publishProfile",
     GitHubAKSKubeConfig = "gitHubSecret:" + GitHubSecretType.AKSKubeConfigSecret + ":kubeconfig",
     GitHubRegistryUsername = "gitHubSecret:" + GitHubSecretType.ContainerRegistryUsername,
-    GitHubRegistryPassword = "gitHubSecret:" + GitHubSecretType.ContainerRegistryPassword
+    GitHubRegistryPassword = "gitHubSecret:" + GitHubSecretType.ContainerRegistryPassword,
+    File = "file" + ":"
 }
 
 export let PreDefinedDataSourceIds = {

@@ -1,7 +1,7 @@
-import * as util from 'util';
-import { Messages } from '../resources/messages';
 import Q = require('q');
+import * as util from 'util';
 import * as logger from '../../logger';
+import { Messages } from '../resources/messages';
 
 export async function sleepForMilliSeconds(timeInMs: number): Promise<void> {
     return new Promise((resolve) => {
