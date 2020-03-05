@@ -105,7 +105,7 @@ class Orchestrator {
 
             telemetryHelper.setCurrentStep('PostPipelineCreation');
             // This step should be determined by the resoruce target provider (azure app service, function app, aks) type and pipelineProvider(azure pipeline vs github)
-            pipelineConfigurer.executePostPipelineCreationSteps(this.inputs, this.azureResourceClient);
+            pipelineConfigurer.executePostPipelineCreationSteps(this.inputs, this.azureResourceClient ? this.azureResourceClient : new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.subscriptionId));
 
             telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
             pipelineConfigurer.browseQueuedPipeline();
