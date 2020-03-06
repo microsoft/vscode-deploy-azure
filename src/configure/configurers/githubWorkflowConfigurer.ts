@@ -5,14 +5,16 @@ import * as Q from 'q';
 import * as utils from 'util';
 import * as vscode from 'vscode';
 const uuid = require('uuid/v4');
+import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
-import { AzureResourceClient } from '../clients/azure/azureResourceClient';
+import { ApiVersions, AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { GithubClient } from '../clients/github/githubClient';
 import { ControlProvider } from '../helper/controlProvider';
 import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
+import { TemplateParameterHelper } from '../helper/templateParameterHelper';
 import { AzureConnectionType, AzureSession, extensionVariables, TargetResourceType, WizardInputs } from "../model/models";
 import { TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
@@ -188,8 +190,8 @@ export class GitHubWorkflowConfigurer implements Configurer {
     }
 
     public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
-        if (inputs.targetResource.resource.type === TargetResourceType.WebApp) {
-            try {
+        try {
+            if (inputs.targetResource  && inputs.targetResource.resource && inputs.targetResource.resource.type === TargetResourceType.WebApp) {
                 // Update web app sourceControls as GitHubAction
                 let sourceControlProperties = {
                     "isGitHubAction": true,
@@ -231,9 +233,14 @@ export class GitHubWorkflowConfigurer implements Configurer {
                         telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
                     });
             }
-            catch (error) {
-                telemetryHelper.logError(Layer, TracePoints.PostDeploymentActionFailed, error);
+            else if (TemplateParameterHelper.getParameterForTargetResourceType(inputs.pipelineConfiguration.template.parameters, TargetResourceType.AKS)) {
+                let aksResource: GenericResource = inputs.pipelineConfiguration.params[TemplateParameterHelper.getParameterForTargetResourceType(inputs.pipelineConfiguration.template.parameters, TargetResourceType.AKS).name];
+                let workflowFileName = path.basename(inputs.pipelineConfiguration.filePath);
+                await azureResourceClient.updateCdSetupResourceTag(aksResource, inputs.sourceRepository.repositoryId, inputs.sourceRepository.branch, workflowFileName, inputs.sourceRepository.commitId, inputs.pipelineConfiguration.params['namespace'], ApiVersions.get(TargetResourceType.AKS));
             }
+        }
+        catch (error) {
+            telemetryHelper.logError(Layer, TracePoints.PostDeploymentActionFailed, error);
         }
     }
 
