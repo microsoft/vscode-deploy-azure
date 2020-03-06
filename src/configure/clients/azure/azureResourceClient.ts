@@ -129,4 +129,4 @@ ApiVersions.set(TargetResourceType.AKS, '2019-10-01');
 const DevopsInfoTagHeader: string = "hidden-DevOpsInfo:";
 const MaxTagKeyLength: number = 512;
 const MaxTagValueLength: number = 256;
-const MaxTagsRow: number = 15;
+const MaxTagsRow: number = 50;
