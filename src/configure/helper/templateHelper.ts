@@ -699,13 +699,6 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateParameterType.String,
                     "dataSourceId": "",
                     "defaultValue": "{{#toLower}}{{#sanitizeString}}{{{inputs.aksCluster.name}}}{{/sanitizeString}}{{/toLower}}{{#tinyguid}}{{/tinyguid}}"
-                },
-                {
-                    "name": "httpApplicationRouting",
-                    "displayName": null,
-                    "type": TemplateParameterType.Boolean,
-                    "dataSourceId": "",
-                    "defaultValue": "{{#if}}{{inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.enabled}} true false{{/if}}"
                 }
             ],
             assets: [

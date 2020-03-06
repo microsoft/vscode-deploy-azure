@@ -8,7 +8,7 @@ metadata:
         kubernetes.io/ingress.class: addon-http-application-routing
 spec:
     rules:
-        - host: {{{ inputs.namespace }}}-{{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}.{{{inputs.aksCluster.properties.addonProfiles.httpapplicationrouting.config.HTTPApplicationRoutingZoneName}}}
+        - host: {{{ inputs.namespace }}}-{{#substring}}'{{#toLower}}{{#sanitizeString}}{{{ inputs.aksCluster.name }}}{{/sanitizeString}}{{/toLower}}' 0 50{{/substring}}.{{{inputs.aksCluster.properties.addonProfiles.httpApplicationRouting.config.httpapplicationroutingzonename }}}
           http:
             paths:
             - path: /

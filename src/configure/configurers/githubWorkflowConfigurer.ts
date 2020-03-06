@@ -157,8 +157,14 @@ export class GitHubWorkflowConfigurer implements Configurer {
     public async checkInPipelineFilesToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
 
         while (!inputs.sourceRepository.commitId) {
+
+            let displayMessage = Messages.modifyAndCommitFile;
+            if (filesToCommit.length > 1) {
+                displayMessage = Messages.modifyAndCommitMultipleFiles;
+            }
+
             let commitOrDiscard = await vscode.window.showInformationMessage(
-                utils.format(Messages.modifyAndCommitFile, Messages.commitAndPush, inputs.sourceRepository.branch, inputs.sourceRepository.remoteName),
+                utils.format(displayMessage, Messages.commitAndPush, inputs.sourceRepository.branch, inputs.sourceRepository.remoteName),
                 Messages.commitAndPush,
                 Messages.discardPipeline);
 
