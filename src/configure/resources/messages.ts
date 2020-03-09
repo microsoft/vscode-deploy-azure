@@ -86,4 +86,5 @@ export class Messages {
     public static unableToGetSelectedResource = 'Unable to fetch the selected azure resource: %s';
     public static unableToGetAksKubeConfig = 'We are unable to fetch kube config for the AKS cluster: %s, due to permission issues. Kindly choose a different one, over which you have access.';
     public static modifyAndCommitMultipleFiles: string = 'Modify and save your YAML files. %s will commit these files, push the branch \'%s\' to remote \'%s\' and proceed with deployment.';
+    public static EmptyTagRowUnavailable = 'There is no space to create a new tag in the resource to store information to ';
 }
