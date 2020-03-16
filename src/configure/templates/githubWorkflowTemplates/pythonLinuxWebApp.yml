@@ -25,7 +25,7 @@ jobs:
 
     # install dependencies
     - name: python install
-      working-directory: {{{ repositoryAnalysisApplicationSettings.settings.pythonRequirementsFileDirectory }}}
+      working-directory: {{{ workingDirectory }}}
       run: |
         sudo apt install python3.7-venv
         python -m venv --copies antenv
@@ -47,7 +47,7 @@ jobs:
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ repositoryAnalysisApplicationSettings.settings.pythonRequirementsFileDirectory }}}
+        package: {{{ workingDirectory }}}
 
     # Azure logout
     - name: logout

@@ -17,12 +17,13 @@ import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, RepositoryAnalysisParameters } from './model/models';
 import { PipelineTemplate, TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
+import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
@@ -409,9 +410,8 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(): Promise<void> {
-        //var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
-        var repoAnalysisResult = null;
-        //await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
+        var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
+        var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, this.workspacePath);
 
         let appropriatePipelines: PipelineTemplate[] = await vscode.window.withProgress(
             { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
@@ -443,14 +443,39 @@ class Orchestrator {
         //Post selecting the template update this.inputs.repositoryAnalysisApplicationSettings with corresponding languageSettings
         if (!!repoAnalysisResult
             && !!repoAnalysisResult.repositoryAnalysisApplicationSettingsList) {
-
+            
             //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
-            this.inputs.repositoryAnalysisApplicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
-                return applicationSettings.language === this.inputs.pipelineConfiguration.template.language;
-            });
+            this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
         }
 
         telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
+    }
+
+    private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void>{
+        var applicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.filter(applicationSetting => {
+            return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
+        });
+        
+        let workspacePaths = Array.from(new Set(applicationSettings.map(a => a.settings.workingDirectory)));
+        if(workspacePaths.length == 1){
+            this.inputs.repositoryAnalysisApplicationSettings = applicationSettings[0];
+            this.inputs.pipelineConfiguration.workingDirectory = applicationSettings[0].settings.workingDirectory;
+            return;
+        }
+
+        let workspacePathQuickPickItemList: Array<QuickPickItemWithData> = [];
+        for (let workspacePath of workspacePaths) {
+            workspacePathQuickPickItemList.push({ label: workspacePath, data: workspacePath });
+        }
+        let selectedWorkspacePathItem = await this.controlProvider.showQuickPick(
+            constants.SelectWorkspace,
+            workspacePathQuickPickItemList,
+            { placeHolder: Messages.selectWorkspace });
+        
+        this.inputs.pipelineConfiguration.workingDirectory = selectedWorkspacePathItem.data;
+        this.inputs.repositoryAnalysisApplicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
+            return (applicationSettings.language === this.inputs.pipelineConfiguration.template.language && applicationSettings.settings.workingDirectory === selectedWorkspacePathItem.data);
+        });
     }
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
