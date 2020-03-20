@@ -18,7 +18,7 @@ import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs} from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { PipelineTemplate, TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -425,7 +425,7 @@ class Orchestrator {
                     "workingDirectory": "wddddddddddddd"
                 }
             ]
-        }; 
+        };
 
         let serviceClient = new TemplateServiceClient();
         var appropriatePipelines;
@@ -436,6 +436,21 @@ class Orchestrator {
                 if (a.templateWeight > b.templateWeight) { return 1; }
                 else { return -1; }
             });
+
+            // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
+            if (appropriatePipelines.length > 1) {
+                let selectedOption = await this.controlProvider.showQuickPick(
+                    constants.SelectPipelineTemplate,
+                    appropriatePipelines.map((pipeline) => { return { label: pipeline.label }; }),
+                    { placeHolder: Messages.selectPipelineTemplate },
+                    TelemetryKeys.PipelineTempateListCount);
+                this.inputs.pipelineConfiguration.templateInfo = appropriatePipelines.find((pipeline) => {
+                    return pipeline.label === selectedOption.label;
+                });
+            }
+            else {
+                this.inputs.pipelineConfiguration.templateInfo = appropriatePipelines[0];
+            }
         }
         else {
             appropriatePipelines = await vscode.window.withProgress(
@@ -446,21 +461,21 @@ class Orchestrator {
                     repoAnalysisResult,
                     this.inputs.pipelineConfiguration.params[constants.TargetResource])
             );
-        }
 
-        // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
-        if (appropriatePipelines.length > 1) {
-            let selectedOption = await this.controlProvider.showQuickPick(
-                constants.SelectPipelineTemplate,
-                appropriatePipelines.map((pipeline) => { return { label: pipeline.label }; }),
-                { placeHolder: Messages.selectPipelineTemplate },
-                TelemetryKeys.PipelineTempateListCount);
-            this.inputs.pipelineConfiguration.templateInfo = appropriatePipelines.find((pipeline) => {
-                return pipeline.label === selectedOption.label;
-            });
-        }
-        else {
-            this.inputs.pipelineConfiguration.templateInfo = appropriatePipelines[0];
+            // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
+            if (appropriatePipelines.length > 1) {
+                let selectedOption = await this.controlProvider.showQuickPick(
+                    constants.SelectPipelineTemplate,
+                    appropriatePipelines.map((pipeline) => { return { label: pipeline.label }; }),
+                    { placeHolder: Messages.selectPipelineTemplate },
+                    TelemetryKeys.PipelineTempateListCount);
+                this.inputs.pipelineConfiguration.template = appropriatePipelines.find((pipeline) => {
+                    return pipeline.label === selectedOption.label;
+                });
+            }
+            else {
+                this.inputs.pipelineConfiguration.template = appropriatePipelines[0];
+            }
         }
 
         //If RepoAnalysis is disabled or didn't provided response related to language of selected template
