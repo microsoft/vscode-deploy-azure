@@ -5,6 +5,7 @@ import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
 const uuid = require('uuid/v4');
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
+import { TemplateServiceClient } from './clients/TemplateServiceClient';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
 import { AssetHandler } from './helper/AssetHandler';
@@ -17,7 +18,7 @@ import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs} from './model/models';
 import { PipelineTemplate, TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -412,15 +413,40 @@ class Orchestrator {
         //var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
         var repoAnalysisResult = null;
         //await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
+        var templateServiceEnabled = false;
 
-        let appropriatePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-            { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
-            () => templateHelper.analyzeRepoAndListAppropriatePipeline(
-                this.inputs.sourceRepository.localPath,
-                this.inputs.sourceRepository.repositoryProvider,
-                repoAnalysisResult,
-                this.inputs.pipelineConfiguration.params[constants.TargetResource])
-        );
+        //calling RepoAnalysis service
+        var repoDetails = {
+            "applicationSettingsList": [
+                {
+                    "language": "Docker",
+                    "buildTargetName": "Dockerfile",
+                    "deployTargetName": "Azure:AKS",
+                    "workingDirectory": "wddddddddddddd"
+                }
+            ]
+        }; 
+
+        let serviceClient = new TemplateServiceClient();
+        var appropriatePipelines;
+        if (templateServiceEnabled) {
+            appropriatePipelines = await serviceClient.getTemplates(repoDetails);
+            //sorting array weightwise
+            appropriatePipelines = appropriatePipelines.sort((a, b) => {
+                if (a.templateWeight > b.templateWeight) { return 1; }
+                else { return -1; }
+            });
+        }
+        else {
+            appropriatePipelines = await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                () => templateHelper.analyzeRepoAndListAppropriatePipeline(
+                    this.inputs.sourceRepository.localPath,
+                    this.inputs.sourceRepository.repositoryProvider,
+                    repoAnalysisResult,
+                    this.inputs.pipelineConfiguration.params[constants.TargetResource])
+            );
+        }
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
         if (appropriatePipelines.length > 1) {
@@ -429,12 +455,12 @@ class Orchestrator {
                 appropriatePipelines.map((pipeline) => { return { label: pipeline.label }; }),
                 { placeHolder: Messages.selectPipelineTemplate },
                 TelemetryKeys.PipelineTempateListCount);
-            this.inputs.pipelineConfiguration.template = appropriatePipelines.find((pipeline) => {
+            this.inputs.pipelineConfiguration.templateInfo = appropriatePipelines.find((pipeline) => {
                 return pipeline.label === selectedOption.label;
             });
         }
         else {
-            this.inputs.pipelineConfiguration.template = appropriatePipelines[0];
+            this.inputs.pipelineConfiguration.templateInfo = appropriatePipelines[0];
         }
 
         //If RepoAnalysis is disabled or didn't provided response related to language of selected template

@@ -2,10 +2,11 @@ import { SubscriptionModels } from 'azure-arm-resource';
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { ServiceClientCredentials } from 'ms-rest';
 import { AzureEnvironment } from 'ms-rest-azure';
+import { Dictionary } from 'underscore';
 import { ExtensionContext, OutputChannel, QuickPickItem, workspace } from 'vscode';
 import { IAzureUserInput, ITelemetryReporter, UIExtensionVariables } from 'vscode-azureextensionui';
 import { Messages } from '../resources/messages';
-import { PipelineTemplate } from './templateModels';
+import { PipelineTemplate, TemplateInfo } from './templateModels';
 
 class ExtensionVariables implements UIExtensionVariables {
     public azureAccountExtensionApi: AzureAccountExtensionExports;
@@ -22,6 +23,18 @@ class ExtensionVariables implements UIExtensionVariables {
 
 let extensionVariables = new ExtensionVariables();
 export { extensionVariables };
+
+export class ApplicationSettings {
+    language: string;
+    buildTargetName: string;
+    deployTargetName: string;
+    workingDirectory: string;
+    settings?: Dictionary<string>;
+}
+
+export class RepoInfo {
+    applicationSettingsList: ApplicationSettings[];
+}
 
 export class WizardInputs {
     organizationName: string;
@@ -82,6 +95,7 @@ export class AzureSession {
 export class PipelineConfiguration {
     filePath: string;
     template: PipelineTemplate;
+    templateInfo: TemplateInfo;
     workingDirectory: string;
     params: { [key: string]: any } = {};
     assets: { [key: string]: any } = {};
@@ -140,26 +154,26 @@ export class ParsedAzureResourceId {
             for (let i = 0; i < parts.length; i++) {
                 switch (i) {
                     case 1:
-                            this.subscriptionId = parts[i];
-                            break;
+                        this.subscriptionId = parts[i];
+                        break;
                     case 3:
-                            this.resourceGroup = parts[i];
-                            break;
+                        this.resourceGroup = parts[i];
+                        break;
                     case 5:
-                            this.resourceProvider = parts[i];
-                            break;
+                        this.resourceProvider = parts[i];
+                        break;
                     case 6:
-                            this.resourceType = parts[i];
-                            break;
+                        this.resourceType = parts[i];
+                        break;
                     case 7:
-                            this.resourceName = parts[i];
-                            break;
+                        this.resourceName = parts[i];
+                        break;
                     case 8:
-                            this.childResourceType = parts[i];
-                            break;
+                        this.childResourceType = parts[i];
+                        break;
                     case 9:
-                            this.childResource = parts[i];
-                            break;
+                        this.childResource = parts[i];
+                        break;
                 }
             }
         }
@@ -175,9 +189,9 @@ export class RepositoryDetails {
     id: string;
     type: string;
     defaultbranch: string;
-    authorizationInfo:{
+    authorizationInfo: {
         scheme: string;
-        parameters:{
+        parameters: {
             accesstoken: string;
         }
     };

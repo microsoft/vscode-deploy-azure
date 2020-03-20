@@ -12,12 +12,18 @@ export interface PipelineTemplate {
     // this should be removed as we will have endpoints/secrets as assets and not a first class property
     azureConnectionType?: AzureConnectionType;
 }
+export interface TemplateInfo {
+    templateId: string;
+    workingDirectory: string;
+    templateWeight: number;
+    description: string;
+}
 
 export interface TemplateParameter {
     name: string;
     displayName: string;
     type: TemplateParameterType;
-    dataSourceId? : string;
+    dataSourceId?: string;
     defaultValue?: any;
     options?: { key: string, value: any }[];
 }
