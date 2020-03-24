@@ -1,4 +1,5 @@
 import { RepoInfo } from "../model/models";
+import { PipelineTemplateMetadata } from "../model/templateModels";
 import { RestClient } from "./restClient";
 
 export class TemplateServiceClient {
@@ -8,7 +9,7 @@ export class TemplateServiceClient {
         this.restClient = new RestClient();
     }
 
-    public async getTemplates(body: RepoInfo): Promise<any> {
+    public async getTemplates(body: RepoInfo): Promise<PipelineTemplateMetadata[]> {
         return this.restClient.sendServiceRequest(
             'https://ts21.azurewebsites.net/Templates',
             'POST',

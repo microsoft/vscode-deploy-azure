@@ -2,11 +2,10 @@ import { SubscriptionModels } from 'azure-arm-resource';
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { ServiceClientCredentials } from 'ms-rest';
 import { AzureEnvironment } from 'ms-rest-azure';
-import { Dictionary } from 'underscore';
 import { ExtensionContext, OutputChannel, QuickPickItem, workspace } from 'vscode';
 import { IAzureUserInput, ITelemetryReporter, UIExtensionVariables } from 'vscode-azureextensionui';
 import { Messages } from '../resources/messages';
-import { PipelineTemplate, TemplateInfo } from './templateModels';
+import { PipelineTemplate, PipelineTemplateMetadata } from './templateModels';
 
 class ExtensionVariables implements UIExtensionVariables {
     public azureAccountExtensionApi: AzureAccountExtensionExports;
@@ -15,6 +14,7 @@ class ExtensionVariables implements UIExtensionVariables {
     public reporter: ITelemetryReporter;
     public ui: IAzureUserInput;
     public enableGitHubWorkflow: boolean;
+    public templateServiceEnabled: boolean;
 
     constructor() {
         this.enableGitHubWorkflow = !workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub');
@@ -23,18 +23,6 @@ class ExtensionVariables implements UIExtensionVariables {
 
 let extensionVariables = new ExtensionVariables();
 export { extensionVariables };
-
-export class ApplicationSettings {
-    language: string;
-    buildTargetName: string;
-    deployTargetName: string;
-    workingDirectory: string;
-    settings?: Dictionary<string>;
-}
-
-export class RepoInfo {
-    applicationSettingsList: ApplicationSettings[];
-}
 
 export class WizardInputs {
     organizationName: string;
@@ -95,7 +83,7 @@ export class AzureSession {
 export class PipelineConfiguration {
     filePath: string;
     template: PipelineTemplate;
-    templateInfo: TemplateInfo;
+    templateInfo: PipelineTemplateMetadata;
     workingDirectory: string;
     params: { [key: string]: any } = {};
     assets: { [key: string]: any } = {};

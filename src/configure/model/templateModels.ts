@@ -12,7 +12,7 @@ export interface PipelineTemplate {
     // this should be removed as we will have endpoints/secrets as assets and not a first class property
     azureConnectionType?: AzureConnectionType;
 }
-export interface TemplateInfo {
+export interface PipelineTemplateMetadata {
     templateId: string;
     workingDirectory: string;
     templateWeight: number;
