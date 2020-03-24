@@ -1,0 +1,25 @@
+pool:
+  vmImage: ubuntu-16.04
+
+steps:
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
+  displayName: 'Run CredScan'
+  inputs:
+    toolMajorVersion: V2
+    debugMode: false
+
+- task: TSLint@1
+  inputs:
+    RuleLibrary: 'microsoft'
+    RulesetMicrosoft: 'mssdlrequired'
+    FileSelectionType: 'fileGlob'
+    Files: '**\*.ts'
+    ECMAScriptVersion: 'ES6'
+    OutputFormat: 'json'
+    TypeScriptVersion: 'latest'
+
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@1
+  displayName: 'Post Analysis'
+  inputs:
+    CredScan: true
+    TSLint: true
