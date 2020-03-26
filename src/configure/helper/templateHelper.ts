@@ -3,140 +3,133 @@ import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
+import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
-import { PipelineTemplate, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType, PipelineTemplateMetadata } from '../model/templateModels';
+import { PipelineTemplate, PipelineTemplateMetadata, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
 import { MustacheHelper } from './mustacheHelper';
 import { telemetryHelper } from './telemetryHelper';
-import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 
-export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<any> {
-   
-   if(extensionVariables.templateServiceEnabled){
-        let templateResult: PipelineTemplateMetadata[] = [];
+export async function mergingRepoAnalysisResults(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters): Promise<AnalysisResult> {
+    let localRepoAnalysisResult = await analyzeRepo(repoPath);
+    let analysisResult = localRepoAnalysisResult;
 
-        //calling repo analysis service
-        var repoDetails = {
-            "applicationSettingsList": [
-                {
-                    "language": "Docker",
-                    "buildTargetName": "Dockerfile",
-                    "deployTargetName": "Azure:AKS",
-                    "workingDirectory": "wddddddddddddd"
-                }
-            ]
-        };
+    //If Repo analysis fails then we'll go with the basic existing analysis
+    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.repositoryAnalysisApplicationSettingsList) {
+        analysisResult = new AnalysisResult();
+        repoAnalysisParameters.repositoryAnalysisApplicationSettingsList.forEach((settings) => {
+            analysisResult.languages.push(settings.language);
 
-        let serviceClient = new TemplateServiceClient();
-        templateResult = await serviceClient.getTemplates(repoDetails);
-        templateResult = templateResult.sort((a, b) => {
-            if (a.templateWeight > b.templateWeight) { return 1; }
-            else { return -1; }
+            //Check if Azure:Functions is value of any deployTargetName property
+            analysisResult.isFunctionApp =
+                analysisResult.isFunctionApp || settings.deployTargetName === RepoAnalysisConstants.AzureFunctions ? true : false;
         });
-        return templateResult;
-   }
-   else{
-        let localRepoAnalysisResult = await analyzeRepo(repoPath);
-        let analysisResult = localRepoAnalysisResult;
 
-        //If Repo analysis fails then we'll go with the basic existing analysis
-        if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.repositoryAnalysisApplicationSettingsList) {
-            analysisResult = new AnalysisResult();
-            repoAnalysisParameters.repositoryAnalysisApplicationSettingsList.forEach((settings) => {
-                analysisResult.languages.push(settings.language);
-
-                //Check if Azure:Functions is value of any deployTargetName property
-                analysisResult.isFunctionApp =
-                    analysisResult.isFunctionApp || settings.deployTargetName === RepoAnalysisConstants.AzureFunctions ? true : false;
-            });
-
-            //Languages not supported by RepoAnalysisService should be considered and taken from LocalRepoAnalysis
-            localRepoAnalysisResult.languages.forEach((language) => {
-                if (analysisResult.languages.indexOf(language) === -1) {
-                    analysisResult.languages.push(language);
-                }
-            });
-
-            if (analysisResult.languages.length === 0) {
-                analysisResult.languages.push(SupportedLanguage.NONE);
+        //Languages not supported by RepoAnalysisService should be considered and taken from LocalRepoAnalysis
+        localRepoAnalysisResult.languages.forEach((language) => {
+            if (analysisResult.languages.indexOf(language) === -1) {
+                analysisResult.languages.push(language);
             }
-        }
+        });
 
-        let templateList: { [key: string]: PipelineTemplate[] } = {};
-        switch (repositoryProvider) {
-            case RepositoryProvider.AzureRepos:
-                templateList = azurePipelineTemplates;
+        if (analysisResult.languages.length === 0) {
+            analysisResult.languages.push(SupportedLanguage.NONE);
+        }
+    }
+    return analysisResult;
+}
+export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+
+    let analysisResult = await mergingRepoAnalysisResults(repoPath, repositoryProvider, repoAnalysisParameters);
+
+    let templateList: { [key: string]: PipelineTemplate[] } = {};
+    switch (repositoryProvider) {
+        case RepositoryProvider.AzureRepos:
+            templateList = azurePipelineTemplates;
+            break;
+        case RepositoryProvider.Github:
+            templateList = extensionVariables.enableGitHubWorkflow ? githubWorklowTemplates : azurePipelineTemplates;
+            break;
+        default:
+            throw new Error(Messages.cannotIdentifyRespositoryDetails);
+    }
+
+
+    let templateResult: PipelineTemplate[] = [];
+    analysisResult.languages.forEach((language) => {
+        switch (language) {
+            case SupportedLanguage.DOCKER:
+                if (templateList[SupportedLanguage.DOCKER] && templateList[SupportedLanguage.DOCKER].length > 0) {
+                    templateResult = templateResult.concat(templateList[SupportedLanguage.DOCKER]);
+                }
                 break;
-            case RepositoryProvider.Github:
-                templateList = extensionVariables.enableGitHubWorkflow ? githubWorklowTemplates : azurePipelineTemplates;
+            case SupportedLanguage.NODE:
+                if (templateList[SupportedLanguage.NODE] && templateList[SupportedLanguage.NODE].length > 0) {
+                    templateResult = templateResult.concat(templateList[SupportedLanguage.NODE]);
+                }
+                break;
+            case SupportedLanguage.PYTHON:
+                if (templateList[SupportedLanguage.PYTHON] && templateList[SupportedLanguage.PYTHON].length > 0) {
+                    templateResult = templateResult.concat(templateList[SupportedLanguage.PYTHON]);
+                }
+                break;
+            case SupportedLanguage.DOTNETCORE:
+                if (templateList[SupportedLanguage.DOTNETCORE] && templateList[SupportedLanguage.DOTNETCORE].length > 0) {
+                    templateResult = templateResult.concat(templateList[SupportedLanguage.DOTNETCORE]);
+                }
+                break;
+            case SupportedLanguage.NONE:
+                if (templateList[SupportedLanguage.NONE] && templateList[SupportedLanguage.NONE].length > 0) {
+                    templateResult = templateResult.concat(templateList[SupportedLanguage.NONE]);
+                }
                 break;
             default:
-                throw new Error(Messages.cannotIdentifyRespositoryDetails);
+                break;
         }
+    });
 
-        let templateResult: PipelineTemplate[] = [];
-        analysisResult.languages.forEach((language) => {
-            switch (language) {
-                case SupportedLanguage.DOCKER:
-                    if (templateList[SupportedLanguage.DOCKER] && templateList[SupportedLanguage.DOCKER].length > 0) {
-                        templateResult = templateResult.concat(templateList[SupportedLanguage.DOCKER]);
-                    }
-                    break;
-                case SupportedLanguage.NODE:
-                    if (templateList[SupportedLanguage.NODE] && templateList[SupportedLanguage.NODE].length > 0) {
-                        templateResult = templateResult.concat(templateList[SupportedLanguage.NODE]);
-                    }
-                    break;
-                case SupportedLanguage.PYTHON:
-                    if (templateList[SupportedLanguage.PYTHON] && templateList[SupportedLanguage.PYTHON].length > 0) {
-                        templateResult = templateResult.concat(templateList[SupportedLanguage.PYTHON]);
-                    }
-                    break;
-                case SupportedLanguage.DOTNETCORE:
-                    if (templateList[SupportedLanguage.DOTNETCORE] && templateList[SupportedLanguage.DOTNETCORE].length > 0) {
-                        templateResult = templateResult.concat(templateList[SupportedLanguage.DOTNETCORE]);
-                    }
-                    break;
-                case SupportedLanguage.NONE:
-                    if (templateList[SupportedLanguage.NONE] && templateList[SupportedLanguage.NONE].length > 0) {
-                        templateResult = templateResult.concat(templateList[SupportedLanguage.NONE]);
-                    }
-                    break;
-                default:
-                    break;
-            }
-        });
-
-        if (templateResult.length < 1 && templateList[SupportedLanguage.NONE] && templateList[SupportedLanguage.NONE].length > 0) {
-            templateResult = templateList[SupportedLanguage.NONE];
-        }
-
-        if (analysisResult.isFunctionApp) {
-            switch (repositoryProvider) {
-                case RepositoryProvider.AzureRepos:
-                    templateResult = azurePipelineTargetBasedTemplates[AzureTarget.FunctionApp].concat(templateResult);
-                    break;
-                case RepositoryProvider.Github:
-                    templateResult = extensionVariables.enableGitHubWorkflow ? githubWorkflowTargetBasedTemplates[AzureTarget.FunctionApp].concat(templateResult) : azurePipelineTargetBasedTemplates[AzureTarget.FunctionApp].concat(templateResult);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        templateResult = targetResource && !!targetResource.type ? templateResult.filter((template) => !template.targetType || template.targetType.toLowerCase() === targetResource.type.toLowerCase()) : templateResult;
-        templateResult = targetResource && !!targetResource.kind ? templateResult.filter((template) => !template.targetKind || template.targetKind.toLowerCase() === targetResource.kind.toLowerCase()) : templateResult;
-        templateResult = templateResult.filter((pipelineTemplate) => pipelineTemplate.enabled);
-
-        // remove duplicate named template:
-        templateResult = removeDuplicates(templateResult);
-        return templateResult;
+    if (templateResult.length < 1 && templateList[SupportedLanguage.NONE] && templateList[SupportedLanguage.NONE].length > 0) {
+        templateResult = templateList[SupportedLanguage.NONE];
     }
-    
+
+    if (analysisResult.isFunctionApp) {
+        switch (repositoryProvider) {
+            case RepositoryProvider.AzureRepos:
+                templateResult = azurePipelineTargetBasedTemplates[AzureTarget.FunctionApp].concat(templateResult);
+                break;
+            case RepositoryProvider.Github:
+                templateResult = extensionVariables.enableGitHubWorkflow ? githubWorkflowTargetBasedTemplates[AzureTarget.FunctionApp].concat(templateResult) : azurePipelineTargetBasedTemplates[AzureTarget.FunctionApp].concat(templateResult);
+                break;
+            default:
+                break;
+        }
+    }
+
+    templateResult = targetResource && !!targetResource.type ? templateResult.filter((template) => !template.targetType || template.targetType.toLowerCase() === targetResource.type.toLowerCase()) : templateResult;
+    templateResult = targetResource && !!targetResource.kind ? templateResult.filter((template) => !template.targetKind || template.targetKind.toLowerCase() === targetResource.kind.toLowerCase()) : templateResult;
+    templateResult = templateResult.filter((pipelineTemplate) => pipelineTemplate.enabled);
+
+    // remove duplicate named template:
+    templateResult = removeDuplicates(templateResult);
+    return templateResult;
+
 }
 
+export async function analyzeRepoAndListAppropriatePipeline2(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplateMetadata[]> {
+
+    //TO:DO - Merge local repo analysis (Some changes in the definition of AnalysisResult required)
+    let templateResult: PipelineTemplateMetadata[] = [];
+
+    let serviceClient = new TemplateServiceClient();
+    templateResult = await serviceClient.getTemplates(repoAnalysisParameters);
+    templateResult = templateResult.sort((a, b) => {
+        if (a.templateWeight > b.templateWeight) { return 1; }
+        else { return -1; }
+    });
+    return templateResult;
+}
 export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: TargetKind): PipelineTemplate[] {
     let pipelineTemplates: PipelineTemplate[] = [];
 

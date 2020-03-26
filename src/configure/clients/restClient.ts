@@ -20,7 +20,7 @@ export class RestClient extends ServiceClient {
         });
     }
 
-    public sendServiceRequest(url: string, httpMethod: string, apiVersion: string, body?: any): Promise<any> {
+    public sendRequest2(url: string, httpMethod: string, apiVersion: string, body?: any): Promise<any> {
         return this.sendRequest(
             {
                 url: url,
