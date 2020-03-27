@@ -190,3 +190,5 @@ export const deploymentManifest:string = "deployment";
 export const serviceManifest:string = "service";
 export const serviceIngressManifest:string = "service-ingress";
 export const ingressManifest:string = "ingress";
+export const azurePipeline:string = "Azure-pipeline";
+export const githubWorkflow:string = "Github-workflow";

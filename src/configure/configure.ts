@@ -259,6 +259,7 @@ class Orchestrator {
         }
         // set telemetry
         telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, this.inputs.sourceRepository.repositoryProvider);
+        telemetryHelper.setTelemetry(TelemetryKeys.RepoId, this.inputs.sourceRepository.repositoryId);
     }
 
     private setDefaultRepositoryDetails(): void {
@@ -375,6 +376,9 @@ class Orchestrator {
         let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
         this.inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
         this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+
+        //add subscription telemetry abc
+        telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
     private async getAzureResourceDetails(): Promise<void> {
