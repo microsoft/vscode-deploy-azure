@@ -5,7 +5,6 @@ import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
 const uuid = require('uuid/v4');
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
-import { TemplateServiceClient } from './clients/github/TemplateServiceClient';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
 import { AssetHandler } from './helper/AssetHandler';

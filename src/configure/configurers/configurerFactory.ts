@@ -1,8 +1,8 @@
-import { Configurer } from './configurerBase';
 import { GitHubWorkflowConfigurer } from '../configurers/githubWorkflowConfigurer';
-import { AzurePipelineConfigurer } from './azurePipelineConfigurer';
-import { GitRepositoryParameters, RepositoryProvider, AzureSession, extensionVariables } from '../model/models';
+import { AzureSession, extensionVariables, GitRepositoryParameters, RepositoryProvider } from '../model/models';
 import { Messages } from '../resources/messages';
+import { AzurePipelineConfigurer } from './azurePipelineConfigurer';
+import { Configurer } from './configurerBase';
 
 export class ConfigurerFactory {
     public static GetConfigurer(sourceRepositoryDetails: GitRepositoryParameters, azureSession: AzureSession, subscriptionId: string): Configurer {
