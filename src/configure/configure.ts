@@ -18,7 +18,7 @@ import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
 import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
-import { PipelineTemplate, TemplateAssetType } from './model/templateModels';
+import { TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
@@ -412,15 +412,43 @@ class Orchestrator {
         //var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
         var repoAnalysisResult = null;
         //await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
+        extensionVariables.templateServiceEnabled = true;
 
-        let appropriatePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-            { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
-            () => templateHelper.analyzeRepoAndListAppropriatePipeline(
-                this.inputs.sourceRepository.localPath,
-                this.inputs.sourceRepository.repositoryProvider,
-                repoAnalysisResult,
-                this.inputs.pipelineConfiguration.params[constants.TargetResource])
-        );
+        let appropriatePipelines;
+        // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
+
+        if (extensionVariables.templateServiceEnabled) {
+            repoAnalysisResult = {
+                "applicationSettingsList": [
+                    {
+                        "language": "Docker",
+                        "buildTargetName": "Dockerfile",
+                        "deployTargetName": "Azure:AKS",
+                        "workingDirectory": "wddddddddddddd"
+                    }
+                ]
+            };
+
+            appropriatePipelines = appropriatePipelines = await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
+                    this.inputs.sourceRepository.localPath,
+                    this.inputs.sourceRepository.repositoryProvider,
+                    repoAnalysisResult,
+                    this.inputs.pipelineConfiguration.params[constants.TargetResource])
+            );
+        }
+        else {
+            appropriatePipelines = appropriatePipelines = await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                () => templateHelper.analyzeRepoAndListAppropriatePipeline(
+                    this.inputs.sourceRepository.localPath,
+                    this.inputs.sourceRepository.repositoryProvider,
+                    repoAnalysisResult,
+                    this.inputs.pipelineConfiguration.params[constants.TargetResource])
+            );
+        }
+
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
         if (appropriatePipelines.length > 1) {
@@ -429,12 +457,24 @@ class Orchestrator {
                 appropriatePipelines.map((pipeline) => { return { label: pipeline.label }; }),
                 { placeHolder: Messages.selectPipelineTemplate },
                 TelemetryKeys.PipelineTempateListCount);
-            this.inputs.pipelineConfiguration.template = appropriatePipelines.find((pipeline) => {
-                return pipeline.label === selectedOption.label;
-            });
+            if (extensionVariables.templateServiceEnabled) {
+                this.inputs.pipelineConfiguration.templateInfo = appropriatePipelines.find((pipeline) => {
+                    return pipeline.label === selectedOption.label;
+                });
+            }
+            else {
+                this.inputs.pipelineConfiguration.template = appropriatePipelines.find((pipeline) => {
+                    return pipeline.label === selectedOption.label;
+                });
+            }
         }
         else {
-            this.inputs.pipelineConfiguration.template = appropriatePipelines[0];
+            if (extensionVariables.templateServiceEnabled) {
+                this.inputs.pipelineConfiguration.templateInfo = appropriatePipelines[0];
+            }
+            else {
+                this.inputs.pipelineConfiguration.template = appropriatePipelines[0];
+            }
         }
 
         //If RepoAnalysis is disabled or didn't provided response related to language of selected template
@@ -450,7 +490,12 @@ class Orchestrator {
             });
         }
 
-        telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
+        if (extensionVariables.templateServiceEnabled) {
+            telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.templateInfo.label);
+        }
+        else {
+            telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
+        }
     }
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
