@@ -490,7 +490,12 @@ class Orchestrator {
             });
         }
 
-        telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
+        if (extensionVariables.templateServiceEnabled) {
+            telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.templateInfo.label);
+        }
+        else {
+            telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
+        }
     }
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {

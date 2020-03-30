@@ -14,6 +14,7 @@ export interface PipelineTemplate {
 }
 export interface PipelineTemplateMetadata {
     templateId: string;
+    label: string;
     workingDirectory: string;
     templateWeight: number;
     description: string;
