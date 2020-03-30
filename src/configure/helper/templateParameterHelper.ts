@@ -130,10 +130,12 @@ export class TemplateParameterHelper {
                         else {
 
                             //handling case senstivity issue of httpApplicationRouting
-                            let addonProfiles = JSON.parse(JSON.stringify(detailedResource.properties.addonProfiles).toLowerCase());
-                            addonProfiles.httpApplicationRouting = addonProfiles.httpapplicationrouting;
-                            delete addonProfiles['httpapplicationrouting'];
-                            detailedResource.properties.addonProfiles = addonProfiles;
+                            if (detailedResource.properties.addonProfiles) {
+                                let addonProfiles = JSON.parse(JSON.stringify(detailedResource.properties.addonProfiles).toLowerCase());
+                                addonProfiles.httpApplicationRouting = addonProfiles.httpapplicationrouting;
+                                delete addonProfiles['httpapplicationrouting'];
+                                detailedResource.properties.addonProfiles = addonProfiles;
+                            }
 
                             // dynamic validation for AKS cluster
                             try {
