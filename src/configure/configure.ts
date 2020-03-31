@@ -461,7 +461,7 @@ class Orchestrator {
                 try {
                     await this.localGitRepoHelper.createAndDisplayManifestFile(constants.deploymentManifest, pipelineConfigurer, filesToCommit, this.inputs);
                     var properties = this.inputs.pipelineConfiguration.params.aksCluster.properties;
-                    if (properties.addonProfiles && properties.addonProfiles.httpApplicationRouting.enabled) {
+                    if (properties.addonProfiles && properties.addonProfiles.httpApplicationRouting && properties.addonProfiles.httpApplicationRouting.enabled) {
                         await this.localGitRepoHelper.createAndDisplayManifestFile(constants.serviceIngressManifest, pipelineConfigurer, filesToCommit, this.inputs, constants.serviceManifest);
                         await this.localGitRepoHelper.createAndDisplayManifestFile(constants.ingressManifest, pipelineConfigurer, filesToCommit, this.inputs);
                     }
