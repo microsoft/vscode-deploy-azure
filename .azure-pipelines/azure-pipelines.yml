@@ -9,8 +9,6 @@
 #   npm test
 #   vsce package
 #   (give VSIX to someone for buddy testing)
-trigger:
-- master
 
 # no `pr` keyword because we want all PRs to run this
 
