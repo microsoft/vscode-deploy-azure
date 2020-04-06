@@ -41,7 +41,13 @@
 			  "import-sources-order": "case-insensitive",
 			  "named-imports-order": "case-insensitive"
 			}
-		  ]
+		],
+		"no-constant-condition": [
+			true,
+			{
+				"checkLoops": false
+			}
+		]
 	},
 	"defaultSeverity": "warning",
 	"extends": ["tslint-microsoft-contrib/recommended", "tslint:recommended"]
