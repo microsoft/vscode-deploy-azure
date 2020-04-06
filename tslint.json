@@ -1,7 +1,6 @@
 {
 	"rulesDirectory": ["node_modules/tslint-microsoft-contrib"],
 	"rules": {
-		"ordered-imports": true,
 		"no-string-throw": true,
 		"no-unused-expression": true,
 		"no-duplicate-variable": true,
@@ -35,7 +34,14 @@
 			}
 		  ],
 		"trailing-comma": false,
-		"one-line": false
+		"one-line": false,
+		"ordered-imports": [
+			true,
+			{
+			  "import-sources-order": "case-insensitive",
+			  "named-imports-order": "case-insensitive"
+			}
+		  ]
 	},
 	"defaultSeverity": "warning",
 	"extends": ["tslint-microsoft-contrib/recommended", "tslint:recommended"]
