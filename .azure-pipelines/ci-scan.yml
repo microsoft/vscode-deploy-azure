@@ -17,7 +17,7 @@ steps:
     ECMAScriptVersion: 'ES6'
     OutputFormat: 'json'
     TypeScriptVersion: 'custom'
-    TypeScriptVersionCustom: '3.8.3'
+    TypeScriptVersionCustom: '3.3.1'
 
 - task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@1
   displayName: 'Post Analysis'
