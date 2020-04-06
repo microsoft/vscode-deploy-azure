@@ -18,7 +18,7 @@ import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
 import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
-import { TemplateAssetType } from './model/templateModels';
+import { TemplateAssetType, PipelineTemplateMetadata } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
@@ -112,6 +112,12 @@ class Orchestrator {
         }
     }
 
+    private async processingTemplate(template: PipelineTemplateMetadata) {
+
+        //getting the template
+        this.inputs.pipelineConfiguration.templateNew = await templateHelper.getTemplate(template.templateId);
+    }
+
     private async getInputs(node: any): Promise<void> {
         let resourceNode = await this.analyzeNode(node);
 
@@ -119,6 +125,11 @@ class Orchestrator {
             await this.getSourceRepositoryDetails();
             await this.getAzureSession();
             await this.getSelectedPipeline();
+
+            //process the template
+            if (extensionVariables.templateServiceEnabled) {
+                await this.processingTemplate(this.inputs.pipelineConfiguration.templateInfo);
+            }
 
             if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
                 // try to see if node corresponds to any parameter of selected pipeline.

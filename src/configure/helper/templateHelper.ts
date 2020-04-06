@@ -5,12 +5,21 @@ import * as path from 'path';
 import * as Q from 'q';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
+import { PipelineTemplateNew } from '../model/PipelineTemplateNew';
 import { PipelineTemplate, PipelineTemplateMetadata, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
 import { MustacheHelper } from './mustacheHelper';
 import { telemetryHelper } from './telemetryHelper';
+
+export async function getTemplate(templateId: string): Promise<PipelineTemplateNew> {
+
+    let serviceClient = new TemplateServiceClient();
+    let template: PipelineTemplateNew;
+    template = await serviceClient.getTemplateById(templateId);
+    return template;
+}
 
 export async function mergingRepoAnalysisResults(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters): Promise<AnalysisResult> {
     let localRepoAnalysisResult = await analyzeRepo(repoPath);

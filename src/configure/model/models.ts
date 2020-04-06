@@ -6,6 +6,7 @@ import { ExtensionContext, OutputChannel, QuickPickItem, workspace } from 'vscod
 import { IAzureUserInput, ITelemetryReporter, UIExtensionVariables } from 'vscode-azureextensionui';
 import { Messages } from '../resources/messages';
 import { PipelineTemplate, PipelineTemplateMetadata } from './templateModels';
+import { PipelineTemplateNew } from './PipelineTemplateNew';
 
 class ExtensionVariables implements UIExtensionVariables {
     public azureAccountExtensionApi: AzureAccountExtensionExports;
@@ -83,6 +84,7 @@ export class AzureSession {
 export class PipelineConfiguration {
     filePath: string;
     template: PipelineTemplate;
+    templateNew: PipelineTemplateNew;
     templateInfo: PipelineTemplateMetadata;
     workingDirectory: string;
     params: { [key: string]: any } = {};
