@@ -16,6 +16,8 @@ Once the setup is completed, an automatic CI/CD trigger will fire for every code
 
 ![GitHub PAT scope](ghpatpermissions.JPG)
 
+You can refer to our [tutorial](https://docs.microsoft.com/en-us/azure/devops/pipelines/targets/deploy-to-azure-vscode?view=azure-devops) for more details on the extension. 
+
 ## Telemetry
 
 Visual Studio Code collects usage data and sends it to Microsoft to help improve our products and services. Read our [privacy statement](https://go.microsoft.com/fwlink/?LinkID=528096&clcid=0x409) to learn more. If you don’t wish to send usage data to Microsoft, you can set the `telemetry.enableTelemetry` setting to `false`. Learn more in our [FAQ](https://code.visualstudio.com/docs/supporting/faq#_how-to-disable-telemetry-reporting).
