@@ -1,4 +1,5 @@
 {
+	"rulesDirectory": ["node_modules/tslint-microsoft-contrib"],
 	"rules": {
 		"ordered-imports": true,
 		"no-string-throw": true,
@@ -10,7 +11,32 @@
 			true,
 			"always"
 		],
-		"triple-equals": true
+		"triple-equals": true,
+		"no-banned-terms": true,
+		"no-delete-expression": true,
+		"no-document-domain": true,
+		"no-disable-auto-sanitization": true,
+		"no-duplicate-parameter-names": true,
+		"no-exec-script": true,
+		"no-function-constructor-with-string-args": true,
+		"no-octal-literal": true,
+		"no-reserved-keywords": true,
+		"no-string-based-set-immediate": true,
+		"no-string-based-set-interval": true,
+		"no-string-based-set-timeout": true,
+		"no-eval": true,
+		"quotemark": false,
+		"no-relative-imports": false,
+		"max-line-length": [
+			true,
+			{
+			  "limit": 200,
+			  "ignore-pattern": "^import [^,]+ from |^export | implements"
+			}
+		  ],
+		"trailing-comma": false,
+		"one-line": false
 	},
-	"defaultSeverity": "warning"
+	"defaultSeverity": "warning",
+	"extends": ["tslint-microsoft-contrib/recommended", "tslint:recommended"]
 }
