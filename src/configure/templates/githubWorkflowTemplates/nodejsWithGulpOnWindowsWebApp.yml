@@ -25,7 +25,7 @@ jobs:
       working-directory: {{{ workingDirectory }}}
       run: |
         npm install
-        gulp default --gulpfile gulpfile.js
+        gulp default --gulpfile {{{repositoryAnalysisApplicationSettings.settings.nodeGulpFilePath}}}
 
     # deploy web app
     - uses: azure/webapps-deploy@v1

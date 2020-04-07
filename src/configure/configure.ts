@@ -414,7 +414,7 @@ class Orchestrator {
         var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, 
             this.inputs.pipelineConfiguration.workingDirectory);
 
-        extensionVariables.templateServiceEnabled = true;
+        extensionVariables.templateServiceEnabled = false;
 
         let appropriatePipelines;
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
@@ -422,7 +422,7 @@ class Orchestrator {
         if (extensionVariables.templateServiceEnabled) {
             repoAnalysisResult = null;
 
-            appropriatePipelines = appropriatePipelines = await vscode.window.withProgress(
+            appropriatePipelines = await vscode.window.withProgress(
                 { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
                     this.inputs.sourceRepository.localPath,
@@ -432,7 +432,7 @@ class Orchestrator {
             );
         }
         else {
-            appropriatePipelines = appropriatePipelines = await vscode.window.withProgress(
+            appropriatePipelines = await vscode.window.withProgress(
                 { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline(
                     this.inputs.sourceRepository.localPath,
@@ -441,7 +441,6 @@ class Orchestrator {
                     this.inputs.pipelineConfiguration.params[constants.TargetResource])
             );
         }
-
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
         if (appropriatePipelines.length > 1) {
@@ -478,7 +477,7 @@ class Orchestrator {
             && !!repoAnalysisResult.repositoryAnalysisApplicationSettingsList) {
             
             //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
-            this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
+            await this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
         }
 
         if (extensionVariables.templateServiceEnabled) {

@@ -25,7 +25,7 @@ jobs:
       working-directory: {{{ workingDirectory }}}
       run: |
         npm install
-        grunt --gruntfile gruntfile.js
+        grunt --gruntfile {{{repositoryAnalysisApplicationSettings.settings.nodeGruntFilePath}}}
 
     # deploy web app
     - uses: azure/webapps-deploy@v1

@@ -48,7 +48,9 @@ export class RepoAnalysisHelper {
                 applicationSettings.language = analysis.language;
 
                 if(!!analysis.settings){
-                    applicationSettings.settings.workingDirectory = !!analysis.settings.workingDirectory ? analysis.settings.workingDirectory : workspacePath;
+                    if(!!analysis.settings.workingDirectory){
+                        applicationSettings.settings.workingDirectory = analysis.settings.workingDirectory.split('\\').join('/');
+                    }
                     if(!!analysis.buildTargetName) {
                         applicationSettings.buildTargetName = analysis.buildTargetName;
                         if (analysis.language === SupportedLanguage.NODE) {
