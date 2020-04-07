@@ -12,5 +12,8 @@
 
     "editor.codeActionsOnSave": {
         "source.organizeImports": true // Sort and remove unused imports
-    }
+    },
+
+    // Turn it on if you want to see errors from all the files
+    "typescript.tsserver.experimental.enableProjectDiagnostics": false
 }
