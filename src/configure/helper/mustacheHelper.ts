@@ -78,7 +78,26 @@ export class MustacheHelper {
                         return render(parts[0].substr(from, length));
                     }
                 };
-            }
+            },
+
+            "parseAzureResourceId": function () {
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length !== 2) {
+                        return "";
+                    }
+
+                    var splitResourceId = parts[0].split("/");
+                    var urlResourcePartIndex = parseInt(parts[1]);
+                    if (splitResourceId && urlResourcePartIndex && splitResourceId.length > urlResourcePartIndex) {
+                        return splitResourceId[urlResourcePartIndex];
+                    }
+
+                    return "";
+                }
+            },
+
         };
     }
 

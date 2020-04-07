@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { registerCommand, IActionContext, createApiProvider, AzureTreeItem } from 'vscode-azureextensionui';
+import { AzureTreeItem,createApiProvider, IActionContext, registerCommand } from 'vscode-azureextensionui';
 import { AzureExtensionApi, AzureExtensionApiProvider } from 'vscode-azureextensionui/api';
 
 import { browsePipeline } from './browse';
 import { configurePipeline } from './configure';
-import { Messages } from './resources/messages';
-import { AzureAccountExtensionExports, extensionVariables } from './model/models';
 import { telemetryHelper } from './helper/telemetryHelper';
+import { AzureAccountExtensionExports, extensionVariables } from './model/models';
+import { Messages } from './resources/messages';
 
 export async function activateConfigurePipeline(): Promise<AzureExtensionApiProvider> {
     let azureAccountExtension = vscode.extensions.getExtension("ms-vscode.azure-account");

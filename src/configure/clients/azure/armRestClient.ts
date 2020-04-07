@@ -10,6 +10,17 @@ export class ArmRestClient {
         this.restClient = new RestClient(azureSession.credentials);
     }
 
+    public fetchArmData(endPointUri: string, httpMethod: string, body?: string){
+        return this.sendRequest(
+            this.resourceManagerEndpointUrl + endPointUri,
+            httpMethod,
+            null,
+            body
+        ).catch( (error) => {
+            console.log(error);
+        });   
+    }
+
     public async getAcrCredentials(acrId: string): Promise<any> {
         let parsedResourceId = new ParsedAzureResourceId(acrId);
         return this.sendRequest(

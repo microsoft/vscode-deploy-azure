@@ -23,6 +23,7 @@ import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
+import { ControlProvider as ControlProvider2} from './utilities/ControlProvider';
 
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
@@ -120,34 +121,46 @@ class Orchestrator {
             await this.getAzureSession();
             await this.getSelectedPipeline();
 
-            if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
-                // try to see if node corresponds to any parameter of selected pipeline.
-                if (resourceNode) {
-                    let resourceParam = TemplateParameterHelper.getMatchingAzureResourceTemplateParameter(resourceNode, this.inputs.pipelineConfiguration.template.parameters);
-                    if (resourceParam) {
-                        this.inputs.pipelineConfiguration.params[resourceParam.name] = resourceNode;
+            
+            if(this.inputs.pipelineConfiguration.templateInfo){
+                //this.inputs.pipelineConfiguration.template.extendedPipelineTemplate = 
+                let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.pipelineConfiguration.templateInfo);  
+                let inputs:{ [key: string]: any} = {};
+                inputs['subscriptionId'] = this.inputs.subscriptionId;
+                let controlProvider = new ControlProvider2(extendedPipelineTemplate, inputs);
+                await controlProvider.getAllInputUxDescriptors(inputs, this.inputs.azureSession);
+            }
+            else{
+                if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
+                    // try to see if node corresponds to any parameter of selected pipeline.
+                    if (resourceNode) {
+                        let resourceParam = TemplateParameterHelper.getMatchingAzureResourceTemplateParameter(resourceNode, this.inputs.pipelineConfiguration.template.parameters);
+                        if (resourceParam) {
+                            this.inputs.pipelineConfiguration.params[resourceParam.name] = resourceNode;
+                        }
+                    }
+    
+                    try {
+                        let templateParameterHelper = new TemplateParameterHelper();
+                        await templateParameterHelper.setParameters(this.inputs.pipelineConfiguration.template.parameters, this.inputs);
+                    }
+                    catch (err) {
+                        if (err.message === Messages.setupAlreadyConfigured) {
+                            this.continueOrchestration = false;
+                            return;
+                        }
+                        else {
+                            throw err;
+                        }
                     }
                 }
-
-                try {
-                    let templateParameterHelper = new TemplateParameterHelper();
-                    await templateParameterHelper.setParameters(this.inputs.pipelineConfiguration.template.parameters, this.inputs);
-                }
-                catch (err) {
-                    if (err.message === Messages.setupAlreadyConfigured) {
-                        this.continueOrchestration = false;
-                        return;
-                    }
-                    else {
-                        throw err;
+                else {
+                    if (!this.inputs.targetResource.resource) {
+                        await this.getAzureResourceDetails();
                     }
                 }
             }
-            else {
-                if (!this.inputs.targetResource.resource) {
-                    await this.getAzureResourceDetails();
-                }
-            }
+            
         }
     }
 

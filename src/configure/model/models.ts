@@ -116,6 +116,15 @@ export class QuickPickItemWithData implements QuickPickItem {
     detail?: string;
 }
 
+export enum ControlType {
+    QucikPick,
+    InputBox
+}
+
+export interface StringMap<T> {
+    [key: string]: T;
+}
+
 export class ParsedAzureResourceId {
     public resourceId: string;
     public subscriptionId: string;
@@ -282,4 +291,15 @@ export enum SupportedLanguage {
     PYTHON = 'python',
     DOTNETCORE = 'dotnetcore',
     DOCKER = 'docker'
+}
+
+export interface IPredicate {
+    inputName: string;
+    condition: string;
+    inputValue: string;
+}
+
+export interface IVisibilityRule {
+    predicateRules: IPredicate[];
+    operator: string;
 }

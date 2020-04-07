@@ -4,6 +4,7 @@ import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
+import { ExtendedPipelineTemplate } from '../model/Contracts';
 import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
 import { PipelineTemplate, PipelineTemplateMetadata, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
@@ -130,6 +131,14 @@ export async function analyzeRepoAndListAppropriatePipeline2(repoPath: string, r
     });
     return templateResult;
 }
+
+export async function getTemplateParameteres(templateInfo: PipelineTemplateMetadata): Promise<ExtendedPipelineTemplate> {
+    let parameters: ExtendedPipelineTemplate;
+    let serviceClient = new TemplateServiceClient();
+    parameters = await serviceClient.getTemplateParameters(templateInfo.templateId);
+    return parameters;
+}
+
 export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: TargetKind): PipelineTemplate[] {
     let pipelineTemplates: PipelineTemplate[] = [];
 
