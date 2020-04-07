@@ -5,8 +5,8 @@ import { AzureEnvironment } from 'ms-rest-azure';
 import { ExtensionContext, OutputChannel, QuickPickItem, workspace } from 'vscode';
 import { IAzureUserInput, ITelemetryReporter, UIExtensionVariables } from 'vscode-azureextensionui';
 import { Messages } from '../resources/messages';
-import { PipelineTemplate, PipelineTemplateMetadata } from './templateModels';
 import { PipelineTemplateNew } from './PipelineTemplateNew';
+import { PipelineTemplate, PipelineTemplateMetadata } from './templateModels';
 
 class ExtensionVariables implements UIExtensionVariables {
     public azureAccountExtensionApi: AzureAccountExtensionExports;

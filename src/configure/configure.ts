@@ -18,7 +18,7 @@ import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
 import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
-import { TemplateAssetType, PipelineTemplateMetadata } from './model/templateModels';
+import { PipelineTemplateMetadata, TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
