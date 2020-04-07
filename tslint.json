@@ -29,7 +29,7 @@
 		"max-line-length": [
 			true,
 			{
-			  "limit": 200,
+			  "limit": 135,
 			  "ignore-pattern": "^import [^,]+ from |^export | implements"
 			}
 		  ],
