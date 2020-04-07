@@ -412,7 +412,7 @@ class Orchestrator {
     private async getSelectedPipeline(): Promise<void> {
         var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
         var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, 
-            this.inputs.pipelineConfiguration.workingDirectory);
+            this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
 
         extensionVariables.templateServiceEnabled = false;
 
