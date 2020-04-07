@@ -49,6 +49,12 @@
 
         /*  */
         "allowJs": true,
+
+        "plugins": [
+            {
+              "name": "typescript-tslint-plugin"
+            }
+        ]
     },
     "include": [
         "src/**/*",

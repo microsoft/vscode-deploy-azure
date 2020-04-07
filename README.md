@@ -29,3 +29,5 @@ Visual Studio Code collects usage data and sends it to Microsoft to help improve
 # Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to jump in!
+
+For TSLint to work in VSCode, run `npm install` and restart VSCode.
