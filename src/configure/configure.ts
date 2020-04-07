@@ -198,7 +198,7 @@ class Orchestrator {
                     workspaceFolderOptions,
                     { placeHolder: Messages.selectWorkspaceFolder });
                 this.workspacePath = selectedWorkspaceFolder.data.uri.fsPath;
-            }
+            }            
         }
         else {
             telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.BrowseLocalMachine);
@@ -411,7 +411,8 @@ class Orchestrator {
 
     private async getSelectedPipeline(): Promise<void> {
         var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
-        var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, this.workspacePath);
+        var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, 
+            this.inputs.pipelineConfiguration.workingDirectory);
 
         let appropriatePipelines: PipelineTemplate[] = await vscode.window.withProgress(
             { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
@@ -456,6 +457,10 @@ class Orchestrator {
             return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
         });
         
+        if(!applicationSettings || applicationSettings.length == 0){
+            return;
+        }
+
         let workspacePaths = Array.from(new Set(applicationSettings.map(a => a.settings.workingDirectory)));
         if(workspacePaths.length == 1){
             this.inputs.repositoryAnalysisApplicationSettings = applicationSettings[0];
@@ -473,8 +478,10 @@ class Orchestrator {
             { placeHolder: Messages.selectWorkspace });
         
         this.inputs.pipelineConfiguration.workingDirectory = selectedWorkspacePathItem.data;
-        this.inputs.repositoryAnalysisApplicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
-            return (applicationSettings.language === this.inputs.pipelineConfiguration.template.language && applicationSettings.settings.workingDirectory === selectedWorkspacePathItem.data);
+        this.inputs.repositoryAnalysisApplicationSettings = 
+        repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
+            return (applicationSettings.language === this.inputs.pipelineConfiguration.template.language 
+                && applicationSettings.settings.workingDirectory === selectedWorkspacePathItem.data);
         });
     }
 
