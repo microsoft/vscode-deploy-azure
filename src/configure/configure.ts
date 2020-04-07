@@ -18,7 +18,7 @@ import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
 import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, RepositoryAnalysisParameters } from './model/models';
-import { PipelineTemplate, TemplateAssetType } from './model/templateModels';
+import { TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
@@ -414,14 +414,34 @@ class Orchestrator {
         var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, 
             this.inputs.pipelineConfiguration.workingDirectory);
 
-        let appropriatePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-            { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
-            () => templateHelper.analyzeRepoAndListAppropriatePipeline(
-                this.inputs.sourceRepository.localPath,
-                this.inputs.sourceRepository.repositoryProvider,
-                repoAnalysisResult,
-                this.inputs.pipelineConfiguration.params[constants.TargetResource])
-        );
+        extensionVariables.templateServiceEnabled = true;
+
+        let appropriatePipelines;
+        // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
+
+        if (extensionVariables.templateServiceEnabled) {
+            repoAnalysisResult = null;
+
+            appropriatePipelines = appropriatePipelines = await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
+                    this.inputs.sourceRepository.localPath,
+                    this.inputs.sourceRepository.repositoryProvider,
+                    repoAnalysisResult,
+                    this.inputs.pipelineConfiguration.params[constants.TargetResource])
+            );
+        }
+        else {
+            appropriatePipelines = appropriatePipelines = await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                () => templateHelper.analyzeRepoAndListAppropriatePipeline(
+                    this.inputs.sourceRepository.localPath,
+                    this.inputs.sourceRepository.repositoryProvider,
+                    repoAnalysisResult,
+                    this.inputs.pipelineConfiguration.params[constants.TargetResource])
+            );
+        }
+
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
         if (appropriatePipelines.length > 1) {
@@ -430,12 +450,24 @@ class Orchestrator {
                 appropriatePipelines.map((pipeline) => { return { label: pipeline.label }; }),
                 { placeHolder: Messages.selectPipelineTemplate },
                 TelemetryKeys.PipelineTempateListCount);
-            this.inputs.pipelineConfiguration.template = appropriatePipelines.find((pipeline) => {
-                return pipeline.label === selectedOption.label;
-            });
+            if (extensionVariables.templateServiceEnabled) {
+                this.inputs.pipelineConfiguration.templateInfo = appropriatePipelines.find((pipeline) => {
+                    return pipeline.label === selectedOption.label;
+                });
+            }
+            else {
+                this.inputs.pipelineConfiguration.template = appropriatePipelines.find((pipeline) => {
+                    return pipeline.label === selectedOption.label;
+                });
+            }
         }
         else {
-            this.inputs.pipelineConfiguration.template = appropriatePipelines[0];
+            if (extensionVariables.templateServiceEnabled) {
+                this.inputs.pipelineConfiguration.templateInfo = appropriatePipelines[0];
+            }
+            else {
+                this.inputs.pipelineConfiguration.template = appropriatePipelines[0];
+            }
         }
 
         //If RepoAnalysis is disabled or didn't provided response related to language of selected template
@@ -449,7 +481,12 @@ class Orchestrator {
             this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
         }
 
-        telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
+        if (extensionVariables.templateServiceEnabled) {
+            telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.templateInfo.label);
+        }
+        else {
+            telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
+        }
     }
 
     private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void>{
@@ -492,7 +529,8 @@ class Orchestrator {
             if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
                 try {
                     await this.localGitRepoHelper.createAndDisplayManifestFile(constants.deploymentManifest, pipelineConfigurer, filesToCommit, this.inputs);
-                    if (this.inputs.pipelineConfiguration.params.aksCluster.properties.addonProfiles.httpApplicationRouting.enabled) {
+                    var properties = this.inputs.pipelineConfiguration.params.aksCluster.properties;
+                    if (properties.addonProfiles && properties.addonProfiles.httpApplicationRouting && properties.addonProfiles.httpApplicationRouting.enabled) {
                         await this.localGitRepoHelper.createAndDisplayManifestFile(constants.serviceIngressManifest, pipelineConfigurer, filesToCommit, this.inputs, constants.serviceManifest);
                         await this.localGitRepoHelper.createAndDisplayManifestFile(constants.ingressManifest, pipelineConfigurer, filesToCommit, this.inputs);
                     }

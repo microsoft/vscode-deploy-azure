@@ -19,4 +19,21 @@ export class RestClient extends ServiceClient {
                 });
         });
     }
+
+    public sendRequest2(url: string, httpMethod: string, apiVersion: string, body?: any): Promise<any> {
+        return this.sendRequest(
+            {
+                url: url,
+                method: httpMethod,
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8"
+                },
+                queryParameters: {
+                    'api-version': apiVersion
+                },
+                body: body,
+                deserializationMapper: null,
+                serializationMapper: null
+            });
+    }
 }

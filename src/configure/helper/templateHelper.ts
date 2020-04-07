@@ -3,15 +3,16 @@ import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
+import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
-import { PipelineTemplate, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
+import { PipelineTemplate, PipelineTemplateMetadata, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
 import { MustacheHelper } from './mustacheHelper';
 import { telemetryHelper } from './telemetryHelper';
 
-export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+export async function mergingRepoAnalysisResults(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters): Promise<AnalysisResult> {
     let localRepoAnalysisResult = await analyzeRepo(repoPath);
     let analysisResult = localRepoAnalysisResult;
 
@@ -37,6 +38,11 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
             analysisResult.languages.push(SupportedLanguage.NONE);
         }
     }
+    return analysisResult;
+}
+export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+
+    let analysisResult = await mergingRepoAnalysisResults(repoPath, repositoryProvider, repoAnalysisParameters);
 
     let templateList: { [key: string]: PipelineTemplate[] } = {};
     switch (repositoryProvider) {
@@ -49,6 +55,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
         default:
             throw new Error(Messages.cannotIdentifyRespositoryDetails);
     }
+
 
     let templateResult: PipelineTemplate[] = [];
     analysisResult.languages.forEach((language) => {
@@ -107,8 +114,22 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     // remove duplicate named template:
     templateResult = removeDuplicates(templateResult);
     return templateResult;
+
 }
 
+export async function analyzeRepoAndListAppropriatePipeline2(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplateMetadata[]> {
+
+    //TO:DO - Merge local repo analysis (Some changes in the definition of AnalysisResult required)
+    let templateResult: PipelineTemplateMetadata[] = [];
+
+    let serviceClient = new TemplateServiceClient();
+    templateResult = await serviceClient.getTemplates(repoAnalysisParameters);
+    templateResult = templateResult.sort((a, b) => {
+        if (a.templateWeight > b.templateWeight) { return 1; }
+        else { return -1; }
+    });
+    return templateResult;
+}
 export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: TargetKind): PipelineTemplate[] {
     let pipelineTemplates: PipelineTemplate[] = [];
 
