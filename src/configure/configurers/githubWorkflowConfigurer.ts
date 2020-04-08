@@ -77,7 +77,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 });
 
             if (!!azureConnectionSecret) {
-                inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS_' + uuid().substr(0, 16);
+                inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS_' + uuid().substr(0, 8);
                 try {
                     await vscode.window.withProgress(
                         {
