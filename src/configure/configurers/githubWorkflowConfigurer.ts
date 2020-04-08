@@ -1,10 +1,10 @@
-import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as fs from 'fs';
 import * as ymlconfig from 'js-yaml';
 import * as path from 'path';
 import * as Q from 'q';
 import * as utils from 'util';
 import * as vscode from 'vscode';
+import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
 import { ApiVersions, AzureResourceClient } from '../clients/azure/azureResourceClient';
@@ -21,6 +21,7 @@ import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
+
 const uuid = require('uuid/v4');
 
 const Layer = 'GitHubWorkflowConfigurer';
@@ -76,7 +77,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 });
 
             if (!!azureConnectionSecret) {
-                inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS_' + uuid().substr(0, 8);
+                inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS_' + uuid().substr(0, 16);
                 try {
                     await vscode.window.withProgress(
                         {
