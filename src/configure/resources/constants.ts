@@ -152,6 +152,7 @@ export const SelectProject = 'selectProject';
 export const EnterOrganizationName = 'enterOrganizationName';
 export const SelectPipelineTemplate = 'selectPipelineTemplate';
 export const SelectSubscription = 'selectSubscription';
+export const SelectWorkspace = 'selectWorkspace';
 export const SelectWebApp = 'selectWebApp';
 export const SelectFunctionApp = 'selectFunctionApp';
 export const GitHubPat = 'gitHubPat';

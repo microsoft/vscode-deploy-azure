@@ -34,5 +34,6 @@ export class TelemetryKeys {
     public static WebAppListCount = 'WebAppListCount';
     public static PipelineTempateListCount = 'pipelineTempateListCount';
     public static SubscriptionListCount = 'SubscriptionListCount';
+    public static WorkspaceListCount = 'WorkspaceListCount';
     public static pickListCount = 'pickList_%s_Count';
 }
