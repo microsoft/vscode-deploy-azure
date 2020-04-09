@@ -89,6 +89,8 @@ class Orchestrator {
 
         if (this.continueOrchestration) {
             let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.subscriptionId);
+            let selectedCICDProvider = (pipelineConfigurer.constructor.name === "GitHubWorkflowConfigurer") ? constants.githubWorkflow : constants.azurePipeline;
+            telemetryHelper.setTelemetry(TelemetryKeys.SelectedCICDProvider, selectedCICDProvider);
             await pipelineConfigurer.getInputs(this.inputs);
 
             telemetryHelper.setCurrentStep('CreatePreRequisites');
