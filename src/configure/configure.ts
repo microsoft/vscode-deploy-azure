@@ -482,6 +482,7 @@ class Orchestrator {
                 await templateHelper.renderContent(this.inputs.pipelineConfiguration.template.path, mustacheContext),
                 this.inputs.pipelineConfiguration.filePath);
             await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineConfiguration.filePath));
+            telemetryHelper.setTelemetry(TelemetryKeys.DisplayWorkflow, 'true');
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.AddingContentToPipelineFileFailed, error);
