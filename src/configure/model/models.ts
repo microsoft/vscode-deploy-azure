@@ -50,6 +50,7 @@ export class RepositoryAnalysisApplicationSettings {
 }
 
 export class BuildAndDeploySettings {
+    workingDirectory?: string = ".";
     nodeGulpFilePath?: string = "gulpfile.js";
     nodeGruntFilePath?: string = "gruntfile.js";
     nodePackageFilePath?: string = "package.json";
@@ -180,6 +181,7 @@ export class ParsedAzureResourceId {
 //For multiple application we need to add Working directory here in future
 export class RepositoryAnalysisRequest {
     Repository: RepositoryDetails;
+    WorkingDirectory: string;
 }
 
 export class RepositoryDetails {

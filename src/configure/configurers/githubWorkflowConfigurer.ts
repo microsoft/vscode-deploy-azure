@@ -4,7 +4,6 @@ import * as path from 'path';
 import * as Q from 'q';
 import * as utils from 'util';
 import * as vscode from 'vscode';
-const uuid = require('uuid/v4');
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
@@ -22,6 +21,8 @@ import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
+
+const uuid = require('uuid/v4');
 
 const Layer = 'GitHubWorkflowConfigurer';
 
@@ -76,7 +77,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 });
 
             if (!!azureConnectionSecret) {
-                inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS_' + uuid().substr(0, 16);
+                inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS_' + uuid().substr(0, 8);
                 try {
                     await vscode.window.withProgress(
                         {

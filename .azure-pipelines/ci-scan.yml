@@ -16,7 +16,8 @@ steps:
     Files: '**\*.ts'
     ECMAScriptVersion: 'ES6'
     OutputFormat: 'json'
-    TypeScriptVersion: 'latest'
+    TypeScriptVersion: 'custom'
+    TypeScriptVersionCustom: '3.3.1'
 
 - task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@1
   displayName: 'Post Analysis'

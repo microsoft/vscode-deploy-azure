@@ -22,14 +22,14 @@ jobs:
 
     # install dependencies, build, and test
     - name: npm install, build
-      working-directory: {{{ repositoryAnalysisApplicationSettings.settings.nodePackageFileDirectory }}}
+      working-directory: {{{ workingDirectory }}}
       run: |
         npm install
-        grunt --gruntfile gruntfile.js
+        grunt --gruntfile {{{repositoryAnalysisApplicationSettings.settings.nodeGruntFilePath}}}
 
     # deploy web app
     - uses: azure/webapps-deploy@v1
       with:
         app-name: {{{ targetResource.resource.name }}}
-        package: {{{ repositoryAnalysisApplicationSettings.settings.nodePackageFileDirectory }}}
+        package: {{{ workingDirectory }}}
         publish-profile: {{=<% %>=}}${{ secrets.<% targetResource.serviceConnectionId %> }}<%={{ }}=%>
