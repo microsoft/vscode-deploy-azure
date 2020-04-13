@@ -1,7 +1,7 @@
-import { PortalExtensionClient } from "../clients/portalExtensionClient";
-import { AzureSession, SupportedLanguage, GitRepositoryParameters, RepositoryAnalysisRequest, RepositoryProvider, RepositoryAnalysisParameters, RepositoryAnalysisApplicationSettings, RepositoryDetails } from "../model/models";
-import { RepoAnalysisConstants } from "../resources/constants";
 import * as path from 'path';
+import { PortalExtensionClient } from "../clients/portalExtensionClient";
+import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
+import { RepoAnalysisConstants } from "../resources/constants";
 
 export class RepoAnalysisHelper {
     private portalExtensionClient: PortalExtensionClient;
@@ -57,15 +57,18 @@ export class RepoAnalysisHelper {
                             applicationSettings.settings.nodePackageFilePath = analysis.settings[RepoAnalysisConstants.PackageFilePath];
                             applicationSettings.settings.nodePackageFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.PackageFilePath]);
                             if (analysis.buildTargetName === RepoAnalysisConstants.Gulp && !!analysis.settings[RepoAnalysisConstants.GulpFilePath]) {
-                                applicationSettings.settings.nodeGulpFilePath = analysis.settings[RepoAnalysisConstants.GulpFilePath];
+                                applicationSettings.settings.nodeGulpFilePath = this.GetRelativePath(
+                                    applicationSettings.settings.workingDirectory, analysis.settings[RepoAnalysisConstants.GulpFilePath]);
                             }
                             else if (analysis.buildTargetName === RepoAnalysisConstants.Grunt && !!analysis.settings[RepoAnalysisConstants.GruntFilePath]) {
-                                applicationSettings.settings.nodeGruntFilePath = analysis.settings[RepoAnalysisConstants.GruntFilePath];
+                                applicationSettings.settings.nodeGruntFilePath = this.GetRelativePath(
+                                    applicationSettings.settings.workingDirectory, analysis.settings[RepoAnalysisConstants.GruntFilePath]);
                             }
                         }
                         else if (analysis.language === SupportedLanguage.PYTHON) {
                             if (!!analysis.settings[RepoAnalysisConstants.RequirementsFilePath]) {
-                                applicationSettings.settings.pythonRequirementsFilePath = analysis.settings[RepoAnalysisConstants.RequirementsFilePath];
+                                applicationSettings.settings.pythonRequirementsFilePath = this.GetRelativePath(
+                                    applicationSettings.settings.workingDirectory, analysis.settings[RepoAnalysisConstants.RequirementsFilePath]);
                                 applicationSettings.settings.pythonRequirementsFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.RequirementsFilePath]);
                             }
                         }
@@ -82,5 +85,9 @@ export class RepoAnalysisHelper {
             }
         });
         return parameters;
+    }
+
+    private GetRelativePath(workingDirectory: string, filePath: string): string{
+        return path.relative(workingDirectory, filePath).split(path.sep).join('/');
     }
 }
