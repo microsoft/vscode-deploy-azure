@@ -6,7 +6,7 @@ import { InputUxDescriptor } from "./InputUxDescriptor";
 import { InputUxDescriptorUtility } from "./InputUxDescriptorUtility";
 import { VisibilityHelper } from "./VisibilityHelper";
 
-export class ControlProvider {
+export class InputControlProvider {
     private _pipelineTemplate: ExtendedPipelineTemplate;
     private _inputUxDescriptors: Map<string,InputUxDescriptor>;
     private _uxInputs: Map<string,ExtendedInputDescriptor>;
@@ -15,15 +15,18 @@ export class ControlProvider {
         this._pipelineTemplate = pipelineTemplateParameters;
         this._inputUxDescriptors = new Map<string, InputUxDescriptor>();
         this._uxInputs = new Map<string, ExtendedInputDescriptor>();
+        this._createControls(inputs);
     }
 
-    public async getAllInputUxDescriptors(inputValues: { [key: string]: any}, azureSession: AzureSession ) {
-        this._createControls(inputValues);
+    public async getAllInputUxDescriptors(azureSession: AzureSession ) {
+        let parameters: { [key: string]: any} = {};
         for(let inputUxDescriptor of this._inputUxDescriptors.values()){
             this._setInputUxVisibility(inputUxDescriptor);
             this._setupDefaultInputValue(inputUxDescriptor);
             await inputUxDescriptor.setInputUxDescriptorValue(azureSession);
+            parameters[inputUxDescriptor.getInputUxDescriptorId()] = inputUxDescriptor.getParameterValue();
         }
+        return parameters;
     }
 
     private _createControls(inputValues: { [key: string]: any}) {
@@ -36,6 +39,10 @@ export class ControlProvider {
                 input.inputMode = InputMode.Combo;
             }
             switch(input.inputMode){
+                case InputMode.None: 
+                    // here we'll use data source id to get value
+                    inputUxDescriptor = new InputUxDescriptor(input,inputUxDescriptorValue, ControlType.None);
+                    break;
                 case InputMode.TextBox:
                 case InputMode.PasswordBox:
                     inputUxDescriptor = new InputUxDescriptor(input,inputUxDescriptorValue, ControlType.InputBox);
@@ -44,7 +51,7 @@ export class ControlProvider {
                 case InputMode.CheckBox:
                 case InputMode.RadioButtons:
                 case InputMode.AzureSubscription:
-                    inputUxDescriptor = new InputUxDescriptor(input, inputUxDescriptorValue, ControlType.QucikPick);
+                    inputUxDescriptor = new InputUxDescriptor(input, inputUxDescriptorValue, ControlType.QuickPick);
                     break;
 
             }
@@ -57,7 +64,7 @@ export class ControlProvider {
 
     private _setUxDescriptorsDataSourceInputs(): void {
         this._uxInputs.forEach((inputDes) => {
-            if ((inputDes.inputMode === InputMode.Combo || inputDes.inputMode === InputMode.TextBox) && !!inputDes.dataSourceId) {
+            if (!!inputDes.dataSourceId) {
                 var inputUxDescriptor = this._inputUxDescriptors.get(inputDes.id);
                 inputUxDescriptor.dataSource = DataSourceExpression.parse(inputDes.dataSourceId, this._pipelineTemplate.dataSources);
 
@@ -159,24 +166,17 @@ export class ControlProvider {
     private _setInputUxVisibility(inputUxDescriptor: InputUxDescriptor): void {
         var visibilityRule = VisibilityHelper.parseVisibleRule(inputUxDescriptor.getVisibleRule());
         if (visibilityRule !== null && visibilityRule.predicateRules !== null && visibilityRule.predicateRules.length >= 0) {
-            var requiredInputs: InputUxDescriptor[] = [];
+            var requiredInputUxDescriptors: InputUxDescriptor[] = [];
 
             visibilityRule.predicateRules.forEach((predicateRule: IPredicate) => {
                 try {
-                    requiredInputs = requiredInputs.concat([this._inputUxDescriptors.get(predicateRule.inputName)]);
+                    requiredInputUxDescriptors = requiredInputUxDescriptors.concat([this._inputUxDescriptors.get(predicateRule.inputName)]);
                 }
                 catch (exception) {
                     //input defined in input visibility does not exist.
                 }
             });
-            for( let input of requiredInputs){
-                var inputDes = this._uxInputs[input.getInputUxDescriptorId()];
-                if(inputDes.inputMode === InputMode.RadioButtons){
-                    inputUxDescriptor.setVisibilityDependentOnOption(true);
-                    break;
-                }
-            }
-            inputUxDescriptor.setInputVisibility(VisibilityHelper.evaluateVisibility(visibilityRule, requiredInputs));
+            inputUxDescriptor.setInputVisibility(VisibilityHelper.evaluateVisibility(visibilityRule, requiredInputUxDescriptors));
         }
     }
 }

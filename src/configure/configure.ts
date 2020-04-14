@@ -23,7 +23,7 @@ import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
-import { ControlProvider as ControlProvider2} from './utilities/ControlProvider';
+import { InputControlProvider as InputControlProvider} from './utilities/InputControlProvider';
 
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
@@ -127,8 +127,8 @@ class Orchestrator {
                 let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.pipelineConfiguration.templateInfo);  
                 let inputs:{ [key: string]: any} = {};
                 inputs['subscriptionId'] = this.inputs.subscriptionId;
-                let controlProvider = new ControlProvider2(extendedPipelineTemplate, inputs);
-                await controlProvider.getAllInputUxDescriptors(inputs, this.inputs.azureSession);
+                let controlProvider = new InputControlProvider(extendedPipelineTemplate, inputs);
+                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllInputUxDescriptors(this.inputs.azureSession);              
             }
             else{
                 if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
