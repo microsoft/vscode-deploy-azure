@@ -2,7 +2,6 @@ import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
-const uuid = require('uuid/v4');
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
 import { Configurer } from './configurers/configurerBase';
@@ -13,11 +12,12 @@ import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
+import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 //import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -210,7 +210,7 @@ class Orchestrator {
                     workspaceFolderOptions,
                     { placeHolder: Messages.selectWorkspaceFolder });
                 this.workspacePath = selectedWorkspaceFolder.data.uri.fsPath;
-            }
+            }            
         }
         else {
             telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.BrowseLocalMachine);
@@ -422,27 +422,19 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(): Promise<void> {
-        //var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
-        var repoAnalysisResult = null;
-        //await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository);
-        extensionVariables.templateServiceEnabled = true;
+        var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
+        var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, 
+            this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+
+        extensionVariables.templateServiceEnabled = false;
 
         let appropriatePipelines;
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
 
         if (extensionVariables.templateServiceEnabled) {
-            repoAnalysisResult = {
-                "applicationSettingsList": [
-                    {
-                        "language": "Docker",
-                        "buildTargetName": "Dockerfile",
-                        "deployTargetName": "Azure:AKS",
-                        "workingDirectory": "wddddddddddddd"
-                    }
-                ]
-            };
+            repoAnalysisResult = null;
 
-            appropriatePipelines = appropriatePipelines = await vscode.window.withProgress(
+            appropriatePipelines = await vscode.window.withProgress(
                 { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
                     this.inputs.sourceRepository.localPath,
@@ -452,7 +444,7 @@ class Orchestrator {
             );
         }
         else {
-            appropriatePipelines = appropriatePipelines = await vscode.window.withProgress(
+            appropriatePipelines = await vscode.window.withProgress(
                 { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline(
                     this.inputs.sourceRepository.localPath,
@@ -461,7 +453,6 @@ class Orchestrator {
                     this.inputs.pipelineConfiguration.params[constants.TargetResource])
             );
         }
-
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
         if (appropriatePipelines.length > 1) {
@@ -496,11 +487,9 @@ class Orchestrator {
         //Post selecting the template update this.inputs.repositoryAnalysisApplicationSettings with corresponding languageSettings
         if (!!repoAnalysisResult
             && !!repoAnalysisResult.repositoryAnalysisApplicationSettingsList) {
-
+            
             //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
-            this.inputs.repositoryAnalysisApplicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
-                return applicationSettings.language === this.inputs.pipelineConfiguration.template.language;
-            });
+            await this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
         }
 
         if (extensionVariables.templateServiceEnabled) {
@@ -509,6 +498,39 @@ class Orchestrator {
         else {
             telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
         }
+    }
+
+    private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void>{
+        var applicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.filter(applicationSetting => {
+            return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
+        });
+        
+        if(!applicationSettings || applicationSettings.length == 0){
+            return;
+        }
+
+        let workspacePaths = Array.from(new Set(applicationSettings.map(a => a.settings.workingDirectory)));
+        if(workspacePaths.length == 1){
+            this.inputs.repositoryAnalysisApplicationSettings = applicationSettings[0];
+            this.inputs.pipelineConfiguration.workingDirectory = applicationSettings[0].settings.workingDirectory;
+            return;
+        }
+
+        let workspacePathQuickPickItemList: Array<QuickPickItemWithData> = [];
+        for (let workspacePath of workspacePaths) {
+            workspacePathQuickPickItemList.push({ label: workspacePath, data: workspacePath });
+        }
+        let selectedWorkspacePathItem = await this.controlProvider.showQuickPick(
+            constants.SelectWorkspace,
+            workspacePathQuickPickItemList,
+            { placeHolder: Messages.selectWorkspace });
+        
+        this.inputs.pipelineConfiguration.workingDirectory = selectedWorkspacePathItem.data;
+        this.inputs.repositoryAnalysisApplicationSettings = 
+        repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
+            return (applicationSettings.language === this.inputs.pipelineConfiguration.template.language 
+                && applicationSettings.settings.workingDirectory === selectedWorkspacePathItem.data);
+        });
     }
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
