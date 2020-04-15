@@ -155,10 +155,7 @@ class Orchestrator {
     }
 
     private async getGithubPatToken(): Promise<void> {
-        const peClient = new PortalExtensionClient(this.inputs.azureSession.credentials);
-        const serviceUrlRequest = <ServiceUrlDiscoveryRequest>{ serviceName: "RepositoryAnalysis" };
-        const response: ServiceUrlDiscoveryResponse = await peClient.getServiceUrl(serviceUrlRequest);
-        if (this.inputs.sourceRepository.repositoryProvider === "github" || response.data.filter((v) => v.hostPlatform.toLowerCase() === "moda").length > 0) {
+        if (this.inputs.sourceRepository.repositoryProvider === "github") {
             this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
                 placeHolder: Messages.enterGitHubPat,
                 prompt: Messages.githubPatTokenHelpMessage,
@@ -166,6 +163,24 @@ class Orchestrator {
                     return !inputValue ? Messages.githubPatTokenErrorMessage : null;
                 }
             });
+            return;
+        }
+
+        const peClient = new PortalExtensionClient(this.inputs.azureSession.credentials);
+        const serviceUrlRequest = <ServiceUrlDiscoveryRequest>{ serviceName: "RepositoryAnalysis" };
+        try {
+            const response: ServiceUrlDiscoveryResponse = await peClient.getServiceUrl(serviceUrlRequest);
+            if (response.data.filter((v) => v.hostPlatform.toLowerCase() === "moda").length > 0) {
+                this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
+                    placeHolder: Messages.enterGitHubPat,
+                    prompt: Messages.githubPatTokenHelpMessage,
+                    validateInput: (inputValue) => {
+                        return !inputValue ? Messages.githubPatTokenErrorMessage : null;
+                    }
+                });
+            }
+        } catch(e) {
+            // Add telemetry for error
         }
     }
 
