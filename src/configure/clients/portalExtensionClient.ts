@@ -13,7 +13,7 @@ export class PortalExtensionClient {
     public async getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<any> {
 
         return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
-            url: `https://pe1.portalext.vsts.me/_apis/RepositoryAnalysis`,
+            url: `https://pepfcusc.portalext.visualstudio.com/_apis/RepositoryAnalysis`,
             headers: {
                 "Content-Type": "application/json"
             },
