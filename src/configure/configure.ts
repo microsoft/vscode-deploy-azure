@@ -2,7 +2,6 @@ import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
-const uuid = require('uuid/v4');
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
 import { Configurer } from './configurers/configurerBase';
@@ -13,17 +12,18 @@ import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
+import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 //import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs, RepositoryAnalysisParameters } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
-import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
+const uuid = require('uuid/v4');
 
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
@@ -119,6 +119,18 @@ class Orchestrator {
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
             await this.getAzureSession();
+
+            // Add conditions for when to ask for Github Pat
+            // Make API call to get base url and type
+            // If type is moda, ask for Github Pat. If type is not moda, ask for github pat if source repo is github
+            this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
+                    placeHolder: Messages.enterGitHubPat,
+                    prompt: Messages.githubPatTokenHelpMessage,
+                    validateInput: (inputValue) => {
+                        return !inputValue ? Messages.githubPatTokenErrorMessage : null;
+                    }
+            });
+            
             await this.getSelectedPipeline();
 
             if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
@@ -410,9 +422,12 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(): Promise<void> {
-        var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
-        var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, 
-            this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+        var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken);
+        var repoAnalysisResult = null;
+        
+        if (this.inputs.sourceRepository.repositoryProvider == RepositoryProvider.Github) {
+            repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('\\').join('/'));
+        }
 
         extensionVariables.templateServiceEnabled = false;
 

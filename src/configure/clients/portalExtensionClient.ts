@@ -1,6 +1,6 @@
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from "ms-rest";
-import { RestClient } from "./restClient";
 import { RepositoryAnalysisRequest } from "../model/models";
+import { RestClient } from "./restClient";
 
 export class PortalExtensionClient {
 
@@ -13,7 +13,7 @@ export class PortalExtensionClient {
     public async getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<any> {
 
         return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
-            url: `https://pepfcusc.portalext.visualstudio.com/_apis/RepositoryAnalysis`,
+            url: `https://pe1.portalext.vsts.me/_apis/RepositoryAnalysis`,
             headers: {
                 "Content-Type": "application/json"
             },

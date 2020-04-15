@@ -1,6 +1,5 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as path from 'path';
-import Q = require('q');
 import * as utils from 'util';
 import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
@@ -24,6 +23,7 @@ import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
+import Q = require('q');
 
 const Layer = 'AzurePipelineConfigurer';
 
@@ -42,16 +42,6 @@ export class AzurePipelineConfigurer implements Configurer {
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
         try {
-            if (inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
-                inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
-                    placeHolder: Messages.enterGitHubPat,
-                    prompt: Messages.githubPatTokenHelpMessage,
-                    validateInput: (inputValue) => {
-                        return !inputValue ? Messages.githubPatTokenErrorMessage : null;
-                    }
-                });
-            }
-
             inputs.isNewOrganization = false;
 
             if (!inputs.sourceRepository.remoteUrl || inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {

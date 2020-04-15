@@ -5,17 +5,14 @@ import { RepoAnalysisConstants } from "../resources/constants";
 
 export class RepoAnalysisHelper {
     private portalExtensionClient: PortalExtensionClient;
+    private githubPatToken: string;
 
-    constructor(azureSession: AzureSession) {
+    constructor(azureSession: AzureSession, githubPatToken: string) {
         this.portalExtensionClient = new PortalExtensionClient(azureSession.credentials);
+        this.githubPatToken = githubPatToken;
     }
 
     public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters, workspacePath: string): Promise<RepositoryAnalysisParameters> {
-
-        //As of now this solution has support only for github
-        if (sourceRepositoryDetails.repositoryProvider != RepositoryProvider.Github) {
-            return null;
-        }
 
         let repositoryAnalysisResponse;
         try{
@@ -23,6 +20,8 @@ export class RepoAnalysisHelper {
             repositoryDetails.id = sourceRepositoryDetails.repositoryId;
             repositoryDetails.defaultbranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysisConstants.Master;
             repositoryDetails.type = RepositoryProvider.Github;
+            repositoryDetails.authorizationInfo.scheme = "Token";
+            repositoryDetails.authorizationInfo.parameters.accesstoken = this.githubPatToken.toLowerCase().startsWith("bearer") ? this.githubPatToken.toLowerCase().substring(7) : this.githubPatToken.toLowerCase();    
 
             let repositoryAnalysisRequestBody = new RepositoryAnalysisRequest;
             repositoryAnalysisRequestBody.Repository = repositoryDetails;
