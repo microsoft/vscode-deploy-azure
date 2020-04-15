@@ -1,5 +1,5 @@
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from "ms-rest";
-import { RepositoryAnalysisRequest } from "../model/models";
+import { RepositoryAnalysisRequest, ServiceUrlDiscoveryRequest } from "../model/models";
 import { RestClient } from "./restClient";
 
 export class PortalExtensionClient {
@@ -16,6 +16,22 @@ export class PortalExtensionClient {
             url: `https://pe1.portalext.vsts.me/_apis/RepositoryAnalysis`,
             headers: {
                 "Content-Type": "application/json"
+            },
+            method: "POST",
+            queryParameters: {
+                "api-version": "5.2-preview.1",
+            },
+            body: body,
+            serializationMapper: null,
+            deserializationMapper: null
+        });
+    }
+
+    public async getServiceUrl(body: ServiceUrlDiscoveryRequest): Promise<any> {
+        return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
+            url: `https://pepfcusc.portalext.visualstudio.com/_apis/ServiceUrlDiscovery`,
+            headers: {
+                "Content-Type": "application/json",
             },
             method: "POST",
             queryParameters: {

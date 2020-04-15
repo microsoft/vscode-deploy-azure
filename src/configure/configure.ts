@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
+import { PortalExtensionClient } from './clients/portalExtensionClient';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
 import { AssetHandler } from './helper/AssetHandler';
@@ -17,7 +18,7 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, ServiceUrlDiscoveryRequest, ServiceUrlDiscoveryResponse, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -119,18 +120,7 @@ class Orchestrator {
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
             await this.getAzureSession();
-
-            // Add conditions for when to ask for Github Pat
-            // Make API call to get base url and type
-            // If type is moda, ask for Github Pat. If type is not moda, ask for github pat if source repo is github
-            this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
-                    placeHolder: Messages.enterGitHubPat,
-                    prompt: Messages.githubPatTokenHelpMessage,
-                    validateInput: (inputValue) => {
-                        return !inputValue ? Messages.githubPatTokenErrorMessage : null;
-                    }
-            });
-            
+            await this.getGithubPatToken();
             await this.getSelectedPipeline();
 
             if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
@@ -161,6 +151,21 @@ class Orchestrator {
                     await this.getAzureResourceDetails();
                 }
             }
+        }
+    }
+
+    private async getGithubPatToken(): Promise<void> {
+        const peClient = new PortalExtensionClient(this.inputs.azureSession.credentials);
+        const serviceUrlRequest = <ServiceUrlDiscoveryRequest>{ serviceName: "RepositoryAnalysis" };
+        const response: ServiceUrlDiscoveryResponse = await peClient.getServiceUrl(serviceUrlRequest);
+        if (this.inputs.sourceRepository.repositoryProvider === "github" || response.data.filter((v) => v.hostPlatform.toLowerCase() === "moda").length > 0) {
+            this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
+                placeHolder: Messages.enterGitHubPat,
+                prompt: Messages.githubPatTokenHelpMessage,
+                validateInput: (inputValue) => {
+                    return !inputValue ? Messages.githubPatTokenErrorMessage : null;
+                }
+            });
         }
     }
 
