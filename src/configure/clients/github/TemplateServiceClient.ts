@@ -132,7 +132,7 @@ export class TemplateServiceClient {
                     "properties": {
                         "resourceProviders": "Microsoft.ContainerService;Microsoft.ContainerRegistry;Microsoft.Resources;Microsoft.Insights;Microsoft.OperationalInsights;Microsoft.OperationsManagement;Microsoft.Compute;Microsoft.Network;Microsoft.Storage;"
                     },
-                    "inputMode": 30,
+                    "inputMode": 50,
                     "dataSourceId": null,
                     "defaultValue": null,
                     "staticValidation": null,
@@ -174,12 +174,12 @@ export class TemplateServiceClient {
                     "isRequired": true,
                     "sublabel": null,
                     "properties": {},
-                    "inputMode": 10,
+                    "inputMode": 0,
                     "dataSourceId": null,
                     "defaultValue": "{{#parseAzureResourceId}}{{{inputs.clusterId}}} 4{{/parseAzureResourceId}}",
                     "staticValidation": null,
                     "dynamicValidations": [],
-                    "visibleRule": "clusterId == empty",
+                    "visibleRule": null,
                     "id": "resourceGroup",
                     "description": "Name of the resource group where AKS cluster is present.",
                     "type": "string",
@@ -225,12 +225,12 @@ export class TemplateServiceClient {
                     "isRequired": true,
                     "sublabel": null,
                     "properties": {},
-                    "inputMode": 10,
+                    "inputMode": 0,
                     "dataSourceId": "getResourceGroupLocation",
                     "defaultValue": null,
                     "staticValidation": null,
                     "dynamicValidations": [],
-                    "visibleRule": "clusterId == empty",
+                    "visibleRule": null,
                     "id": "location",
                     "description": "Choose the Azure region that's right for you and your customers.",
                     "type": "string",
@@ -251,7 +251,16 @@ export class TemplateServiceClient {
                     "id": "reuseACR",
                     "description": null,
                     "type": 0,
-                    "possibleValues": []
+                    "possibleValues": [
+                        {
+                            "displayValue": "Create New",
+                            "value": "false"
+                        },
+                        {
+                            "displayValue": "Use Existing",
+                            "value": "true"
+                        }
+                    ]
                 },
                 {
                     "name": "Container Registry Name",
@@ -283,7 +292,7 @@ export class TemplateServiceClient {
                     "dynamicValidations": [],
                     "visibleRule": "reuseACR == false",
                     "id": "acrResourceGroup",
-                    "description": "Name of the resource group where Azure Container registry is present.",
+                    "description": "Name of the resource group where Azure Container registry is to be created.",
                     "type": "string",
                     "possibleValues": []
                 },
@@ -298,7 +307,7 @@ export class TemplateServiceClient {
                     "defaultValue": null,
                     "staticValidation": null,
                     "dynamicValidations": [],
-                    "visibleRule": "reuseACR == invalid",
+                    "visibleRule": "reuseACR == true",
                     "id": "existingContainerRegistryResourceGroupLocation",
                     "description": null,
                     "type": 0,
@@ -312,7 +321,7 @@ export class TemplateServiceClient {
                     "properties": {},
                     "inputMode": 10,
                     "dataSourceId": null,
-                    "defaultValue": "{{#parseAzureResourceId}}{{{inputs.clusterId}}} 6{{/parseAzureResourceId}}",
+                    "defaultValue": "{{#parseAzureResourceId}}{{{inputs.clusterId}}} 8{{/parseAzureResourceId}}",
                     "staticValidation": {
                         "pattern": "[a-zA-Z0-9]*",
                         "regexFlags": null,

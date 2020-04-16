@@ -1,5 +1,5 @@
 import { MustacheHelper } from "../helper/mustacheHelper";
-import {ExtendedInputDescriptor, ExtendedPipelineTemplate, InputMode } from "../model/Contracts";
+import { ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputMode } from "../model/Contracts";
 import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
 import { DataSourceExpression } from "./DataSourceExpression";
 import { InputUxDescriptor } from "./InputUxDescriptor";
@@ -18,7 +18,7 @@ export class InputControlProvider {
         this._createControls(inputs);
     }
 
-    public async getAllInputUxDescriptors(azureSession: AzureSession ) {
+    public async getAllInputUxDescriptors(azureSession: AzureSession,  ) {
         let parameters: { [key: string]: any} = {};
         for(let inputUxDescriptor of this._inputUxDescriptors.values()){
             this._setInputUxVisibility(inputUxDescriptor);
@@ -34,14 +34,13 @@ export class InputControlProvider {
             this._uxInputs.set(input.id, input);
             var inputUxDescriptor: InputUxDescriptor = null;
             var inputUxDescriptorValue = this._getInputUxDescriptorValue(input, inputValues);
-
-            if(input.groupId === 'cdResource' && input.properties.cdResource){
-                input.inputMode = InputMode.Combo;
-            }
+            
             switch(input.inputMode){
                 case InputMode.None: 
-                    // here we'll use data source id to get value
-                    inputUxDescriptor = new InputUxDescriptor(input,inputUxDescriptorValue, ControlType.None);
+                case InputMode.AzureSubscription:
+                    if(input.type !== InputDataType.Authorization) {
+                        inputUxDescriptor = new InputUxDescriptor(input, inputUxDescriptorValue, ControlType.None);
+                    }
                     break;
                 case InputMode.TextBox:
                 case InputMode.PasswordBox:
@@ -50,7 +49,6 @@ export class InputControlProvider {
                 case InputMode.Combo:
                 case InputMode.CheckBox:
                 case InputMode.RadioButtons:
-                case InputMode.AzureSubscription:
                     inputUxDescriptor = new InputUxDescriptor(input, inputUxDescriptorValue, ControlType.QuickPick);
                     break;
 
@@ -90,7 +88,7 @@ export class InputControlProvider {
 
         var defaultValue = this._computeMustacheValue(inputDes.defaultValue, dependentUxDesciptorArray);
         if (defaultValue !== inputUxDescriptor.getParameterValue()) {
-            inputUxDescriptor.updateValue(defaultValue);
+            inputUxDescriptor.setValue(defaultValue);
         }
     }
 

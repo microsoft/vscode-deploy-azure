@@ -46,13 +46,13 @@ export class InputUxDescriptorUtility {
         return this._fetchIdsInExpressionByType(expression, DependencyType.System);
     }
 
-    private static _fetchIdsInExpressionByType(expression: string, type: DependencyType): string[] {
+    private static _fetchIdsInExpressionByType(expression: string, dependencyType: DependencyType): string[] {
         if (!expression) {
             return [];
         }
 
         var regex;
-        switch (type) {
+        switch (dependencyType) {
             case DependencyType.Input:
                 regex = /{{{inputs\.(\w+)}}}/g;
                 break;
@@ -65,7 +65,7 @@ export class InputUxDescriptorUtility {
         var dependentIds: string[] = [];
         var uniqueDependentIdMap = new Map<string, null>();
         var resultArray;
-        while ((resultArray = regex.exec(expression)) != null) {
+        while ((resultArray = regex.exec(expression)) !== null) {
             uniqueDependentIdMap.set(resultArray[1], null);
         }
 
@@ -79,4 +79,4 @@ export class InputUxDescriptorUtility {
 enum DependencyType {
     Input,
     System
-};
+}

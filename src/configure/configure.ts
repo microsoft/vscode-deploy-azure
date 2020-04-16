@@ -13,7 +13,6 @@ import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
 import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
-//import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
@@ -23,9 +22,11 @@ import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
-import { InputControlProvider as InputControlProvider} from './utilities/InputControlProvider';
+import { InputControlProvider as InputControlProvider } from './utilities/InputControlProvider';
 
+const uuid = require('uuid/v4');
 const Layer: string = 'configure';
+
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
 export async function configurePipeline(node: AzureTreeItem) {
@@ -96,7 +97,7 @@ class Orchestrator {
             await pipelineConfigurer.createPreRequisites(this.inputs, !!this.azureResourceClient ? this.azureResourceClient : new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId));
 
             telemetryHelper.setCurrentStep('CreateAssets');
-            await new AssetHandler().createAssets(this.inputs.pipelineConfiguration.template.assets, this.inputs, (name: string, type: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, type, data, inputs); });
+            await new AssetHandler().createAssets(this.inputs.pipelineConfiguration.template.assets, this.inputs, (name: string, templateType: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, templateType, data, inputs); });
 
             telemetryHelper.setCurrentStep('CheckInPipeline');
             await this.checkInPipelineFileToRepository(pipelineConfigurer);
@@ -122,15 +123,14 @@ class Orchestrator {
             await this.getSelectedPipeline();
 
             
-            if(this.inputs.pipelineConfiguration.templateInfo){
-                //this.inputs.pipelineConfiguration.template.extendedPipelineTemplate = 
+            if(this.inputs.pipelineConfiguration.templateInfo) {
                 let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.pipelineConfiguration.templateInfo);  
                 let inputs:{ [key: string]: any} = {};
                 inputs['subscriptionId'] = this.inputs.subscriptionId;
                 let controlProvider = new InputControlProvider(extendedPipelineTemplate, inputs);
                 this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllInputUxDescriptors(this.inputs.azureSession);              
             }
-            else{
+            else {
                 if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
                     // try to see if node corresponds to any parameter of selected pipeline.
                     if (resourceNode) {
@@ -424,16 +424,14 @@ class Orchestrator {
     private async getSelectedPipeline(): Promise<void> {
         var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
         var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, 
-            this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+         this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
 
-        extensionVariables.templateServiceEnabled = false;
+        extensionVariables.templateServiceEnabled = true;
 
         let appropriatePipelines;
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
 
         if (extensionVariables.templateServiceEnabled) {
-            repoAnalysisResult = null;
-
             appropriatePipelines = await vscode.window.withProgress(
                 { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
@@ -505,12 +503,12 @@ class Orchestrator {
             return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
         });
         
-        if(!applicationSettings || applicationSettings.length == 0){
+        if(!applicationSettings || applicationSettings.length === 0){
             return;
         }
 
         let workspacePaths = Array.from(new Set(applicationSettings.map(a => a.settings.workingDirectory)));
-        if(workspacePaths.length == 1){
+        if(workspacePaths.length === 1){
             this.inputs.repositoryAnalysisApplicationSettings = applicationSettings[0];
             this.inputs.pipelineConfiguration.workingDirectory = applicationSettings[0].settings.workingDirectory;
             return;

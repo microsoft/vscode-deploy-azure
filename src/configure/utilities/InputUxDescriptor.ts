@@ -1,72 +1,107 @@
 import { InputBoxOptions, QuickPickItem } from 'vscode';
 import { IAzureQuickPickOptions } from 'vscode-azureextensionui';
+import { telemetryHelper } from '../helper/telemetryHelper';
 import { ExtendedInputDescriptor, InputMode } from "../model/Contracts";
 import { AzureSession, ControlType, extensionVariables } from '../model/models';
 import { Messages } from '../resources/messages';
+import { TelemetryKeys } from '../resources/telemetryKeys';
 import { DataSourceExpression } from './DataSourceExpression';
 
 export class InputUxDescriptor {
-
-    private _input: ExtendedInputDescriptor;
-    private _value: any;
-    private _controlType: ControlType;
-    private _isVisible: boolean;
     public dataSource: DataSourceExpression;
     public dataSourceUxInputs: Array<InputUxDescriptor>;
     public dataSourceInputs: Map<string, any>;
+    private input: ExtendedInputDescriptor;
+    private value: any;
+    private controlType: ControlType;
+    private visible: boolean;
 
     constructor(input: ExtendedInputDescriptor, value: any, controlType: ControlType) {
-        this._input = input;
-        this._value = value;
-        this._isVisible = true;
-        this._controlType = controlType;
+        this.input = input;
+        this.value = value;
+        this.visible = true;
+        this.controlType = controlType;
         this.dataSourceUxInputs = [];
         this.dataSourceInputs = new Map<string, any>();
     }
 
+    public getValue(): any {
+        return this.value;
+    }
+
+    public setValue(defaultValue: string) {
+        this.value = defaultValue;
+    }
+
+    public getInputUxDescriptorId(): string {
+        return this.input.id;
+    }
+
+    public getInputGroupId(): string {
+        return this.input.groupId;
+    }
+
+    public getInputMode(): InputMode {
+        return this.input.inputMode;
+    }
+
+    public getParameterValue(): any {
+        return this.value;
+    }
+
+    public getVisibleRule(): string {
+        return this.input.visibleRule;
+    }
+
+    public isVisible(): boolean {
+        return this.visible;
+    }
+
+    public setInputVisibility(value: boolean): void {
+        this.visible = value;
+    }
+    
     public async setInputUxDescriptorValue(azureSession: AzureSession): Promise<any> {
-        if (!!this.dataSource && !this._value) {
+        if(!this.isVisible()){
+            return;
+        }
+        if (!!this.dataSource) {
             var inputs = this._getDataSourceInputs();
-            if (this._controlType === ControlType.None) {
-                this._value = await this.dataSource.evaluateDataSources(inputs, azureSession);
+            if (this.controlType === ControlType.None || this.controlType === ControlType.InputBox) {
+                this.value = await this.dataSource.evaluateDataSources(inputs, azureSession);
             }
-            else if (this._controlType === ControlType.QuickPick && this.IsVisible()) {
+            else if (this.controlType === ControlType.QuickPick) {
                 let selectedValue = await this.dataSource.evaluateDataSources(inputs, azureSession)
                     .then((listItems: Array<{ label: string, data: any, group?: string }>) => {
-                        if (this.IsVisible()) {
-                            return this.showQuickPick(listItems, { placeHolder: this._input.description });
-                        }
-                        return listItems[0];
+                        return this.showQuickPick(this.getInputUxDescriptorId(), listItems, { placeHolder: this.input.name });
                     });
-                //validation
-                this._value = selectedValue.data;
-
+                this.value = selectedValue.data;
             }
-        } else if (this.IsVisible()) {
-            if (this._controlType === ControlType.QuickPick && !!this._input.possibleValues && this._input.possibleValues.length > 0) {
+        } 
+        else {
+            if (this.controlType === ControlType.QuickPick) {
                 var listItems: Array<{ label: string, data: any }> = [];
-                this._input.possibleValues.forEach((item) => {
-                    listItems.push({ label: item.displayValue, data: item.value });
-                });
-                let selectedValue = await this.showQuickPick(listItems, { placeHolder: this._input.description });
-                this._value = selectedValue.data;
-
+                if (!!this.input.possibleValues && this.input.possibleValues.length > 0) {
+                    this.input.possibleValues.forEach((item) => {
+                        listItems.push({ label: item.displayValue, data: item.value });
+                    });
+                } 
+                else if(this.input.inputMode === InputMode.RadioButtons){
+                    listItems.push({ label: "Yes", data: "true" });
+                    listItems.push({ label: "No", data: "false" });
+                }
+                this.value = (await this.showQuickPick(this.getInputUxDescriptorId(), listItems, { placeHolder: this.input.name })).data;
             }
-            else if (this._controlType === ControlType.InputBox && this._input.isRequired) {
-                this._value = await this.showInputBox({ 
-                    placeHolder: this._input.description,
+            else if (this.controlType === ControlType.InputBox) {
+                this.value = await this.showInputBox( this.getInputUxDescriptorId(), { 
+                    placeHolder: this.input.name,
                     validateInput: (inputValue) => {
-                        return !inputValue ? Messages.valueRequired : null;
+                        return !inputValue ? Messages.valueRequired : null;      
                     } 
                 });
             }
-            else if (this._controlType === ControlType.InputBox) {
-                this._value = await this.showInputBox({ 
-                    placeHolder: this._input.description});
-            }
         }
     }
-
 
     private _getDataSourceInputs(): { [key: string]: any } {
         var inputs: { [key: string]: any } = {};
@@ -76,56 +111,20 @@ export class InputUxDescriptor {
         return inputs;
     }
 
-    public getValue(): any {
-        return this._value;
-    }
-
-    public updateValue(defaultValue: string) {
-        this._value = defaultValue;
-    }
-
-    public getInputUxDescriptorId(): string {
-        return this._input.id;
-    }
-
-    public getInputGroupId(): string {
-        return this._input.groupId;
-    }
-
-    public getInputMode(): InputMode {
-        return this._input.inputMode;
-    }
-
-    public getParameterValue(): any {
-        return this._value;
-    }
-
-    public getVisibleRule(): string {
-        return this._input.visibleRule;
-    }
-
-    public IsVisible(): boolean {
-        return this._isVisible;
-    }
-
-    public setInputVisibility(value: boolean): void {
-        this._isVisible = value;
-    }
-
-    private async showQuickPick<T extends QuickPickItem>(listItems: T[] | Thenable<T[]>, options: IAzureQuickPickOptions, itemCountTelemetryKey?: string): Promise<T> {
+    private async showQuickPick<T extends QuickPickItem>(listName: string, listItems: T[] | Thenable<T[]>, options: IAzureQuickPickOptions, itemCountTelemetryKey?: string): Promise<T> {
         try {
-            //telemetryHelper.setTelemetry(TelemetryKeys.CurrentUserInput, listName);
+            telemetryHelper.setTelemetry(TelemetryKeys.CurrentUserInput, listName);
             return await extensionVariables.ui.showQuickPick(listItems, options);
         }
         finally {
             if (itemCountTelemetryKey) {
-                //telemetryHelper.setTelemetry(itemCountTelemetryKey, (await listItems).length.toString());
+                telemetryHelper.setTelemetry(itemCountTelemetryKey, (await listItems).length.toString());
             }
         }
     }
 
-    private async showInputBox(options: InputBoxOptions): Promise<string> {
-        //telemetryHelper.setTelemetry(TelemetryKeys.CurrentUserInput, inputName);
+    private async showInputBox(inputName: string, options: InputBoxOptions): Promise<string> {
+        telemetryHelper.setTelemetry(TelemetryKeys.CurrentUserInput, inputName);
         return await extensionVariables.ui.showInputBox(options);
     }
 }

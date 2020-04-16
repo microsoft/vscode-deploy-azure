@@ -44,7 +44,7 @@ export class VisibilityHelper {
             });
 
             if (dependentInput) {
-                let isInputVisible = dependentInput.IsVisible();
+                let isInputVisible = dependentInput.isVisible();
                 if (!isInputVisible) {
                     result = this._evaluate(result, isInputVisible, visibilityRule.operator);
                 } else {

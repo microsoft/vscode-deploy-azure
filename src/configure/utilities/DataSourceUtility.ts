@@ -1,4 +1,4 @@
-import {JSONPath} from 'jsonpath-plus';
+import { JSONPath } from 'jsonpath-plus';
 import { ArmRestClient } from "../clients/azure/armRestClient";
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { DataSource } from "../model/Contracts";
