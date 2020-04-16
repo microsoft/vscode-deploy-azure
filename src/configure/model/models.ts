@@ -177,10 +177,6 @@ export interface ServiceUrlDiscoveryDataModel {
     url: string;
 }
 
-export interface ServiceUrlDiscoveryRequest {
-    serviceName: string;
-}
-
 export interface ServiceUrlDiscoveryResponse {
     data: ServiceUrlDiscoveryDataModel[];
 }

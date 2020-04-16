@@ -18,7 +18,7 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, ServiceUrlDiscoveryRequest, ServiceUrlDiscoveryResponse, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, ServiceUrlDiscoveryResponse, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -167,9 +167,8 @@ class Orchestrator {
         }
 
         const peClient = new PortalExtensionClient(this.inputs.azureSession.credentials);
-        const serviceUrlRequest = <ServiceUrlDiscoveryRequest>{ serviceName: "RepositoryAnalysis" };
         try {
-            const response: ServiceUrlDiscoveryResponse = await peClient.getServiceUrl(serviceUrlRequest);
+            const response: ServiceUrlDiscoveryResponse = await peClient.getServiceUrl("RepositoryAnalysis");
             if (response.data.filter((v) => v.hostPlatform.toLowerCase() === "moda").length > 0) {
                 this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
                     placeHolder: Messages.enterGitHubPat,
