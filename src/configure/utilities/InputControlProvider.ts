@@ -1,5 +1,6 @@
+import { GenericResource } from "azure-arm-resource/lib/resource/models";
 import { MustacheHelper } from "../helper/mustacheHelper";
-import {ExtendedInputDescriptor, ExtendedPipelineTemplate, InputMode } from "../model/Contracts";
+import { ExtendedInputDescriptor, ExtendedPipelineTemplate, InputMode } from "../model/Contracts";
 import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
 import { DataSourceExpression } from "./DataSourceExpression";
 import { InputUxDescriptor } from "./InputUxDescriptor";
@@ -8,44 +9,50 @@ import { VisibilityHelper } from "./VisibilityHelper";
 
 export class InputControlProvider {
     private _pipelineTemplate: ExtendedPipelineTemplate;
-    private _inputUxDescriptors: Map<string,InputUxDescriptor>;
-    private _uxInputs: Map<string,ExtendedInputDescriptor>;
+    private _inputUxDescriptors: Map<string, InputUxDescriptor>;
+    private _uxInputs: Map<string, ExtendedInputDescriptor>;
 
-    constructor(pipelineTemplateParameters: ExtendedPipelineTemplate, inputs: { [key: string]: any}){
+    constructor(pipelineTemplateParameters: ExtendedPipelineTemplate, inputs: { [key: string]: any }) {
         this._pipelineTemplate = pipelineTemplateParameters;
         this._inputUxDescriptors = new Map<string, InputUxDescriptor>();
         this._uxInputs = new Map<string, ExtendedInputDescriptor>();
         this._createControls(inputs);
     }
 
-    public async getAllInputUxDescriptors(azureSession: AzureSession ) {
-        let parameters: { [key: string]: any} = {};
-        for(let inputUxDescriptor of this._inputUxDescriptors.values()){
-            this._setInputUxVisibility(inputUxDescriptor);
-            this._setupDefaultInputValue(inputUxDescriptor);
-            await inputUxDescriptor.setInputUxDescriptorValue(azureSession);
+    public async getAllInputUxDescriptors(azureSession: AzureSession, resourceNode?: GenericResource) {
+        let parameters: { [key: string]: any } = {};
+
+        for (let inputUxDescriptor of this._inputUxDescriptors.values()) {
+            if (inputUxDescriptor.getPropertyValue('deployTarget') === "true" && !!resourceNode) {
+                inputUxDescriptor.updateValue(resourceNode.id);
+            }
+            else {
+                this._setInputUxVisibility(inputUxDescriptor);
+                this._setupDefaultInputValue(inputUxDescriptor);
+                await inputUxDescriptor.setInputUxDescriptorValue(azureSession);
+            }
             parameters[inputUxDescriptor.getInputUxDescriptorId()] = inputUxDescriptor.getParameterValue();
         }
         return parameters;
     }
 
-    private _createControls(inputValues: { [key: string]: any}) {
-        for( let input of this._pipelineTemplate.inputs){
+    private _createControls(inputValues: { [key: string]: any }) {
+        for (let input of this._pipelineTemplate.inputs) {
             this._uxInputs.set(input.id, input);
             var inputUxDescriptor: InputUxDescriptor = null;
             var inputUxDescriptorValue = this._getInputUxDescriptorValue(input, inputValues);
 
-            if(input.groupId === 'cdResource' && input.properties.cdResource){
+            if (input.groupId === 'cdResource' && input.properties.deployTarget) {
                 input.inputMode = InputMode.Combo;
             }
-            switch(input.inputMode){
-                case InputMode.None: 
+            switch (input.inputMode) {
+                case InputMode.None:
                     // here we'll use data source id to get value
-                    inputUxDescriptor = new InputUxDescriptor(input,inputUxDescriptorValue, ControlType.None);
+                    inputUxDescriptor = new InputUxDescriptor(input, inputUxDescriptorValue, ControlType.None);
                     break;
                 case InputMode.TextBox:
                 case InputMode.PasswordBox:
-                    inputUxDescriptor = new InputUxDescriptor(input,inputUxDescriptorValue, ControlType.InputBox);
+                    inputUxDescriptor = new InputUxDescriptor(input, inputUxDescriptorValue, ControlType.InputBox);
                     break;
                 case InputMode.Combo:
                 case InputMode.CheckBox:
@@ -55,11 +62,11 @@ export class InputControlProvider {
                     break;
 
             }
-            if(inputUxDescriptor){
+            if (inputUxDescriptor) {
                 this._inputUxDescriptors.set(input.id, inputUxDescriptor);
             }
         }
-        this._setUxDescriptorsDataSourceInputs();   
+        this._setUxDescriptorsDataSourceInputs();
     }
 
     private _setUxDescriptorsDataSourceInputs(): void {
@@ -94,7 +101,7 @@ export class InputControlProvider {
         }
     }
 
-    
+
     private _computeMustacheValue(mustacheExpression: string, dependentUxDesciptorArray: InputUxDescriptor[]): string {
 
         var dependentInputValues = this._getInputParameterValueIfAllSet(dependentUxDesciptorArray);
@@ -105,17 +112,17 @@ export class InputControlProvider {
         }
     }
 
-    private _getInputUxDescriptorValue(inputDes: ExtendedInputDescriptor, inputValues: { [key:string]:any }) {
+    private _getInputUxDescriptorValue(inputDes: ExtendedInputDescriptor, inputValues: { [key: string]: any }) {
         if (!!inputValues && !!inputValues[inputDes.id]) {
             return inputValues[inputDes.id];
         } else {
             return !inputDes.defaultValue
-            || InputUxDescriptorUtility.doesExpressionContainsDependency(inputDes.defaultValue)
-            ? "" : inputDes.defaultValue;
+                || InputUxDescriptorUtility.doesExpressionContainsDependency(inputDes.defaultValue)
+                ? "" : inputDes.defaultValue;
         }
     }
 
-    private _getInputDependencyArray(inputUxDescriptor: InputUxDescriptor, dependencyExpressionArray: string[], allowSelfDependency: boolean = true){
+    private _getInputDependencyArray(inputUxDescriptor: InputUxDescriptor, dependencyExpressionArray: string[], allowSelfDependency: boolean = true) {
         var dependentInputUxDescriptorArray: InputUxDescriptor[] = [];
         var dependentInputIds: string[] = [];
         for (var dependencyExpression of dependencyExpressionArray) {
@@ -134,7 +141,7 @@ export class InputControlProvider {
 
         var uniqueDependentInputIds = dependentInputIds.filter(function (item, pos) {
             return dependentInputIds.indexOf(item) === pos;
-        });        
+        });
 
         for (var inputId of uniqueDependentInputIds) {
             var dependentInputUxDescriptor = this._inputUxDescriptors.get(inputId);
@@ -156,7 +163,7 @@ export class InputControlProvider {
         for (var dependentUxDesciptor of dependentUxDesciptorArray) {
             if (!dependentUxDesciptor.getParameterValue()) {
                 //Value of the parameter is not available, so rest of the input values will be useless.
-                throw new Error("Unable to get the input value") ;
+                throw new Error("Unable to get the input value");
             }
             inputs[dependentUxDesciptor.getInputUxDescriptorId()] = dependentUxDesciptor.getParameterValue();
         }

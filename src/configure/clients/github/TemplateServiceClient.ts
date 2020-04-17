@@ -155,7 +155,7 @@ export class TemplateServiceClient {
                     "isRequired": true,
                     "sublabel": null,
                     "properties": {
-                      "cdResource": "true" 
+                      "deployTarget": "true" 
                     },
                     "inputMode": 80,
                     "dataSourceId": "listExistingAKS",

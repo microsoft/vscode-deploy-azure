@@ -1,7 +1,8 @@
 import { InputBoxOptions, QuickPickItem } from 'vscode';
 import { IAzureQuickPickOptions } from 'vscode-azureextensionui';
+import { MustacheHelper } from '../helper/mustacheHelper';
 import { ExtendedInputDescriptor, InputMode } from "../model/Contracts";
-import { AzureSession, ControlType, extensionVariables } from '../model/models';
+import { AzureSession, ControlType, extensionVariables, StringMap } from '../model/models';
 import { Messages } from '../resources/messages';
 import { DataSourceExpression } from './DataSourceExpression';
 
@@ -53,16 +54,17 @@ export class InputUxDescriptor {
 
             }
             else if (this._controlType === ControlType.InputBox && this._input.isRequired) {
-                this._value = await this.showInputBox({ 
+                this._value = await this.showInputBox({
                     placeHolder: this._input.description,
                     validateInput: (inputValue) => {
                         return !inputValue ? Messages.valueRequired : null;
-                    } 
+                    }
                 });
             }
             else if (this._controlType === ControlType.InputBox) {
-                this._value = await this.showInputBox({ 
-                    placeHolder: this._input.description});
+                this._value = await this.showInputBox({
+                    placeHolder: this._input.description
+                });
             }
         }
     }
@@ -110,6 +112,25 @@ export class InputUxDescriptor {
 
     public setInputVisibility(value: boolean): void {
         this._isVisible = value;
+    }
+
+    public getPropertyValue(propertyName: string, inputs?: StringMap<any>): string {
+        return InputUxDescriptor.getUxDescriptorProperty(this._input, propertyName, inputs);
+    }
+
+    public static getUxDescriptorProperty(inputDescriptor: ExtendedInputDescriptor, property: string, inputs?: StringMap<any>): any {
+        var properties = inputDescriptor.properties;
+        var value: Object;
+
+        if (!!properties) {
+            value = properties[property];
+            if (!!value && !!inputs && typeof value === "string") {
+                return MustacheHelper.render(value, { inputs: inputs });
+            } else if (!!value && !!inputs) {
+                return MustacheHelper.renderObject(value, { inputs: inputs });
+            }
+        }
+        return value;
     }
 
     private async showQuickPick<T extends QuickPickItem>(listItems: T[] | Thenable<T[]>, options: IAzureQuickPickOptions, itemCountTelemetryKey?: string): Promise<T> {
