@@ -1,15 +1,26 @@
 import * as path from 'path';
+import { ModaClient } from '../clients/modaClient';
 import { PortalExtensionClient } from "../clients/portalExtensionClient";
 import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
 
+export enum ServiceFramework {
+    Moda,
+    Vssf
+}
+
 export class RepoAnalysisHelper {
+    public static redirectUrl: string = "https://aka.ms/AA4xgy0";
+    public static url: string = "";
+    public static serviceFramework: ServiceFramework = ServiceFramework.Vssf;
     private portalExtensionClient: PortalExtensionClient;
+    private modaClient: ModaClient;
     private githubPatToken: string;
 
     constructor(azureSession: AzureSession, githubPatToken: string) {
         this.portalExtensionClient = new PortalExtensionClient(azureSession.credentials);
         this.githubPatToken = githubPatToken;
+        this.modaClient = new ModaClient(RepoAnalysisHelper.url, githubPatToken);
     }
 
     public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters, workspacePath: string): Promise<RepositoryAnalysisParameters> {
@@ -27,7 +38,12 @@ export class RepoAnalysisHelper {
             repositoryAnalysisRequestBody.Repository = repositoryDetails;
             repositoryAnalysisRequestBody.WorkingDirectory = workspacePath;
 
-            repositoryAnalysisResponse = await this.portalExtensionClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
+            if (RepoAnalysisHelper.serviceFramework === ServiceFramework.Vssf) {
+                repositoryAnalysisResponse = await this.portalExtensionClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
+            } else {
+                const response = await this.modaClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
+                repositoryAnalysisResponse = response.result;
+            }
             if (!!repositoryAnalysisResponse && repositoryAnalysisResponse.length === 0) {
                 return null;
             }

@@ -1,10 +1,10 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as path from 'path';
+import * as trc from 'typed-rest-client';
 import * as vscode from 'vscode';
 import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
-import { PortalExtensionClient } from './clients/portalExtensionClient';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
 import { AssetHandler } from './helper/AssetHandler';
@@ -13,17 +13,18 @@ import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
-import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
+import { RepoAnalysisHelper, ServiceFramework } from './helper/repoAnalysisHelper';
 //import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, ServiceUrlDiscoveryResponse, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { TemplateAssetType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
+
 const uuid = require('uuid/v4');
 
 const Layer: string = 'configure';
@@ -157,7 +158,23 @@ class Orchestrator {
     }
 
     private async getGithubPatToken(): Promise<void> {
-        if (this.inputs.sourceRepository.repositoryProvider === "github") {
+        RepoAnalysisHelper.serviceFramework = ServiceFramework.Vssf;
+        const requestOptions = {
+            allowRedirects: false
+        };
+        const restClient = new trc.RestClient("deploy-to-azure", "", [], requestOptions);
+        const response = await restClient.client.get(RepoAnalysisHelper.redirectUrl, requestOptions);
+        if ((response.message.statusCode === 301 || response.message.statusCode === 302)){
+            RepoAnalysisHelper.url = response.message.headers["location"];
+        } else {
+            throw Error("Invalid response from url " + RepoAnalysisHelper.redirectUrl);
+        }
+        
+        if (!RepoAnalysisHelper.url.includes("portalext.visualstudio.com")) {
+            RepoAnalysisHelper.serviceFramework = ServiceFramework.Moda;
+        }
+
+        if (this.inputs.sourceRepository.repositoryProvider === "github" || RepoAnalysisHelper.serviceFramework === ServiceFramework.Moda) {
             this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
                 placeHolder: Messages.enterGitHubPat,
                 prompt: Messages.githubPatTokenHelpMessage,
@@ -165,23 +182,6 @@ class Orchestrator {
                     return !inputValue ? Messages.githubPatTokenErrorMessage : null;
                 }
             });
-            return;
-        }
-
-        const peClient = new PortalExtensionClient(this.inputs.azureSession.credentials);
-        try {
-            const response: ServiceUrlDiscoveryResponse = await peClient.getServiceUrl("RepositoryAnalysis");
-            if (response.data.filter((v) => v.hostPlatform.toLowerCase() === "moda").length > 0) {
-                this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
-                    placeHolder: Messages.enterGitHubPat,
-                    prompt: Messages.githubPatTokenHelpMessage,
-                    validateInput: (inputValue) => {
-                        return !inputValue ? Messages.githubPatTokenErrorMessage : null;
-                    }
-                });
-            }
-        } catch(e) {
-            // Add telemetry for error
         }
     }
 

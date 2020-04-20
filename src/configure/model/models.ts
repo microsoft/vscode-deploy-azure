@@ -169,18 +169,6 @@ export class ParsedAzureResourceId {
     }
 }
 
-
-export interface ServiceUrlDiscoveryDataModel {
-    enabled: boolean;
-    hostPlatform: string;
-    serviceName: string;
-    url: string;
-}
-
-export interface ServiceUrlDiscoveryResponse {
-    data: ServiceUrlDiscoveryDataModel[];
-}
-
 //For multiple application we need to add Working directory here in future
 export class RepositoryAnalysisRequest {
     Repository: RepositoryDetails;
