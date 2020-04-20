@@ -3,24 +3,21 @@ import { ModaClient } from '../clients/modaClient';
 import { PortalExtensionClient } from "../clients/portalExtensionClient";
 import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
+import { RedirectLinkHelper, ServiceFramework } from './redirectLinkHelper';
 
-export enum ServiceFramework {
-    Moda,
-    Vssf
-}
 
 export class RepoAnalysisHelper {
-    public static redirectUrl: string = "https://aka.ms/AA4xgy0";
-    public static url: string = "";
-    public static serviceFramework: ServiceFramework = ServiceFramework.Vssf;
     private portalExtensionClient: PortalExtensionClient;
     private modaClient: ModaClient;
+    private redirectHelper: RedirectLinkHelper;
     private githubPatToken: string;
 
     constructor(azureSession: AzureSession, githubPatToken: string) {
         this.portalExtensionClient = new PortalExtensionClient(azureSession.credentials);
         this.githubPatToken = githubPatToken;
-        this.modaClient = new ModaClient(RepoAnalysisHelper.url, githubPatToken);
+        this.redirectHelper = new RedirectLinkHelper();
+        this.redirectHelper.loadAll();
+        this.modaClient = new ModaClient(this.redirectHelper.repoAnalysisUrl, githubPatToken);
     }
 
     public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters, workspacePath: string): Promise<RepositoryAnalysisParameters> {
@@ -31,14 +28,14 @@ export class RepoAnalysisHelper {
             repositoryDetails.id = sourceRepositoryDetails.repositoryId;
             repositoryDetails.defaultbranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysisConstants.Master;
             repositoryDetails.type = RepositoryProvider.Github;
-            repositoryDetails.authorizationInfo.scheme = "Token";
-            repositoryDetails.authorizationInfo.parameters.accesstoken = this.githubPatToken.toLowerCase().startsWith("bearer") ? this.githubPatToken.toLowerCase().substring(7) : this.githubPatToken.toLowerCase();    
 
             let repositoryAnalysisRequestBody = new RepositoryAnalysisRequest;
             repositoryAnalysisRequestBody.Repository = repositoryDetails;
             repositoryAnalysisRequestBody.WorkingDirectory = workspacePath;
 
-            if (RepoAnalysisHelper.serviceFramework === ServiceFramework.Vssf) {
+            if (this.redirectHelper.repoAnalysisServiceFramework === ServiceFramework.Vssf) {
+                repositoryAnalysisRequestBody.Repository.authorizationInfo.scheme = "Token";
+                repositoryAnalysisRequestBody.Repository.authorizationInfo.parameters.accesstoken = this.githubPatToken.toLowerCase();
                 repositoryAnalysisResponse = await this.portalExtensionClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             } else {
                 const response = await this.modaClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);

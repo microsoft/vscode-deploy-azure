@@ -1,6 +1,5 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as path from 'path';
-import * as trc from 'typed-rest-client';
 import * as vscode from 'vscode';
 import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient } from './clients/azure/appServiceClient';
@@ -13,7 +12,8 @@ import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
-import { RepoAnalysisHelper, ServiceFramework } from './helper/repoAnalysisHelper';
+import { RedirectLinkHelper, ServiceFramework } from './helper/redirectLinkHelper';
+import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 //import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
@@ -158,23 +158,9 @@ class Orchestrator {
     }
 
     private async getGithubPatToken(): Promise<void> {
-        RepoAnalysisHelper.serviceFramework = ServiceFramework.Vssf;
-        const requestOptions = {
-            allowRedirects: false
-        };
-        const restClient = new trc.RestClient("deploy-to-azure", "", [], requestOptions);
-        const response = await restClient.client.get(RepoAnalysisHelper.redirectUrl, requestOptions);
-        if ((response.message.statusCode === 301 || response.message.statusCode === 302)){
-            RepoAnalysisHelper.url = response.message.headers["location"];
-        } else {
-            throw Error("Invalid response from url " + RepoAnalysisHelper.redirectUrl);
-        }
-        
-        if (!RepoAnalysisHelper.url.includes("portalext.visualstudio.com")) {
-            RepoAnalysisHelper.serviceFramework = ServiceFramework.Moda;
-        }
-
-        if (this.inputs.sourceRepository.repositoryProvider === "github" || RepoAnalysisHelper.serviceFramework === ServiceFramework.Moda) {
+        const redirectHelper = new RedirectLinkHelper();
+        await redirectHelper.loadAll();
+        if (this.inputs.sourceRepository.repositoryProvider === "github" || redirectHelper.repoAnalysisServiceFramework === ServiceFramework.Moda) {
             this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
                 placeHolder: Messages.enterGitHubPat,
                 prompt: Messages.githubPatTokenHelpMessage,

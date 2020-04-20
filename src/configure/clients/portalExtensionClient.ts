@@ -5,7 +5,6 @@ import { RestClient } from "./restClient";
 export class PortalExtensionClient {
 
     private restClient: RestClient;
-    
     constructor(credentials: ServiceClientCredentials) {
         this.restClient = new RestClient(credentials);
     }
