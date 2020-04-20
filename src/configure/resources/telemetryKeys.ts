@@ -18,6 +18,11 @@ export class TelemetryKeys {
     public static NewDevOpsRepository = 'newDevOpsRepository';
     public static AzureLoginOption = 'azureLoginOption';
     public static PipelineAlreadyConfigured = 'pipelineAlreadyConfigured';
+    public static SubscriptionId = 'subscriptionId';
+    public static SelectedCICDProvider = 'selectedCICDProvider';
+    public static RepoId = 'repoId';
+    public static DisplayWorkflow = 'displayWorkflow';
+
 
     public static resourceType = 'resourceType';
     public static resourceKind = 'resourceKind';
