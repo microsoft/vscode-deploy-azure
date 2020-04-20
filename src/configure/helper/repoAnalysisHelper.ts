@@ -15,15 +15,14 @@ export class RepoAnalysisHelper {
     constructor(azureSession: AzureSession, githubPatToken: string) {
         this.portalExtensionClient = new PortalExtensionClient(azureSession.credentials);
         this.githubPatToken = githubPatToken;
-        this.redirectHelper = new RedirectLinkHelper();
-        this.redirectHelper.loadAll();
-        this.modaClient = new ModaClient(this.redirectHelper.repoAnalysisUrl, githubPatToken);
     }
 
     public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters, workspacePath: string): Promise<RepositoryAnalysisParameters> {
 
         let repositoryAnalysisResponse;
         try{
+            this.redirectHelper = new RedirectLinkHelper();
+            await this.redirectHelper.loadAll();
             let repositoryDetails: RepositoryDetails = new RepositoryDetails();
             repositoryDetails.id = sourceRepositoryDetails.repositoryId;
             repositoryDetails.defaultbranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysisConstants.Master;
@@ -38,6 +37,7 @@ export class RepoAnalysisHelper {
                 repositoryAnalysisRequestBody.Repository.authorizationInfo.parameters.accesstoken = this.githubPatToken;
                 repositoryAnalysisResponse = await this.portalExtensionClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             } else {
+                this.modaClient = new ModaClient(this.redirectHelper.repoAnalysisUrl, this.githubPatToken);
                 const response = await this.modaClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
                 repositoryAnalysisResponse = response.result;
             }
