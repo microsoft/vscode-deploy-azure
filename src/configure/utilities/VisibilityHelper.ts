@@ -1,5 +1,5 @@
 import { IPredicate, IVisibilityRule } from "../model/models";
-import { InputUxDescriptor } from "./InputUxDescriptor";
+import { InputControl } from "./templateInputsHelper/InputControl";
 
 const Operator_AND: string = "&&";
 const Operator_OR: string = "||";
@@ -34,13 +34,13 @@ export class VisibilityHelper {
         return rule;
     }
 
-    public static evaluateVisibility(visibilityRule: IVisibilityRule, dependentInputs: InputUxDescriptor[]): boolean {
+    public static evaluateVisibility(visibilityRule: IVisibilityRule, dependentInputs: InputControl[]): boolean {
         let result: boolean = visibilityRule.operator === Operator_AND;
 
         for (let i = 0, len = visibilityRule.predicateRules.length; i < len; i++) {
             let predicateRule = visibilityRule.predicateRules[i];
-            let dependentInput: InputUxDescriptor = dependentInputs.find((dependentInput: InputUxDescriptor) => {
-                return dependentInput.getInputUxDescriptorId() === predicateRule.inputName;
+            let dependentInput: InputControl = dependentInputs.find((dependentInput: InputControl) => {
+                return dependentInput.getInputControlId() === predicateRule.inputName;
             });
 
             if (dependentInput) {

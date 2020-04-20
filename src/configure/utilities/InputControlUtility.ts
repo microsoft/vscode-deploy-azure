@@ -1,34 +1,4 @@
-import { InputUxDescriptor } from "./InputUxDescriptor";
-
-export class InputUxDescriptorUtility {
-    
-    public static getUxDescriptorsValues(inputUxDescriptors: Map<string, InputUxDescriptor>): Map<string,any> {
-        var params: Map<string,any> = new Map<string,any>();
-
-        inputUxDescriptors.forEach((inputUxDescriptor, id) => {
-            params[id] = inputUxDescriptor.getParameterValue();
-        });
-
-        return params;
-    }
-
-    public static updateUxDescriptorsValues(inputUxDescriptors: Map<string, InputUxDescriptor>, values: Map<string,any>): void {
-        inputUxDescriptors.forEach((inputUxDescriptor, id) => {
-            if (!!values[id]) {
-                //inputUxDescriptor.updateValue(values[id]);
-            }
-        });
-    }
-
-    public static getUxDescriptorsStringValues(inputUxDescriptors: Map<string, InputUxDescriptor>): Map<string,string> {
-        var params: Map<string,string> = new Map<string,string>();
-
-        inputUxDescriptors.forEach((inputUxDescriptor, id) => {
-            params[id] = inputUxDescriptor.getParameterValue();
-        });
-
-        return params;
-    }
+export class InputControlUtility {
 
     public static doesExpressionContainsDependency(expression: string): boolean {
         if (!expression) {

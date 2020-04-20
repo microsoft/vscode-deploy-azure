@@ -1,15 +1,15 @@
 import { InputBoxOptions, QuickPickItem } from 'vscode';
 import { IAzureQuickPickOptions } from 'vscode-azureextensionui';
-import { telemetryHelper } from '../helper/telemetryHelper';
-import { ExtendedInputDescriptor, InputMode } from "../model/Contracts";
-import { AzureSession, ControlType, extensionVariables } from '../model/models';
-import { Messages } from '../resources/messages';
-import { TelemetryKeys } from '../resources/telemetryKeys';
-import { DataSourceExpression } from './DataSourceExpression';
+import { telemetryHelper } from '../../helper/telemetryHelper';
+import { ExtendedInputDescriptor, InputMode } from "../../model/Contracts";
+import { AzureSession, ControlType, extensionVariables } from '../../model/models';
+import { Messages } from '../../resources/messages';
+import { TelemetryKeys } from '../../resources/telemetryKeys';
+import { DataSourceExpression } from '../DataSourceExpression';
 
-export class InputUxDescriptor {
+export class InputControl {
     public dataSource: DataSourceExpression;
-    public dataSourceUxInputs: Array<InputUxDescriptor>;
+    public dataSourceInputControls: Array<InputControl>;
     public dataSourceInputs: Map<string, any>;
     private input: ExtendedInputDescriptor;
     private value: any;
@@ -21,7 +21,7 @@ export class InputUxDescriptor {
         this.value = value;
         this.visible = true;
         this.controlType = controlType;
-        this.dataSourceUxInputs = [];
+        this.dataSourceInputControls = [];
         this.dataSourceInputs = new Map<string, any>();
     }
 
@@ -33,7 +33,11 @@ export class InputUxDescriptor {
         this.value = defaultValue;
     }
 
-    public getInputUxDescriptorId(): string {
+    public getInputDescriptor(): ExtendedInputDescriptor {
+        return this.input;
+    }
+
+    public getInputControlId(): string {
         return this.input.id;
     }
 
@@ -45,10 +49,6 @@ export class InputUxDescriptor {
         return this.input.inputMode;
     }
 
-    public getParameterValue(): any {
-        return this.value;
-    }
-
     public getVisibleRule(): string {
         return this.input.visibleRule;
     }
@@ -57,12 +57,12 @@ export class InputUxDescriptor {
         return this.visible;
     }
 
-    public setInputVisibility(value: boolean): void {
+    public setVisibility(value: boolean): void {
         this.visible = value;
     }
-    
-    public async setInputUxDescriptorValue(azureSession: AzureSession): Promise<any> {
-        if(!this.isVisible()){
+
+    public async setInputControlValue(azureSession: AzureSession): Promise<any> {
+        if (!this.isVisible()) {
             return;
         }
         if (!!this.dataSource) {
@@ -73,11 +73,11 @@ export class InputUxDescriptor {
             else if (this.controlType === ControlType.QuickPick) {
                 let selectedValue = await this.dataSource.evaluateDataSources(inputs, azureSession)
                     .then((listItems: Array<{ label: string, data: any, group?: string }>) => {
-                        return this.showQuickPick(this.getInputUxDescriptorId(), listItems, { placeHolder: this.input.name });
+                        return this.showQuickPick(this.getInputControlId(), listItems, { placeHolder: this.input.name });
                     });
                 this.value = selectedValue.data;
             }
-        } 
+        }
         else {
             if (this.controlType === ControlType.QuickPick) {
                 var listItems: Array<{ label: string, data: any }> = [];
@@ -85,19 +85,19 @@ export class InputUxDescriptor {
                     this.input.possibleValues.forEach((item) => {
                         listItems.push({ label: item.displayValue, data: item.value });
                     });
-                } 
-                else if(this.input.inputMode === InputMode.RadioButtons){
+                }
+                else if (this.input.inputMode === InputMode.RadioButtons) {
                     listItems.push({ label: "Yes", data: "true" });
                     listItems.push({ label: "No", data: "false" });
                 }
-                this.value = (await this.showQuickPick(this.getInputUxDescriptorId(), listItems, { placeHolder: this.input.name })).data;
+                this.value = (await this.showQuickPick(this.getInputControlId(), listItems, { placeHolder: this.input.name })).data;
             }
             else if (this.controlType === ControlType.InputBox) {
-                this.value = await this.showInputBox( this.getInputUxDescriptorId(), { 
+                this.value = await this.showInputBox(this.getInputControlId(), {
                     placeHolder: this.input.name,
                     validateInput: (inputValue) => {
-                        return !inputValue ? Messages.valueRequired : null;      
-                    } 
+                        return !inputValue ? Messages.valueRequired : null;
+                    }
                 });
             }
         }
@@ -105,8 +105,8 @@ export class InputUxDescriptor {
 
     private _getDataSourceInputs(): { [key: string]: any } {
         var inputs: { [key: string]: any } = {};
-        for (var dataSourceInput of this.dataSourceUxInputs) {
-            inputs[dataSourceInput.getInputUxDescriptorId()] = dataSourceInput.getParameterValue();
+        for (var dataSourceInput of this.dataSourceInputControls) {
+            inputs[dataSourceInput.getInputControlId()] = dataSourceInput.getValue();
         }
         return inputs;
     }

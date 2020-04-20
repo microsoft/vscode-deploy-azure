@@ -61,8 +61,8 @@ export class DataSourceExpression {
 
         return leftDependencyArray.concat(rightDependencyArray);
     }
-    
-    public async evaluateDataSources(inputs: {[key: string] :any}, azureSession: AzureSession): Promise<any> {
+
+    public async evaluateDataSources(inputs: { [key: string]: any }, azureSession: AzureSession): Promise<any> {
         var dataPromises: Promise<any>[] = [];
 
         if (this.operator === Operator.UNDEFINED) {
