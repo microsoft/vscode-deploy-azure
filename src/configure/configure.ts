@@ -168,6 +168,9 @@ class Orchestrator {
                     return !inputValue ? Messages.githubPatTokenErrorMessage : null;
                 }
             });
+            if (!!this.inputs.githubPATToken) {
+                this.inputs.githubPATToken = this.inputs.githubPATToken.toLowerCase();
+            }
         }
     }
 

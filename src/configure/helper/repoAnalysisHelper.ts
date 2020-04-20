@@ -35,7 +35,7 @@ export class RepoAnalysisHelper {
 
             if (this.redirectHelper.repoAnalysisServiceFramework === ServiceFramework.Vssf) {
                 repositoryAnalysisRequestBody.Repository.authorizationInfo.scheme = "Token";
-                repositoryAnalysisRequestBody.Repository.authorizationInfo.parameters.accesstoken = this.githubPatToken.toLowerCase();
+                repositoryAnalysisRequestBody.Repository.authorizationInfo.parameters.accesstoken = this.githubPatToken;
                 repositoryAnalysisResponse = await this.portalExtensionClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             } else {
                 const response = await this.modaClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
