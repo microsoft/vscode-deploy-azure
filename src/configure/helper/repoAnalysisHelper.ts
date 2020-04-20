@@ -10,9 +10,9 @@ export class RepoAnalysisHelper {
     private portalExtensionClient: PortalExtensionClient;
     private modaClient: ModaClient;
     private redirectHelper: RedirectLinkHelper;
-    private githubPatToken: string;
+    private githubPatToken?: string;
 
-    constructor(azureSession: AzureSession, githubPatToken: string) {
+    constructor(azureSession: AzureSession, githubPatToken?: string) {
         this.portalExtensionClient = new PortalExtensionClient(azureSession.credentials);
         this.githubPatToken = githubPatToken;
     }
