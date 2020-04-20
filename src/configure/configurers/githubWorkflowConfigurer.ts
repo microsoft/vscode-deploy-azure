@@ -189,7 +189,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
 
     public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
         try {
-            if (inputs.targetResource  && inputs.targetResource.resource && inputs.targetResource.resource.type === TargetResourceType.WebApp) {
+            if (inputs.targetResource && inputs.targetResource.resource && inputs.targetResource.resource.type === TargetResourceType.WebApp) {
                 // Update web app sourceControls as GitHubAction
                 let sourceControlProperties = {
                     "isGitHubAction": true,

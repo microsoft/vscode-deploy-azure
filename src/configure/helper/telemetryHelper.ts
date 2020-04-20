@@ -40,6 +40,7 @@ class TelemetryHelper {
     }
 
     public setCurrentStep(stepName: string): void {
+        //current step is the last step till which user reaches
         this.actionContext.telemetry.properties["currentStep"] = stepName;
     }
 
