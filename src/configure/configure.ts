@@ -452,7 +452,7 @@ class Orchestrator {
             repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('\\').join('/'));
         }
 
-        extensionVariables.templateServiceEnabled = true;
+        extensionVariables.templateServiceEnabled = false;
 
         let appropriatePipelines;
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected

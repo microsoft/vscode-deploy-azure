@@ -31,8 +31,12 @@ export class RepoAnalysisHelper {
             repositoryAnalysisRequestBody.WorkingDirectory = workspacePath;
 
             if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
-                repositoryAnalysisRequestBody.Repository.authorizationInfo.scheme = "Token";
-                repositoryAnalysisRequestBody.Repository.authorizationInfo.parameters.accesstoken = this.githubPatToken;
+                repositoryAnalysisRequestBody.Repository.authorizationInfo = {
+                    scheme: "Token",
+                    parameters: {
+                        accesstoken: this.githubPatToken
+                    }
+                };
                 repositoryAnalysisResponse = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             } else {
                 const response = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
