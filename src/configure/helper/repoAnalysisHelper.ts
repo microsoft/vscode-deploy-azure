@@ -3,7 +3,7 @@ import { ModaRepositoryAnalysisClient } from '../clients/modaRepositoryAnalysisC
 import { PortalExtensionRepositoryAnalysisClient } from "../clients/portalExtensionRepositoryAnalysisClient";
 import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
-import { IServiceUrlDefinition, RemoteServiceUrlHelper, ServiceFramework } from './RemoteServiceUrlHelper';
+import { IServiceUrlDefinition, RemoteServiceUrlHelper, ServiceFramework } from './remoteServiceUrlHelper';
 
 
 export class RepoAnalysisHelper {
