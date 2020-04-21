@@ -1,7 +1,6 @@
 import * as path from 'path';
-import { ModaClient } from '../clients/modaClient';
-import { PortalExtensionClient } from "../clients/portalExtensionClient";
-import { IRepositoryAnalysisClient } from '../clients/repositoryAnalyisClient';
+import { ModaRepositoryAnalysisClient } from '../clients/modaRepositoryAnalysisClient';
+import { PortalExtensionRepositoryAnalysisClient } from "../clients/portalExtensionRepositoryAnalysisClient";
 import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
 import { IServiceUrlDefinition, RemoteServiceUrlHelper, ServiceFramework } from './RemoteServiceUrlHelper';
@@ -10,7 +9,6 @@ import { IServiceUrlDefinition, RemoteServiceUrlHelper, ServiceFramework } from 
 export class RepoAnalysisHelper {
     private azureSession: AzureSession;
     private githubPatToken?: string;
-    private client: IRepositoryAnalysisClient;
     constructor(azureSession: AzureSession, githubPatToken?: string) {
         this.azureSession = azureSession;
         this.githubPatToken = githubPatToken;
@@ -105,9 +103,9 @@ export class RepoAnalysisHelper {
     private getClient(serviceDefinition: IServiceUrlDefinition) {
         let client = null;
         if (serviceDefinition.serviceFramework == ServiceFramework.Vssf) {
-            client = new PortalExtensionClient(this.azureSession.credentials);
+            client = new PortalExtensionRepositoryAnalysisClient(this.azureSession.credentials);
         } else {
-            client = new ModaClient(serviceDefinition.serviceUrl, this.githubPatToken);
+            client = new ModaRepositoryAnalysisClient(serviceDefinition.serviceUrl, this.githubPatToken);
         }
         return client;
     }

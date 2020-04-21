@@ -3,7 +3,7 @@ import vscodeUri from "vscode-uri";
 import { RepositoryAnalysisRequest } from "../model/models";
 import { IRepositoryAnalysisClient } from "./repositoryAnalyisClient";
 
-export class ModaClient implements IRepositoryAnalysisClient {
+export class ModaRepositoryAnalysisClient implements IRepositoryAnalysisClient {
     private restClient: RestClient;
     private githubPat: string;
     private pathUrl: string;

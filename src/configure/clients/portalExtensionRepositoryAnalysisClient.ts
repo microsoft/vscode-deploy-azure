@@ -3,7 +3,7 @@ import { RepositoryAnalysisRequest } from "../model/models";
 import { IRepositoryAnalysisClient } from "./repositoryAnalyisClient";
 import { RestClient } from "./restClient";
 
-export class PortalExtensionClient implements IRepositoryAnalysisClient {
+export class PortalExtensionRepositoryAnalysisClient implements IRepositoryAnalysisClient {
 
     private restClient: RestClient;
     constructor(credentials: ServiceClientCredentials) {
