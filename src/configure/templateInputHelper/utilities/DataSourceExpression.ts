@@ -1,5 +1,5 @@
-import { DataSource } from "../model/Contracts";
-import { AzureSession } from "../model/models";
+import { DataSource } from "../../model/Contracts";
+import { AzureSession } from "../../model/models";
 import { DataSourceUtility } from "./DataSourceUtility";
 
 export class DataSourceExpression {

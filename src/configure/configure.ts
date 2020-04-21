@@ -22,7 +22,7 @@ import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
-import { InputControlProvider as InputControlProvider } from './utilities/templateInputsHelper/InputControlProvider';
+import { InputControlProvider as InputControlProvider } from './templateInputHelper/InputControlProvider';
 
 const uuid = require('uuid/v4');
 const Layer: string = 'configure';

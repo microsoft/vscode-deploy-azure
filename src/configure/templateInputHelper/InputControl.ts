@@ -1,11 +1,11 @@
 import { InputBoxOptions, QuickPickItem } from 'vscode';
 import { IAzureQuickPickOptions } from 'vscode-azureextensionui';
-import { telemetryHelper } from '../../helper/telemetryHelper';
-import { ExtendedInputDescriptor, InputMode } from "../../model/Contracts";
-import { AzureSession, ControlType, extensionVariables } from '../../model/models';
-import { Messages } from '../../resources/messages';
-import { TelemetryKeys } from '../../resources/telemetryKeys';
-import { DataSourceExpression } from '../DataSourceExpression';
+import { telemetryHelper } from '../helper/telemetryHelper';
+import { ExtendedInputDescriptor, InputMode } from "../model/Contracts";
+import { AzureSession, ControlType, extensionVariables } from '../model/models';
+import { Messages } from '../resources/messages';
+import { TelemetryKeys } from '../resources/telemetryKeys';
+import { DataSourceExpression } from './utilities/DataSourceExpression';
 
 export class InputControl {
     public dataSource: DataSourceExpression;

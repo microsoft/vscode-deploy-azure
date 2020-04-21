@@ -1,5 +1,5 @@
-import { IPredicate, IVisibilityRule } from "../model/models";
-import { InputControl } from "./templateInputsHelper/InputControl";
+import { IPredicate, IVisibilityRule } from "../../model/models";
+import { InputControl } from "../InputControl";
 
 const Operator_AND: string = "&&";
 const Operator_OR: string = "||";

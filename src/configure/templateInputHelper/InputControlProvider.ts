@@ -1,10 +1,10 @@
-import { MustacheHelper } from "../../helper/mustacheHelper";
-import { ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputMode } from "../../model/Contracts";
-import { AzureSession, ControlType, IPredicate, StringMap } from '../../model/models';
-import { DataSourceExpression } from "../DataSourceExpression";
-import { InputControlUtility } from "../InputControlUtility";
-import { VisibilityHelper } from "../VisibilityHelper";
+import { MustacheHelper } from "../helper/mustacheHelper";
+import { ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputMode } from "../model/Contracts";
+import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
 import { InputControl } from "./InputControl";
+import { DataSourceExpression } from "./utilities/DataSourceExpression";
+import { InputControlUtility } from "./utilities/InputControlUtility";
+import { VisibilityHelper } from "./utilities/VisibilityHelper";
 
 export class InputControlProvider {
     private _pipelineTemplate: ExtendedPipelineTemplate;
