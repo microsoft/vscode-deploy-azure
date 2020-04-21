@@ -13,7 +13,7 @@ export interface IServiceUrlDefinition {
 }
 
 export class RemoteServiceUrlHelper {
-    public static repoAnalysisRedirectUrl: string  = "https://aka.ms/AA87j8k";
+    public static repoAnalysisRedirectUrl: string  = "https://go.microsoft.com/fwlink/?linkid=2127646";
 
     public static async getRepositoryAnalysisDefinition(): Promise<IServiceUrlDefinition> {
         const result = <IServiceUrlDefinition>{
