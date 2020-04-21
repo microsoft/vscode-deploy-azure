@@ -41,11 +41,11 @@ export async function mergingRepoAnalysisResults(repoPath: string, repositoryPro
     }
     return analysisResult;
 }
-export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<COMMONTEMPLATE[]> {
 
     let analysisResult = await mergingRepoAnalysisResults(repoPath, repositoryProvider, repoAnalysisParameters);
 
-    let templateList: { [key: string]: PipelineTemplate[] } = {};
+    let templateList: { [key: string]: COMMONTEMPLATE[] } = {};
     switch (repositoryProvider) {
         case RepositoryProvider.AzureRepos:
             templateList = azurePipelineTemplates;
@@ -58,7 +58,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     }
 
 
-    let templateResult: PipelineTemplate[] = [];
+    let templateResult: COMMONTEMPLATE[] = [];
     analysisResult.languages.forEach((language) => {
         switch (language) {
             case SupportedLanguage.DOCKER:
@@ -121,14 +121,14 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
 export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplateMetadata[]> {
 
     //TO:DO - Merge local repo analysis (Some changes in the definition of AnalysisResult required)
-    let templateResult: PipelineTemplateMetadata[] = [];
+    let templateResult: COMMONTEMPLATE[] = [];
 
     let serviceClient = new TemplateServiceClient(azureSession.credentials);
     templateResult = await serviceClient.getTemplates(repoAnalysisParameters);
-    templateResult = templateResult.sort((a, b) => {
-        if (a.templateWeight > b.templateWeight) { return 1; }
-        else { return -1; }
-    });
+    // templateResult = templateResult.sort((a, b) => {
+    //     if (a.templateWeight > b.templateWeight) { return 1; }
+    //     else { return -1; }
+    // });
     return templateResult;
 }
 
@@ -139,8 +139,8 @@ export async function getTemplateParameteres(azureSession: AzureSession, templat
     return parameters;
 }
 
-export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: TargetKind): PipelineTemplate[] {
-    let pipelineTemplates: PipelineTemplate[] = [];
+export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: TargetKind): COMMONTEMPLATE[] {
+    let pipelineTemplates: COMMONTEMPLATE[] = [];
 
     if (repositoryProvider === RepositoryProvider.Github && extensionVariables.enableGitHubWorkflow) {
         pipelineTemplates = githubWorklowTemplates[language];
@@ -262,8 +262,8 @@ export function isFunctionAppType(targetKind: TargetKind): boolean {
     return targetKind === TargetKind.FunctionApp || targetKind === TargetKind.FunctionAppLinux || targetKind === TargetKind.FunctionAppLinuxContainer;
 }
 
-function removeDuplicates(templateList: PipelineTemplate[]): PipelineTemplate[] {
-    let templateMap: Map<string, PipelineTemplate> = new Map<string, PipelineTemplate>();
+function removeDuplicates(templateList: COMMONTEMPLATE[]): COMMONTEMPLATE[] {
+    let templateMap: Map<string, COMMONTEMPLATE> = new Map<string, COMMONTEMPLATE>();
     let tempList = templateList;
     templateList = [];
     tempList.forEach((template) => {
@@ -286,7 +286,7 @@ export enum AzureTarget {
     FunctionApp = 'Microsoft.Web/sites-functionapp'
 }
 
-let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
+let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
 {
     'none': [
         {
@@ -694,7 +694,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
     ]
 };
 
-let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } = {
+let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
     'docker': [
         {
             label: 'Containerized application to AKS',
@@ -785,7 +785,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 100
         },
         {
             label: PipelineTemplateLabels.NodeJSWithNpmToAppService,
@@ -831,7 +832,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 200
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
@@ -877,7 +879,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight:300
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
@@ -923,7 +926,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 400
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
@@ -969,7 +973,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 400
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
@@ -1017,7 +1022,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 200
         },
         {
             label: PipelineTemplateLabels.SimpleApplicationToAppService,
@@ -1071,7 +1077,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: PipelineTemplate[] } =
     'dotnetcore': []
 };
 
-const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplate[] } =
+const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[] } =
 {
     'Microsoft.Web/sites-functionapp': [
         {
@@ -1219,7 +1225,7 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplat
     ]
 };
 
-const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: PipelineTemplate[] } =
+const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[] } =
 {
     'Microsoft.Web/sites-functionapp': [
         {
