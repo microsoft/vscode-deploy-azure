@@ -3,13 +3,13 @@ import { ModaClient } from '../clients/modaClient';
 import { PortalExtensionClient } from "../clients/portalExtensionClient";
 import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
-import { RedirectLinkHelper, ServiceFramework } from './redirectLinkHelper';
+import { RemoteServiceUrlHelper, ServiceFramework } from './RemoteServiceUrlHelper';
 
 
 export class RepoAnalysisHelper {
     private portalExtensionClient: PortalExtensionClient;
     private modaClient: ModaClient;
-    private redirectHelper: RedirectLinkHelper;
+    private redirectHelper: RemoteServiceUrlHelper;
     private githubPatToken?: string;
 
     constructor(azureSession: AzureSession, githubPatToken?: string) {
@@ -21,7 +21,7 @@ export class RepoAnalysisHelper {
 
         let repositoryAnalysisResponse;
         try{
-            this.redirectHelper = new RedirectLinkHelper();
+            this.redirectHelper = new RemoteServiceUrlHelper();
             await this.redirectHelper.loadAll();
             let repositoryDetails: RepositoryDetails = new RepositoryDetails();
             repositoryDetails.id = sourceRepositoryDetails.repositoryId;

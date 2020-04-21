@@ -12,7 +12,7 @@ import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
-import { RedirectLinkHelper, ServiceFramework } from './helper/redirectLinkHelper';
+import { RemoteServiceUrlHelper, ServiceFramework } from './helper/RemoteServiceUrlHelper';
 import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 //import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
@@ -158,9 +158,8 @@ class Orchestrator {
     }
 
     private async getGithubPatToken(): Promise<void> {
-        const redirectHelper = new RedirectLinkHelper();
-        await redirectHelper.loadAll();
-        if (this.inputs.sourceRepository.repositoryProvider === "github" || redirectHelper.repoAnalysisServiceFramework === ServiceFramework.Moda) {
+        const repositoryAnalysisServiceDefinition = await RemoteServiceUrlHelper.getRepositoryAnalysisDefinition();
+        if (this.inputs.sourceRepository.repositoryProvider === "github" || repositoryAnalysisServiceDefinition.serviceFramework === ServiceFramework.Moda) {
             this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
                 placeHolder: Messages.enterGitHubPat,
                 prompt: Messages.githubPatTokenHelpMessage,
