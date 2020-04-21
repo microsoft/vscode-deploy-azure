@@ -1,19 +1,18 @@
 import * as path from 'path';
 import { ModaClient } from '../clients/modaClient';
 import { PortalExtensionClient } from "../clients/portalExtensionClient";
+import { IRepositoryAnalysisClient } from '../clients/repositoryAnalyisClient';
 import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
-import { RemoteServiceUrlHelper, ServiceFramework } from './RemoteServiceUrlHelper';
+import { IServiceUrlDefinition, RemoteServiceUrlHelper, ServiceFramework } from './RemoteServiceUrlHelper';
 
 
 export class RepoAnalysisHelper {
-    private portalExtensionClient: PortalExtensionClient;
-    private modaClient: ModaClient;
-    private redirectHelper: RemoteServiceUrlHelper;
+    private azureSession: AzureSession;
     private githubPatToken?: string;
-
+    private client: IRepositoryAnalysisClient;
     constructor(azureSession: AzureSession, githubPatToken?: string) {
-        this.portalExtensionClient = new PortalExtensionClient(azureSession.credentials);
+        this.azureSession = azureSession;
         this.githubPatToken = githubPatToken;
     }
 
@@ -21,9 +20,10 @@ export class RepoAnalysisHelper {
 
         let repositoryAnalysisResponse;
         try{
-            this.redirectHelper = new RemoteServiceUrlHelper();
-            await this.redirectHelper.loadAll();
-            let repositoryDetails: RepositoryDetails = new RepositoryDetails();
+            const serviceDefinition = await RemoteServiceUrlHelper.getRepositoryAnalysisDefinition();
+            const client = this.getClient(serviceDefinition);
+
+            const repositoryDetails: RepositoryDetails = new RepositoryDetails();
             repositoryDetails.id = sourceRepositoryDetails.repositoryId;
             repositoryDetails.defaultbranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysisConstants.Master;
             repositoryDetails.type = RepositoryProvider.Github;
@@ -32,13 +32,12 @@ export class RepoAnalysisHelper {
             repositoryAnalysisRequestBody.Repository = repositoryDetails;
             repositoryAnalysisRequestBody.WorkingDirectory = workspacePath;
 
-            if (this.redirectHelper.repoAnalysisServiceFramework === ServiceFramework.Vssf) {
+            if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
                 repositoryAnalysisRequestBody.Repository.authorizationInfo.scheme = "Token";
                 repositoryAnalysisRequestBody.Repository.authorizationInfo.parameters.accesstoken = this.githubPatToken;
-                repositoryAnalysisResponse = await this.portalExtensionClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
+                repositoryAnalysisResponse = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             } else {
-                this.modaClient = new ModaClient(this.redirectHelper.repoAnalysisUrl, this.githubPatToken);
-                const response = await this.modaClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
+                const response = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
                 repositoryAnalysisResponse = response.result;
             }
             if (!!repositoryAnalysisResponse && repositoryAnalysisResponse.length === 0) {
@@ -101,5 +100,15 @@ export class RepoAnalysisHelper {
 
     private GetRelativePath(workingDirectory: string, filePath: string): string{
         return path.relative(workingDirectory, filePath).split(path.sep).join('/');
+    }
+
+    private getClient(serviceDefinition: IServiceUrlDefinition) {
+        let client = null;
+        if (serviceDefinition.serviceFramework == ServiceFramework.Vssf) {
+            client = new PortalExtensionClient(this.azureSession.credentials);
+        } else {
+            client = new ModaClient(serviceDefinition.serviceUrl, this.githubPatToken);
+        }
+        return client;
     }
 }

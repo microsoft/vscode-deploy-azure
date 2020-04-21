@@ -1,8 +1,9 @@
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from "ms-rest";
 import { RepositoryAnalysisRequest } from "../model/models";
+import { IRepositoryAnalysisClient } from "./repositoryAnalyisClient";
 import { RestClient } from "./restClient";
 
-export class PortalExtensionClient {
+export class PortalExtensionClient implements IRepositoryAnalysisClient {
 
     private restClient: RestClient;
     constructor(credentials: ServiceClientCredentials) {

@@ -1,8 +1,9 @@
 import { IRestResponse, RestClient } from "typed-rest-client";
 import vscodeUri from "vscode-uri";
 import { RepositoryAnalysisRequest } from "../model/models";
+import { IRepositoryAnalysisClient } from "./repositoryAnalyisClient";
 
-export class ModaClient{
+export class ModaClient implements IRepositoryAnalysisClient {
     private restClient: RestClient;
     private githubPat: string;
     private pathUrl: string;
