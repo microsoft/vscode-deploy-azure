@@ -1,3 +1,4 @@
+import { ExtendedPipelineTemplate } from "./Contracts";
 import { AzureConnectionType, ServiceConnectionType, TargetKind, TargetResourceType } from "./models";
 
 export interface PipelineTemplate {
@@ -7,11 +8,13 @@ export interface PipelineTemplate {
     targetType: TargetResourceType;
     targetKind: TargetKind;
     enabled: boolean;
+    extendedPipelineTemplate?: ExtendedPipelineTemplate;
     parameters?: TemplateParameter[];
     assets?: TemplateAsset[];
     // this should be removed as we will have endpoints/secrets as assets and not a first class property
     azureConnectionType?: AzureConnectionType;
 }
+
 export interface PipelineTemplateMetadata {
     templateId: string;
     label: string;

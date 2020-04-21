@@ -88,6 +88,7 @@ export class PipelineConfiguration {
     workingDirectory: string;
     params: { [key: string]: any } = {};
     assets: { [key: string]: any } = {};
+    parameters: { [key: string]: any } = {};
 }
 
 export class MustacheContext {
@@ -115,6 +116,16 @@ export class QuickPickItemWithData implements QuickPickItem {
     data: any;
     description?: string;
     detail?: string;
+}
+
+export enum ControlType {
+    None,
+    QuickPick,
+    InputBox
+}
+
+export interface StringMap<T> {
+    [key: string]: T;
 }
 
 export class ParsedAzureResourceId {
@@ -284,4 +295,15 @@ export enum SupportedLanguage {
     PYTHON = 'python',
     DOTNETCORE = 'dotnetcore',
     DOCKER = 'docker'
+}
+
+export interface IPredicate {
+    inputName: string;
+    condition: string;
+    inputValue: string;
+}
+
+export interface IVisibilityRule {
+    predicateRules: IPredicate[];
+    operator: string;
 }
