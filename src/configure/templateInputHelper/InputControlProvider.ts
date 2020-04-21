@@ -1,3 +1,4 @@
+import { GenericResource } from "azure-arm-resource/lib/resource/models";
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputMode } from "../model/Contracts";
 import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
@@ -16,12 +17,17 @@ export class InputControlProvider {
         this._createControls(context);
     }
 
-    public async getAllPipelineTemplateInputs(azureSession: AzureSession) {
+    public async getAllPipelineTemplateInputs(azureSession: AzureSession, resourceNode?: GenericResource) {
         let parameters: { [key: string]: any } = {};
         for (let inputControl of this._inputControlsMap.values()) {
-            this._setInputControlVisibility(inputControl);
-            this._setupInputControlDefaultValue(inputControl);
-            await inputControl.setInputControlValue(azureSession);
+            if (inputControl.getPropertyValue('deployTarget') === "true" && !!resourceNode) {
+                inputControl.setValue(resourceNode.id);
+            }
+            else {
+                this._setInputControlVisibility(inputControl);
+                this._setupInputControlDefaultValue(inputControl);
+                await inputControl.setInputControlValue(azureSession);
+            }
             parameters[inputControl.getInputControlId()] = inputControl.getValue();
         }
         return parameters;
