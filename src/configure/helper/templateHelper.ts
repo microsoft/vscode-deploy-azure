@@ -4,7 +4,8 @@ import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
-import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
+import { ExtendedPipelineTemplate } from '../model/Contracts';
+import { AzureConnectionType, AzureSession, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
 import { PipelineTemplate, PipelineTemplateMetadata, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -117,12 +118,12 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
 
 }
 
-export async function analyzeRepoAndListAppropriatePipeline2(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplateMetadata[]> {
+export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplateMetadata[]> {
 
     //TO:DO - Merge local repo analysis (Some changes in the definition of AnalysisResult required)
     let templateResult: PipelineTemplateMetadata[] = [];
 
-    let serviceClient = new TemplateServiceClient();
+    let serviceClient = new TemplateServiceClient(azureSession.credentials);
     templateResult = await serviceClient.getTemplates(repoAnalysisParameters);
     templateResult = templateResult.sort((a, b) => {
         if (a.templateWeight > b.templateWeight) { return 1; }
@@ -130,6 +131,14 @@ export async function analyzeRepoAndListAppropriatePipeline2(repoPath: string, r
     });
     return templateResult;
 }
+
+export async function getTemplateParameteres(azureSession: AzureSession, templateInfo: PipelineTemplateMetadata): Promise<ExtendedPipelineTemplate> {
+    let parameters: ExtendedPipelineTemplate;
+    let serviceClient = new TemplateServiceClient(azureSession.credentials);
+    parameters = await serviceClient.getTemplateParameters(templateInfo.templateId);
+    return parameters;
+}
+
 export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: TargetKind): PipelineTemplate[] {
     let pipelineTemplates: PipelineTemplate[] = [];
 

@@ -24,10 +24,17 @@ import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
+<<<<<<< HEAD
+<<<<<<< HEAD
 
 const uuid = require('uuid/v4');
+=======
+import { InputControlProvider as InputControlProvider } from './templateInputHelper/InputControlProvider';
+>>>>>>> 0975be65404f969321bf2b449829cfaf86d0c839
 
+const uuid = require('uuid/v4');
 const Layer: string = 'configure';
+
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
 export async function configurePipeline(node: AzureTreeItem) {
@@ -126,34 +133,45 @@ class Orchestrator {
             await this.getGithubPatToken();
             await this.getSelectedPipeline();
 
-            if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
-                // try to see if node corresponds to any parameter of selected pipeline.
-                if (resourceNode) {
-                    let resourceParam = TemplateParameterHelper.getMatchingAzureResourceTemplateParameter(resourceNode, this.inputs.pipelineConfiguration.template.parameters);
-                    if (resourceParam) {
-                        this.inputs.pipelineConfiguration.params[resourceParam.name] = resourceNode;
-                    }
-                }
 
-                try {
-                    let templateParameterHelper = new TemplateParameterHelper();
-                    await templateParameterHelper.setParameters(this.inputs.pipelineConfiguration.template.parameters, this.inputs);
-                }
-                catch (err) {
-                    if (err.message === Messages.setupAlreadyConfigured) {
-                        this.continueOrchestration = false;
-                        return;
-                    }
-                    else {
-                        throw err;
-                    }
-                }
+            if (this.inputs.pipelineConfiguration.templateInfo) {
+                let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, this.inputs.pipelineConfiguration.templateInfo);
+                let context: { [key: string]: any } = {};
+                context['subscriptionId'] = this.inputs.subscriptionId;
+                let controlProvider = new InputControlProvider(extendedPipelineTemplate, context);
+                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession);
             }
             else {
-                if (!this.inputs.targetResource.resource) {
-                    await this.getAzureResourceDetails();
+                if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
+                    // try to see if node corresponds to any parameter of selected pipeline.
+                    if (resourceNode) {
+                        let resourceParam = TemplateParameterHelper.getMatchingAzureResourceTemplateParameter(resourceNode, this.inputs.pipelineConfiguration.template.parameters);
+                        if (resourceParam) {
+                            this.inputs.pipelineConfiguration.params[resourceParam.name] = resourceNode;
+                        }
+                    }
+
+                    try {
+                        let templateParameterHelper = new TemplateParameterHelper();
+                        await templateParameterHelper.setParameters(this.inputs.pipelineConfiguration.template.parameters, this.inputs);
+                    }
+                    catch (err) {
+                        if (err.message === Messages.setupAlreadyConfigured) {
+                            this.continueOrchestration = false;
+                            return;
+                        }
+                        else {
+                            throw err;
+                        }
+                    }
+                }
+                else {
+                    if (!this.inputs.targetResource.resource) {
+                        await this.getAzureResourceDetails();
+                    }
                 }
             }
+
         }
     }
 
@@ -219,7 +237,7 @@ class Orchestrator {
                     workspaceFolderOptions,
                     { placeHolder: Messages.selectWorkspaceFolder });
                 this.workspacePath = selectedWorkspaceFolder.data.uri.fsPath;
-            }            
+            }
         }
         else {
             telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.BrowseLocalMachine);
@@ -434,24 +452,23 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(): Promise<void> {
-        var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken);
-        var repoAnalysisResult = null;
-        
-        if (this.inputs.sourceRepository.repositoryProvider == RepositoryProvider.Github) {
+        const repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken);
+        let repoAnalysisResult = null;
+        if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
             repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('\\').join('/'));
         }
 
-        extensionVariables.templateServiceEnabled = false;
+        extensionVariables.templateServiceEnabled = true;
 
         let appropriatePipelines;
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
 
         if (extensionVariables.templateServiceEnabled) {
             repoAnalysisResult = null;
-
             appropriatePipelines = await vscode.window.withProgress(
                 { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
+                    this.inputs.azureSession,
                     this.inputs.sourceRepository.localPath,
                     this.inputs.sourceRepository.repositoryProvider,
                     repoAnalysisResult,
@@ -502,7 +519,7 @@ class Orchestrator {
         //Post selecting the template update this.inputs.repositoryAnalysisApplicationSettings with corresponding languageSettings
         if (!!repoAnalysisResult
             && !!repoAnalysisResult.repositoryAnalysisApplicationSettingsList) {
-            
+
             //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
             await this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
         }
@@ -515,17 +532,17 @@ class Orchestrator {
         }
     }
 
-    private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void>{
+    private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
         var applicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.filter(applicationSetting => {
             return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
         });
-        
-        if(!applicationSettings || applicationSettings.length == 0){
+
+        if (!applicationSettings || applicationSettings.length === 0) {
             return;
         }
 
         let workspacePaths = Array.from(new Set(applicationSettings.map(a => a.settings.workingDirectory)));
-        if(workspacePaths.length == 1){
+        if (workspacePaths.length === 1) {
             this.inputs.repositoryAnalysisApplicationSettings = applicationSettings[0];
             this.inputs.pipelineConfiguration.workingDirectory = applicationSettings[0].settings.workingDirectory;
             return;
@@ -539,13 +556,13 @@ class Orchestrator {
             constants.SelectWorkspace,
             workspacePathQuickPickItemList,
             { placeHolder: Messages.selectWorkspace });
-        
+
         this.inputs.pipelineConfiguration.workingDirectory = selectedWorkspacePathItem.data;
-        this.inputs.repositoryAnalysisApplicationSettings = 
-        repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
-            return (applicationSettings.language === this.inputs.pipelineConfiguration.template.language 
-                && applicationSettings.settings.workingDirectory === selectedWorkspacePathItem.data);
-        });
+        this.inputs.repositoryAnalysisApplicationSettings =
+            repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
+                return (applicationSettings.language === this.inputs.pipelineConfiguration.template.language
+                    && applicationSettings.settings.workingDirectory === selectedWorkspacePathItem.data);
+            });
     }
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
