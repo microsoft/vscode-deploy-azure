@@ -10,10 +10,10 @@ export class InputControlProvider {
     private _pipelineTemplate: ExtendedPipelineTemplate;
     private _inputControlsMap: Map<string, InputControl>;
 
-    constructor(pipelineTemplate: ExtendedPipelineTemplate, inputs: { [key: string]: any }) {
+    constructor(pipelineTemplate: ExtendedPipelineTemplate, context: { [key: string]: any }) {
         this._pipelineTemplate = pipelineTemplate;
         this._inputControlsMap = new Map<string, InputControl>();
-        this._createControls(inputs);
+        this._createControls(context);
     }
 
     public async getAllPipelineTemplateInputs(azureSession: AzureSession) {
@@ -27,10 +27,10 @@ export class InputControlProvider {
         return parameters;
     }
 
-    private _createControls(inputValues: { [key: string]: any }) {
+    private _createControls(context: { [key: string]: any }) {
         for (let input of this._pipelineTemplate.inputs) {
             var inputControl: InputControl = null;
-            var inputControlValue = this._getInputControlValue(input, inputValues);
+            var inputControlValue = this._getInputControlValue(input, context);
 
             switch (input.inputMode) {
                 case InputMode.None:
@@ -99,9 +99,9 @@ export class InputControlProvider {
         }
     }
 
-    private _getInputControlValue(inputDes: ExtendedInputDescriptor, inputValues: { [key: string]: any }) {
-        if (!!inputValues && !!inputValues[inputDes.id]) {
-            return inputValues[inputDes.id];
+    private _getInputControlValue(inputDes: ExtendedInputDescriptor, context: { [key: string]: any }) {
+        if (!!context && !!context[inputDes.id]) {
+            return context[inputDes.id];
         } else {
             return !inputDes.defaultValue
                 || InputControlUtility.doesExpressionContainsDependency(inputDes.defaultValue)
@@ -142,7 +142,7 @@ export class InputControlProvider {
     }
 
     private _getInputParameterValueIfAllSet(dependentInputControlArray: InputControl[], useDisplayValue: boolean = false): StringMap<any> {
-        var inputs: StringMap<any> = {};
+        var dependentInputValuesMap: StringMap<any> = {};
         if (!dependentInputControlArray) {
             return null;
         }
@@ -152,9 +152,9 @@ export class InputControlProvider {
                 //Value of the parameter is not available, so rest of the input values will be useless.
                 throw new Error("Unable to get the input value, inputs order may not be correct");
             }
-            inputs[dependentInputControl.getInputControlId()] = dependentInputControl.getValue();
+            dependentInputValuesMap[dependentInputControl.getInputControlId()] = dependentInputControl.getValue();
         }
-        return inputs;
+        return dependentInputValuesMap;
     }
 
     private _setInputControlVisibility(inputControl: InputControl): void {
