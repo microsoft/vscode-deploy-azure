@@ -11,13 +11,13 @@ export class InputControl {
     public dataSource: DataSourceExpression;
     public dataSourceInputControls: Array<InputControl>;
     public dataSourceInputs: Map<string, any>;
-    private input: ExtendedInputDescriptor;
+    private inputDescriptor: ExtendedInputDescriptor;
     private value: any;
     private controlType: ControlType;
     private visible: boolean;
 
-    constructor(input: ExtendedInputDescriptor, value: any, controlType: ControlType) {
-        this.input = input;
+    constructor(inputDescriptor: ExtendedInputDescriptor, value: any, controlType: ControlType) {
+        this.inputDescriptor = inputDescriptor;
         this.value = value;
         this.visible = true;
         this.controlType = controlType;
@@ -34,23 +34,23 @@ export class InputControl {
     }
 
     public getInputDescriptor(): ExtendedInputDescriptor {
-        return this.input;
+        return this.inputDescriptor;
     }
 
     public getInputControlId(): string {
-        return this.input.id;
+        return this.inputDescriptor.id;
     }
 
     public getInputGroupId(): string {
-        return this.input.groupId;
+        return this.inputDescriptor.groupId;
     }
 
     public getInputMode(): InputMode {
-        return this.input.inputMode;
+        return this.inputDescriptor.inputMode;
     }
 
     public getVisibleRule(): string {
-        return this.input.visibleRule;
+        return this.inputDescriptor.visibleRule;
     }
 
     public isVisible(): boolean {
@@ -66,14 +66,14 @@ export class InputControl {
             return;
         }
         if (!!this.dataSource) {
-            var inputs = this._getDataSourceInputs();
+            var dependentInputs = this._getDataSourceInputs();
             if (this.controlType === ControlType.None || this.controlType === ControlType.InputBox) {
-                this.value = await this.dataSource.evaluateDataSources(inputs, azureSession);
+                this.value = await this.dataSource.evaluateDataSources(dependentInputs, azureSession);
             }
             else if (this.controlType === ControlType.QuickPick) {
-                let selectedValue = await this.dataSource.evaluateDataSources(inputs, azureSession)
+                let selectedValue = await this.dataSource.evaluateDataSources(dependentInputs, azureSession)
                     .then((listItems: Array<{ label: string, data: any, group?: string }>) => {
-                        return this.showQuickPick(this.getInputControlId(), listItems, { placeHolder: this.input.name });
+                        return this.showQuickPick(this.getInputControlId(), listItems, { placeHolder: this.inputDescriptor.name });
                     });
                 this.value = selectedValue.data;
             }
@@ -81,20 +81,20 @@ export class InputControl {
         else {
             if (this.controlType === ControlType.QuickPick) {
                 var listItems: Array<{ label: string, data: any }> = [];
-                if (!!this.input.possibleValues && this.input.possibleValues.length > 0) {
-                    this.input.possibleValues.forEach((item) => {
+                if (!!this.inputDescriptor.possibleValues && this.inputDescriptor.possibleValues.length > 0) {
+                    this.inputDescriptor.possibleValues.forEach((item) => {
                         listItems.push({ label: item.displayValue, data: item.value });
                     });
                 }
-                else if (this.input.inputMode === InputMode.RadioButtons) {
+                else if (this.inputDescriptor.inputMode === InputMode.RadioButtons) {
                     listItems.push({ label: "Yes", data: "true" });
                     listItems.push({ label: "No", data: "false" });
                 }
-                this.value = (await this.showQuickPick(this.getInputControlId(), listItems, { placeHolder: this.input.name })).data;
+                this.value = (await this.showQuickPick(this.getInputControlId(), listItems, { placeHolder: this.inputDescriptor.name })).data;
             }
             else if (this.controlType === ControlType.InputBox) {
                 this.value = await this.showInputBox(this.getInputControlId(), {
-                    placeHolder: this.input.name,
+                    placeHolder: this.inputDescriptor.name,
                     validateInput: (inputValue) => {
                         return !inputValue ? Messages.valueRequired : null;
                     }
