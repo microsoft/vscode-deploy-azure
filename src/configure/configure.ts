@@ -24,15 +24,9 @@ import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-const uuid = require('uuid/v4');
-=======
 import { InputControlProvider as InputControlProvider } from './templateInputHelper/InputControlProvider';
->>>>>>> 0975be65404f969321bf2b449829cfaf86d0c839
-
 const uuid = require('uuid/v4');
+
 const Layer: string = 'configure';
 
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
