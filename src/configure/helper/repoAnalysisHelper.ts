@@ -29,14 +29,13 @@ export class RepoAnalysisHelper {
             let repositoryAnalysisRequestBody = new RepositoryAnalysisRequest;
             repositoryAnalysisRequestBody.Repository = repositoryDetails;
             repositoryAnalysisRequestBody.WorkingDirectory = workspacePath;
-
+            repositoryAnalysisRequestBody.Repository.authorizationInfo = {
+                scheme: "Token",
+                parameters: {
+                    accesstoken: this.githubPatToken
+                }
+            };
             if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
-                repositoryAnalysisRequestBody.Repository.authorizationInfo = {
-                    scheme: "Token",
-                    parameters: {
-                        accesstoken: this.githubPatToken
-                    }
-                };
                 repositoryAnalysisResponse = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             } else {
                 const response = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
