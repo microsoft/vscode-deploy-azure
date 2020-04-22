@@ -5,7 +5,7 @@ import { AzureEnvironment } from 'ms-rest-azure';
 import { ExtensionContext, OutputChannel, QuickPickItem, workspace } from 'vscode';
 import { IAzureUserInput, ITelemetryReporter, UIExtensionVariables } from 'vscode-azureextensionui';
 import { Messages } from '../resources/messages';
-import { COMMONTEMPLATE } from './templateModels';
+import { PipelineTemplate } from './templateModels';
 
 class ExtensionVariables implements UIExtensionVariables {
     public azureAccountExtensionApi: AzureAccountExtensionExports;
@@ -83,8 +83,7 @@ export class AzureSession {
 
 export class PipelineConfiguration {
     filePath: string;
-    template: COMMONTEMPLATE;
-    potentialTemplates: COMMONTEMPLATE[];
+    template: PipelineTemplate;
     workingDirectory: string;
     params: { [key: string]: any } = {};
     assets: { [key: string]: any } = {};

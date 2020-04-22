@@ -1,23 +1,61 @@
 import { ExtendedPipelineTemplate } from "./Contracts";
 import { AzureConnectionType, ServiceConnectionType, TargetKind, TargetResourceType } from "./models";
 
-export interface COMMONTEMPLATE {
-    path?: string;      
-    templateId?: string;
-    label?: string;
-    language?: string;
-    targetType?: TargetResourceType;
-    targetKind?: TargetKind;
-    enabled?: boolean;
-    parameters?: TemplateParameter[];
-    assets?: TemplateAsset[];
-    azureConnectionType?: AzureConnectionType;
-    workingDirectory?: string;
-    templateWeight?: number;
-    description?: string;
+export enum TemplateType {
+    remote,
+    local
+}
+export interface PipelineTemplate {
+    label: string;
+    templateWeight: number;
+    templateType: TemplateType;
+    targetType: TargetResourceType;
+    targetKind: TargetKind;
+    language: string;
 }
 
-export interface PipelineTemplate {
+export interface PipelineTemplateMetadata {
+    templateId: string;
+    workingDirectory: string;
+    templateWeight: number;
+    templateDescription: string;
+    attributes: TemplateAttributes;
+}
+
+export interface RemotePipelineTemplate extends PipelineTemplate {
+
+    templateId: string;
+    workingDirectory: string;
+}
+
+export interface LocalPipelineTemplate extends PipelineTemplate {
+
+    path: string;
+    enabled: boolean;
+    parameters?: TemplateParameter[];
+    assets?: TemplateAsset[];
+    // this should be removed as we will have endpoints/secrets as assets and not a first class property
+    azureConnectionType?: AzureConnectionType;
+
+}
+
+// export interface COMMONTEMPLATE {
+//     path?: string;      
+//     templateId?: string;
+//     label?: string;
+//     language?: string;
+//     targetType?: TargetResourceType;
+//     targetKind?: TargetKind;
+//     enabled?: boolean;
+//     parameters?: TemplateParameter[];
+//     assets?: TemplateAsset[];
+//     azureConnectionType?: AzureConnectionType;
+//     workingDirectory?: string;
+//     templateWeight?: number;
+//     description?: string;
+// }
+
+export interface PipelineTemplateold {
     path: string;
     label: string;
     language: string;
@@ -37,6 +75,13 @@ export interface PipelineTemplateMetadata {
     workingDirectory: string;
     templateWeight: number;
     description: string;
+    attributes: TemplateAttributes;
+}
+
+export interface TemplateAttributes {
+    language: string;
+    buildTarget: string;
+    deployTarget: string;
 }
 
 export interface TemplateParameter {

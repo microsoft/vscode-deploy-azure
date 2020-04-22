@@ -14,7 +14,7 @@ import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
 import { AzureConnectionType, AzureSession, extensionVariables, TargetResourceType, WizardInputs } from "../model/models";
-import { TemplateAssetType } from '../model/templateModels';
+import { LocalPipelineTemplate, TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
@@ -51,7 +51,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
                 },
                 async () => {
                     try {
-                        switch (inputs.pipelineConfiguration.template.azureConnectionType) {
+                        switch ((inputs.pipelineConfiguration.template as LocalPipelineTemplate).azureConnectionType) {
                             case AzureConnectionType.None:
                                 return null;
                             case AzureConnectionType.AzureRMPublishProfile:
@@ -231,8 +231,8 @@ export class GitHubWorkflowConfigurer implements Configurer {
                         telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
                     });
             }
-            else if (TemplateParameterHelper.getParameterForTargetResourceType(inputs.pipelineConfiguration.template.parameters, TargetResourceType.AKS)) {
-                let aksResource: GenericResource = inputs.pipelineConfiguration.params[TemplateParameterHelper.getParameterForTargetResourceType(inputs.pipelineConfiguration.template.parameters, TargetResourceType.AKS).name];
+            else if (TemplateParameterHelper.getParameterForTargetResourceType((inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters, TargetResourceType.AKS)) {
+                let aksResource: GenericResource = inputs.pipelineConfiguration.params[TemplateParameterHelper.getParameterForTargetResourceType((inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters, TargetResourceType.AKS).name];
                 let workflowFileName = path.basename(inputs.pipelineConfiguration.filePath);
                 await azureResourceClient.updateCdSetupResourceTag(aksResource, inputs.sourceRepository.repositoryId, inputs.sourceRepository.branch, workflowFileName, inputs.sourceRepository.commitId, inputs.pipelineConfiguration.params['namespace'], ApiVersions.get(TargetResourceType.AKS));
             }
