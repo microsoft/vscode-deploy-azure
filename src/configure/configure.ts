@@ -14,7 +14,6 @@ import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
 import { RemoteServiceUrlHelper, ServiceFramework } from './helper/remoteServiceUrlHelper';
 import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
-//import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
