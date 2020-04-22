@@ -132,7 +132,7 @@ class Orchestrator {
                 let context: { [key: string]: any } = {};
                 context['subscriptionId'] = this.inputs.subscriptionId;
                 let controlProvider = new InputControlProvider(extendedPipelineTemplate, context);
-                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession);
+                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession, resourceNode);
             }
             else {
                 if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
