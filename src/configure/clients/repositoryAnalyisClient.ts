@@ -1,5 +1,5 @@
-import { RepositoryAnalysisRequest } from "../model/models";
+import { RepositoryAnalysisRequest, RepositoryAnalysisResponse } from "../model/models";
 
 export interface IRepositoryAnalysisClient {
-    getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<any>;
+    getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<RepositoryAnalysisResponse>;
 }

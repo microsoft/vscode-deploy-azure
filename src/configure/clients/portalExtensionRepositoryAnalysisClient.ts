@@ -1,5 +1,5 @@
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from "ms-rest";
-import { RepositoryAnalysisRequest } from "../model/models";
+import { RepositoryAnalysisRequest, RepositoryAnalysisResponse } from "../model/models";
 import { IRepositoryAnalysisClient } from "./repositoryAnalyisClient";
 import { RestClient } from "./restClient";
 
@@ -10,7 +10,7 @@ export class PortalExtensionRepositoryAnalysisClient implements IRepositoryAnaly
         this.restClient = new RestClient(credentials);
     }
 
-    public async getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<any> {
+    public async getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<RepositoryAnalysisResponse> {
 
         return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
             url: `https://pepfcusc.portalext.visualstudio.com/_apis/RepositoryAnalysis`,

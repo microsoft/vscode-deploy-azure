@@ -1,6 +1,6 @@
-import { IRestResponse, RestClient } from "typed-rest-client";
+import { RestClient } from "typed-rest-client";
 import vscodeUri from "vscode-uri";
-import { RepositoryAnalysisRequest } from "../model/models";
+import { RepositoryAnalysisRequest, RepositoryAnalysisResponse } from "../model/models";
 import { IRepositoryAnalysisClient } from "./repositoryAnalyisClient";
 
 export class ModaRepositoryAnalysisClient implements IRepositoryAnalysisClient {
@@ -15,13 +15,13 @@ export class ModaRepositoryAnalysisClient implements IRepositoryAnalysisClient {
         this.githubPat = githubPat;
     }
 
-    public async getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<IRestResponse<unknown>> {
+    public async getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<RepositoryAnalysisResponse> {
         const requestOptions = {
             acceptHeader: "application/json",
             additionalHeaders: {
                 "Authorization": "Bearer " + this.githubPat
             }
         };
-        return this.restClient.create(this.pathUrl, body, requestOptions);
+        return <RepositoryAnalysisResponse>((await this.restClient.create(this.pathUrl, body, requestOptions)).result);
     }
 }

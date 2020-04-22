@@ -38,8 +38,7 @@ export class RepoAnalysisHelper {
             if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
                 repositoryAnalysisResponse = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             } else {
-                const response = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
-                repositoryAnalysisResponse = response.result;
+                repositoryAnalysisResponse = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             }
             if (!!repositoryAnalysisResponse && repositoryAnalysisResponse.length === 0) {
                 return null;
