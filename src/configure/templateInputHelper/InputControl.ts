@@ -110,11 +110,7 @@ export class InputControl {
 
         if (!!properties) {
             value = properties[propertyName];
-            if (!!value && !!inputs && typeof value === "string") {
-                return MustacheHelper.render(value, { inputs: inputs });
-            } else if (!!value && !!inputs) {
-                return MustacheHelper.renderObject(value, { inputs: inputs });
-            }
+            if( !!value && !!inputs ) { return MustacheHelper.render(value, { inputs: inputs }); }
         }
         return value;
     }
