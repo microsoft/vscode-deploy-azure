@@ -23,8 +23,8 @@ import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
 import { InputControlProvider as InputControlProvider } from './templateInputHelper/InputControlProvider';
-
 const uuid = require('uuid/v4');
+
 const Layer: string = 'configure';
 
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
@@ -122,6 +122,7 @@ class Orchestrator {
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
             await this.getAzureSession();
+            await this.getGithubPatToken();
             await this.getSelectedPipeline();
 
 
@@ -163,6 +164,18 @@ class Orchestrator {
                 }
             }
 
+        }
+    }
+
+    private async getGithubPatToken(): Promise<void> {
+        if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+            this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
+                placeHolder: Messages.enterGitHubPat,
+                prompt: Messages.githubPatTokenHelpMessage,
+                validateInput: (inputValue) => {
+                    return !inputValue ? Messages.githubPatTokenErrorMessage : null;
+                }
+            });
         }
     }
 
@@ -427,11 +440,13 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(): Promise<void> {
-        var repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession);
-        var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository,
-            this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+        const repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken);
+        let repoAnalysisResult = null;
+        if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+            repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('\\').join('/'));
+        }
 
-        extensionVariables.templateServiceEnabled = true;
+        extensionVariables.templateServiceEnabled = false;
 
         let appropriatePipelines;
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
