@@ -35,6 +35,7 @@ export class WizardInputs {
     azureSession: AzureSession;
     subscriptionId: string;
     githubPATToken?: string;
+    potentialTemplates?: PipelineTemplate[];
 }
 
 export class RepositoryAnalysisParameters {

@@ -1,4 +1,3 @@
-import { ExtendedPipelineTemplate } from "./Contracts";
 import { AzureConnectionType, ServiceConnectionType, TargetKind, TargetResourceType } from "./models";
 
 export enum TemplateType {
@@ -23,59 +22,17 @@ export interface PipelineTemplateMetadata {
 }
 
 export interface RemotePipelineTemplate extends PipelineTemplate {
-
     templateId: string;
     workingDirectory: string;
 }
 
 export interface LocalPipelineTemplate extends PipelineTemplate {
-
     path: string;
     enabled: boolean;
     parameters?: TemplateParameter[];
     assets?: TemplateAsset[];
     // this should be removed as we will have endpoints/secrets as assets and not a first class property
     azureConnectionType?: AzureConnectionType;
-
-}
-
-// export interface COMMONTEMPLATE {
-//     path?: string;      
-//     templateId?: string;
-//     label?: string;
-//     language?: string;
-//     targetType?: TargetResourceType;
-//     targetKind?: TargetKind;
-//     enabled?: boolean;
-//     parameters?: TemplateParameter[];
-//     assets?: TemplateAsset[];
-//     azureConnectionType?: AzureConnectionType;
-//     workingDirectory?: string;
-//     templateWeight?: number;
-//     description?: string;
-// }
-
-export interface PipelineTemplateold {
-    path: string;
-    label: string;
-    language: string;
-    targetType: TargetResourceType;
-    targetKind: TargetKind;
-    enabled: boolean;
-    extendedPipelineTemplate?: ExtendedPipelineTemplate;
-    parameters?: TemplateParameter[];
-    assets?: TemplateAsset[];
-    // this should be removed as we will have endpoints/secrets as assets and not a first class property
-    azureConnectionType?: AzureConnectionType;
-}
-
-export interface PipelineTemplateMetadata {
-    templateId: string;
-    label: string;
-    workingDirectory: string;
-    templateWeight: number;
-    description: string;
-    attributes: TemplateAttributes;
 }
 
 export interface TemplateAttributes {

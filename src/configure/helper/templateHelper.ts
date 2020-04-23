@@ -5,8 +5,8 @@ import * as path from 'path';
 import * as Q from 'q';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 import { ExtendedPipelineTemplate } from '../model/Contracts';
-import { AzureConnectionType, AzureSession, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
-import { PipelineTemplate, PipelineTemplateMetadata, PreDefinedDataSourceIds, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
+import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
+import { LocalPipelineTemplate, PipelineTemplate, PipelineTemplateMetadata, PreDefinedDataSourceIds, RemotePipelineTemplate, TemplateAssetType, TemplateParameterType, TemplateType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
@@ -41,11 +41,33 @@ export async function mergingRepoAnalysisResults(repoPath: string, repositoryPro
     }
     return analysisResult;
 }
-export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<COMMONTEMPLATE[]> {
+
+export function getTargetType(template: PipelineTemplateMetadata) {
+    if (template.attributes.deployTarget.toLowerCase().includes("webapp")) {
+        return TargetResourceType.WebApp;
+    }
+    return TargetResourceType.None;
+}
+
+export function getTargetKind(template: PipelineTemplateMetadata) {
+
+    var targetKind: TargetKind;
+    if (template.attributes.deployTarget.toLowerCase().includes("container")) {
+        targetKind = TargetKind.LinuxContainerApp;
+    } else if (template.attributes.deployTarget.toLowerCase().includes("linux")) {
+        targetKind = TargetKind.LinuxApp;
+    } else if (template.attributes.deployTarget.toLowerCase().includes("windows")) {
+        targetKind = TargetKind.WindowsApp;
+    }
+    return targetKind;
+}
+
+
+export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<LocalPipelineTemplate[]> {
 
     let analysisResult = await mergingRepoAnalysisResults(repoPath, repositoryProvider, repoAnalysisParameters);
 
-    let templateList: { [key: string]: COMMONTEMPLATE[] } = {};
+    let templateList: { [key: string]: LocalPipelineTemplate[] } = {};
     switch (repositoryProvider) {
         case RepositoryProvider.AzureRepos:
             templateList = azurePipelineTemplates;
@@ -58,7 +80,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     }
 
 
-    let templateResult: COMMONTEMPLATE[] = [];
+    let templateResult: LocalPipelineTemplate[] = [];
     analysisResult.languages.forEach((language) => {
         switch (language) {
             case SupportedLanguage.DOCKER:
@@ -113,34 +135,52 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     templateResult = templateResult.filter((pipelineTemplate) => pipelineTemplate.enabled);
 
     // remove duplicate named template:
-    templateResult = removeDuplicates(templateResult);
-    return templateResult;
-
-}
-
-export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplateMetadata[]> {
-
-    //TO:DO - Merge local repo analysis (Some changes in the definition of AnalysisResult required)
-    let templateResult: COMMONTEMPLATE[] = [];
-
-    let serviceClient = new TemplateServiceClient(azureSession.credentials);
-    templateResult = await serviceClient.getTemplates(repoAnalysisParameters);
-    // templateResult = templateResult.sort((a, b) => {
-    //     if (a.templateWeight > b.templateWeight) { return 1; }
-    //     else { return -1; }
-    // });
+    //templateResult = removeDuplicates(templateResult);
     return templateResult;
 }
 
-export async function getTemplateParameteres(azureSession: AzureSession, templateInfo: PipelineTemplateMetadata): Promise<ExtendedPipelineTemplate> {
+export async function analyzeRepoAndListAppropriatePipeline2(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+
+    var pipelineTemplates: PipelineTemplate[] = [];
+    var localPipelineTemplatesPromise: Promise<LocalPipelineTemplate> = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
+
+    //let templateResult: PipelineTemplateMetadata[] = [];
+    let serviceClient = new TemplateServiceClient();
+    var templateResultPromise = await serviceClient.getTemplates(repoAnalysisParameters);
+
+    return Q.all([localPipelineTemplatesPromise, templateResultPromise])
+        .spread((localPipelineTemplates: LocalPipelineTemplate, templateResult: PipelineTemplateMetadata[]) => {
+            templateResult.forEach((template: PipelineTemplateMetadata) => {
+                var remoteTemplate: RemotePipelineTemplate = {
+                    label: template.templateDescription,
+                    targetType: getTargetType(template),
+                    targetKind: getTargetKind(template),
+                    language: template.attributes.language,
+                    templateId: template.templateId,
+                    templateWeight: template.templateWeight,
+                    templateType: TemplateType.remote,
+                    workingDirectory: template.workingDirectory
+                };
+                pipelineTemplates.push(remoteTemplate);
+            });
+            // sorted by weight
+            pipelineTemplates = pipelineTemplates.sort((a, b) => {
+                if (a.templateWeight < b.templateWeight) { return 1; }
+                else { return -1; }
+            });
+            return pipelineTemplates.concat(localPipelineTemplates);
+        });
+}
+
+export async function getTemplateParameteres(templateInfo: RemotePipelineTemplate): Promise<ExtendedPipelineTemplate> {
     let parameters: ExtendedPipelineTemplate;
-    let serviceClient = new TemplateServiceClient(azureSession.credentials);
+    let serviceClient = new TemplateServiceClient();
     parameters = await serviceClient.getTemplateParameters(templateInfo.templateId);
     return parameters;
 }
 
-export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: TargetKind): COMMONTEMPLATE[] {
-    let pipelineTemplates: COMMONTEMPLATE[] = [];
+export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: TargetKind): LocalPipelineTemplate[] {
+    let pipelineTemplates: LocalPipelineTemplate[] = [];
 
     if (repositoryProvider === RepositoryProvider.Github && extensionVariables.enableGitHubWorkflow) {
         pipelineTemplates = githubWorklowTemplates[language];
@@ -262,8 +302,8 @@ export function isFunctionAppType(targetKind: TargetKind): boolean {
     return targetKind === TargetKind.FunctionApp || targetKind === TargetKind.FunctionAppLinux || targetKind === TargetKind.FunctionAppLinuxContainer;
 }
 
-function removeDuplicates(templateList: COMMONTEMPLATE[]): COMMONTEMPLATE[] {
-    let templateMap: Map<string, COMMONTEMPLATE> = new Map<string, COMMONTEMPLATE>();
+function removeDuplicates(templateList: LocalPipelineTemplate[]): LocalPipelineTemplate[] {
+    let templateMap: Map<string, LocalPipelineTemplate> = new Map<string, LocalPipelineTemplate>();
     let tempList = templateList;
     templateList = [];
     tempList.forEach((template) => {
@@ -286,7 +326,7 @@ export enum AzureTarget {
     FunctionApp = 'Microsoft.Web/sites-functionapp'
 }
 
-let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
+let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[] } =
 {
     'none': [
         {
@@ -310,7 +350,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 123,
+            templateType: TemplateType.local,
         },
         {
             label: PipelineTemplateLabels.SimpleApplicationToAppService,
@@ -333,7 +375,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         }
     ],
     'node': [
@@ -358,7 +402,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
@@ -381,7 +427,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
@@ -404,7 +452,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
@@ -427,7 +477,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
@@ -450,7 +502,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithNpmToAppService,
@@ -473,7 +527,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
@@ -496,7 +552,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
@@ -519,7 +577,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
@@ -542,7 +602,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
@@ -565,7 +627,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         }
     ],
     'python': [
@@ -590,7 +654,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: 'Build and Test Python Django App',
@@ -600,7 +666,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
             targetKind: null,
             enabled: true,
             parameters: [],
-            azureConnectionType: AzureConnectionType.None
+            azureConnectionType: AzureConnectionType.None,
+            templateWeight: 123,
+            templateType: TemplateType.local
         }
     ],
     'dotnetcore': [
@@ -625,7 +693,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMPublishProfileServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMPublishProfile
+            azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.DotNetCoreWebAppToAppService,
@@ -648,7 +718,9 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         }
     ],
     'docker': [
@@ -689,12 +761,14 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } =
                     "id": "containerRegistryServiceConnection",
                     "type": TemplateAssetType.ACRServiceConnection
                 }
-            ]
+            ],
+            templateWeight: 123,
+            templateType: TemplateType.local
         }
     ]
 };
 
-let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
+let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[] } = {
     'docker': [
         {
             label: 'Containerized application to AKS',
@@ -760,7 +834,9 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                     "id": "service-ingress",
                     "type": TemplateAssetType.File
                 }
-            ]
+            ],
+            templateWeight: 123,
+            templateType: TemplateType.local
         }
     ],
     'node': [
@@ -786,7 +862,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 100
+            templateWeight: 100,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithNpmToAppService,
@@ -809,7 +886,9 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
@@ -833,7 +912,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 200
+            templateWeight: 200,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGulpToAppService,
@@ -856,7 +936,9 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
@@ -880,7 +962,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight:300
+            templateWeight: 300,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithGruntToAppService,
@@ -903,7 +986,9 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
@@ -927,7 +1012,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 400
+            templateWeight: 400,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithAngularToAppService,
@@ -950,7 +1036,9 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
@@ -974,7 +1062,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 400
+            templateWeight: 400,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSWithWebpackToAppService,
@@ -997,7 +1086,9 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         }
     ],
     'none': [
@@ -1023,7 +1114,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 200
+            templateWeight: 200,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.SimpleApplicationToAppService,
@@ -1046,7 +1138,9 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         }
     ],
     'python': [
@@ -1071,13 +1165,15 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: COMMONTEMPLATE[] } = {
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
     ],
     'dotnetcore': []
 };
 
-const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[] } =
+const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTemplate[] } =
 {
     'Microsoft.Web/sites-functionapp': [
         {
@@ -1101,7 +1197,9 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
@@ -1124,7 +1222,9 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
@@ -1133,7 +1233,9 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[
             targetType: TargetResourceType.WebApp,
             targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true,
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.DotNetCoreFunctionAppToAzureFunction,
@@ -1156,7 +1258,9 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.DotNetCoreFunctionAppToAzureFunction,
@@ -1179,7 +1283,9 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.DotNetCoreFunctionAppToAzureFunction,
@@ -1188,7 +1294,9 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[
             targetType: TargetResourceType.WebApp,
             targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true,
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.PythonFunctionAppToLinuxAzureFunction,
@@ -1211,7 +1319,9 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.PythonFunctionAppToLinuxAzureFunction,
@@ -1220,12 +1330,14 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[
             targetType: TargetResourceType.WebApp,
             targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true,
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
     ]
 };
 
-const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE[] } =
+const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTemplate[] } =
 {
     'Microsoft.Web/sites-functionapp': [
         {
@@ -1249,7 +1361,9 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
@@ -1272,7 +1386,9 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.NodeJSFunctionAppToAzureFunction,
@@ -1281,7 +1397,9 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE
             targetType: TargetResourceType.WebApp,
             targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true,
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.PythonFunctionAppToLinuxAzureFunction,
@@ -1304,7 +1422,9 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         },
         {
             label: PipelineTemplateLabels.PythonFunctionAppToLinuxAzureFunction,
@@ -1327,7 +1447,9 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: COMMONTEMPLATE
                     "type": TemplateAssetType.AzureARMServiceConnection
                 }
             ],
-            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal
+            azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
+            templateWeight: 123,
+            templateType: TemplateType.local
         }
     ]
 };
