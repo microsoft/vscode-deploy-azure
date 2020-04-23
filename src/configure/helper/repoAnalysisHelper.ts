@@ -1,6 +1,7 @@
 import * as path from 'path';
 import { ModaRepositoryAnalysisClient } from '../clients/modaRepositoryAnalysisClient';
 import { PortalExtensionRepositoryAnalysisClient } from "../clients/portalExtensionRepositoryAnalysisClient";
+import { IRepositoryAnalysisClient } from '../clients/repositoryAnalyisClient';
 import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
 import { IServiceUrlDefinition, RemoteServiceUrlHelper, ServiceFramework } from './remoteServiceUrlHelper';
@@ -35,11 +36,7 @@ export class RepoAnalysisHelper {
                     accesstoken: this.githubPatToken
                 }
             };
-            if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
-                repositoryAnalysisResponse = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
-            } else {
-                repositoryAnalysisResponse = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
-            }
+            repositoryAnalysisResponse = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             if (!!repositoryAnalysisResponse && repositoryAnalysisResponse.length === 0) {
                 return null;
             }
@@ -102,10 +99,10 @@ export class RepoAnalysisHelper {
         return path.relative(workingDirectory, filePath).split(path.sep).join('/');
     }
 
-    private getClient(serviceDefinition: IServiceUrlDefinition) {
+    private getClient(serviceDefinition: IServiceUrlDefinition): IRepositoryAnalysisClient {
         let client = null;
-        if (serviceDefinition.serviceFramework == ServiceFramework.Vssf) {
-            client = new PortalExtensionRepositoryAnalysisClient(this.azureSession.credentials);
+        if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
+            client = new PortalExtensionRepositoryAnalysisClient(serviceDefinition.serviceUrl, this.azureSession.credentials);
         } else {
             client = new ModaRepositoryAnalysisClient(serviceDefinition.serviceUrl, this.githubPatToken);
         }
