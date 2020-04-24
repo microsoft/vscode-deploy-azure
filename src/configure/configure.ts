@@ -17,7 +17,7 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
 import { LocalPipelineTemplate, PipelineTemplate, RemotePipelineTemplate, TemplateAssetType, TemplateType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -155,7 +155,27 @@ class Orchestrator {
                 break;
 
             default:
-                return null;
+                let appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
+                let selectedPipelineTemplate = this.inputs.pipelineConfiguration.template;
+                let matchingPipelineTemplates = templateHelper.getPipelineTemplatesForAllWebAppKind(this.inputs.sourceRepository.repositoryProvider,
+                    selectedPipelineTemplate.label, selectedPipelineTemplate.language, selectedPipelineTemplate.targetKind);
+
+                let webAppKinds = matchingPipelineTemplates.map((template) => template.targetKind);
+                let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
+                    Messages.selectTargetResource,
+                    appServiceClient.GetAppServices(webAppKinds)
+                        .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
+                    { placeHolder: Messages.selectTargetResource },
+                    TelemetryKeys.AzureResourceListCount);
+
+                if (await appServiceClient.isScmTypeSet((<GenericResource>selectedResource.data).id)) {
+                    this.continueOrchestration = false;
+                    await openBrowseExperience((<GenericResource>selectedResource.data).id);
+                }
+                else {
+                    this.inputs.targetResource.resource = selectedResource.data;
+                    this.inputs.pipelineConfiguration.template = matchingPipelineTemplates.find((template) => template.targetKind === <TargetKind>this.inputs.targetResource.resource.kind);
+                }
         }
     }
 
@@ -176,27 +196,27 @@ class Orchestrator {
             }
 
             if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.remote) {
-                let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, (this.inputs.pipelineConfiguration.template as RemotePipelineTemplate));	
-                let context: { [key: string]: any } = {};	
-                context['subscriptionId'] = this.inputs.subscriptionId;	
-                let controlProvider = new InputControlProvider(extendedPipelineTemplate, context);	
+                let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, (this.inputs.pipelineConfiguration.template as RemotePipelineTemplate));
+                let context: { [key: string]: any } = {};
+                context['subscriptionId'] = this.inputs.subscriptionId;
+                let controlProvider = new InputControlProvider(extendedPipelineTemplate, context);
                 this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession, resourceNode);
             }
         }
     }
 
-    private async getGithubPatToken(): Promise<void> {	
-        if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {	
-            this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {	
-                placeHolder: Messages.enterGitHubPat,	
-                prompt: Messages.githubPatTokenHelpMessage,	
-                validateInput: (inputValue) => {	
-                    return !inputValue ? Messages.githubPatTokenErrorMessage : null;	
-                }	
-            });	
-        }	
+    private async getGithubPatToken(): Promise<void> {
+        if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+            this.inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
+                placeHolder: Messages.enterGitHubPat,
+                prompt: Messages.githubPatTokenHelpMessage,
+                validateInput: (inputValue) => {
+                    return !inputValue ? Messages.githubPatTokenErrorMessage : null;
+                }
+            });
+        }
     }
-    
+
     private async analyzeNode(node: any): Promise<GenericResource> {
         if (!!node && !!node.fullId) {
             return await this.extractAzureResourceFromNode(node);
@@ -427,10 +447,10 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(): Promise<void> {
-        const repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken);	
-        let repoAnalysisResult = null;	
-        if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {	
-            repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('\\').join('/'));	
+        const repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken);
+        let repoAnalysisResult = null;
+        if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+            repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('\\').join('/'));
         }
         extensionVariables.templateServiceEnabled = false;
         var appropriatePipelines: PipelineTemplate[] = [];
