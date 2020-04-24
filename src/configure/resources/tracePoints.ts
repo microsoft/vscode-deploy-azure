@@ -19,4 +19,5 @@ export class TracePoints {
     public static ReadingDockerFileFailed = 'ReadingDockerFileFailed';
     public static CreatingManifestsFailed = 'CreatingManifestsFailed';
     public static ManifestsFolderCreationFailed = 'ManifestsFolderCreationFailed';
+    public static RemoteServiceUrlFetchFailed = 'RemoteServiceUrlFetchFailed';
 }

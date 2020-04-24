@@ -1,15 +1,14 @@
+import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as fs from 'fs';
 import * as ymlconfig from 'js-yaml';
 import * as path from 'path';
 import * as Q from 'q';
 import * as utils from 'util';
 import * as vscode from 'vscode';
-import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
 import { ApiVersions, AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { GithubClient } from '../clients/github/githubClient';
-import { ControlProvider } from '../helper/controlProvider';
 import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
@@ -27,22 +26,14 @@ const uuid = require('uuid/v4');
 const Layer = 'GitHubWorkflowConfigurer';
 
 export class GitHubWorkflowConfigurer implements Configurer {
-    private queuedPipelineUrl: string;
-    private controlProvider: ControlProvider;
+    private queuedPipelineUrl: string;;
     private githubClient: GithubClient;
 
     constructor(azureSession: AzureSession, subscriptionId: string) {
-        this.controlProvider = new ControlProvider();
+        
     }
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
-        inputs.githubPATToken = await this.controlProvider.showInputBox(constants.GitHubPat, {
-            placeHolder: Messages.enterGitHubPat,
-            prompt: Messages.githubPatTokenHelpMessageGithubWorkflow,
-            validateInput: (inputValue) => {
-                return !inputValue ? Messages.githubPatTokenErrorMessage : null;
-            }
-        });
         this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
         return;
     }

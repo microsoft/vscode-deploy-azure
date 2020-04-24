@@ -1,25 +1,28 @@
 import * as path from 'path';
-import { PortalExtensionClient } from "../clients/portalExtensionClient";
+import { ModaRepositoryAnalysisClient } from '../clients/modaRepositoryAnalysisClient';
+import { PortalExtensionRepositoryAnalysisClient } from "../clients/portalExtensionRepositoryAnalysisClient";
+import { IRepositoryAnalysisClient } from '../clients/repositoryAnalyisClient';
 import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
+import { IServiceUrlDefinition, RemoteServiceUrlHelper, ServiceFramework } from './remoteServiceUrlHelper';
+
 
 export class RepoAnalysisHelper {
-    private portalExtensionClient: PortalExtensionClient;
-
-    constructor(azureSession: AzureSession) {
-        this.portalExtensionClient = new PortalExtensionClient(azureSession.credentials);
+    private azureSession: AzureSession;
+    private githubPatToken?: string;
+    constructor(azureSession: AzureSession, githubPatToken?: string) {
+        this.azureSession = azureSession;
+        this.githubPatToken = githubPatToken;
     }
 
     public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters, workspacePath: string): Promise<RepositoryAnalysisParameters> {
 
-        //As of now this solution has support only for github
-        if (sourceRepositoryDetails.repositoryProvider != RepositoryProvider.Github) {
-            return null;
-        }
-
         let repositoryAnalysisResponse;
         try{
-            let repositoryDetails: RepositoryDetails = new RepositoryDetails();
+            const serviceDefinition = await RemoteServiceUrlHelper.getRepositoryAnalysisDefinition();
+            const client = this.getClient(serviceDefinition);
+
+            const repositoryDetails: RepositoryDetails = new RepositoryDetails();
             repositoryDetails.id = sourceRepositoryDetails.repositoryId;
             repositoryDetails.defaultbranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysisConstants.Master;
             repositoryDetails.type = RepositoryProvider.Github;
@@ -27,8 +30,13 @@ export class RepoAnalysisHelper {
             let repositoryAnalysisRequestBody = new RepositoryAnalysisRequest;
             repositoryAnalysisRequestBody.Repository = repositoryDetails;
             repositoryAnalysisRequestBody.WorkingDirectory = workspacePath;
-
-            repositoryAnalysisResponse = await this.portalExtensionClient.getRepositoryAnalysis(repositoryAnalysisRequestBody);
+            repositoryAnalysisRequestBody.Repository.authorizationInfo = {
+                scheme: "Token",
+                parameters: {
+                    accesstoken: this.githubPatToken
+                }
+            };
+            repositoryAnalysisResponse = await client.getRepositoryAnalysis(repositoryAnalysisRequestBody);
             if (!!repositoryAnalysisResponse && repositoryAnalysisResponse.length === 0) {
                 return null;
             }
@@ -89,5 +97,15 @@ export class RepoAnalysisHelper {
 
     private GetRelativePath(workingDirectory: string, filePath: string): string{
         return path.relative(workingDirectory, filePath).split(path.sep).join('/');
+    }
+
+    private getClient(serviceDefinition: IServiceUrlDefinition): IRepositoryAnalysisClient {
+        let client = null;
+        if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
+            client = new PortalExtensionRepositoryAnalysisClient(serviceDefinition.serviceUrl, this.azureSession.credentials);
+        } else {
+            client = new ModaRepositoryAnalysisClient(serviceDefinition.serviceUrl, this.githubPatToken);
+        }
+        return client;
     }
 }
