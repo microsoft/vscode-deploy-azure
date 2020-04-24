@@ -62,6 +62,9 @@ export function getTargetKind(template: PipelineTemplateMetadata) {
     return targetKind;
 }
 
+export function uniqueValues(value, index, self) {
+    return self.indexOf(value) === index;
+}
 
 export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<LocalPipelineTemplate[]> {
 
@@ -81,7 +84,9 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
 
 
     let templateResult: LocalPipelineTemplate[] = [];
-    analysisResult.languages.forEach((language) => {
+    let uniqueLanguages = (analysisResult.languages).filter(this.uniqueValues);
+
+    uniqueLanguages.forEach((language) => {
         switch (language) {
             case SupportedLanguage.DOCKER:
                 if (templateList[SupportedLanguage.DOCKER] && templateList[SupportedLanguage.DOCKER].length > 0) {
@@ -134,8 +139,6 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     templateResult = targetResource && !!targetResource.kind ? templateResult.filter((template) => !template.targetKind || template.targetKind.toLowerCase() === targetResource.kind.toLowerCase()) : templateResult;
     templateResult = templateResult.filter((pipelineTemplate) => pipelineTemplate.enabled);
 
-    // remove duplicate named template:
-    //templateResult = removeDuplicates(templateResult);
     return templateResult;
 }
 

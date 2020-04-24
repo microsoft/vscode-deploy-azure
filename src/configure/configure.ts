@@ -184,8 +184,8 @@ class Orchestrator {
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
-            await this.getGithubPatToken();
             await this.getAzureSession();
+            await this.getGithubPatToken();
             await this.getSelectedPipeline();
             if (!resourceNode) {
                 let selectedResource = await this.getAzureResource();
