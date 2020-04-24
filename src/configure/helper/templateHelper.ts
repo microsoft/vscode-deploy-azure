@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as Q from 'q';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 import { ExtendedPipelineTemplate } from '../model/Contracts';
-import { AzureConnectionType, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
+import { AzureConnectionType, AzureSession, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
 import { LocalPipelineTemplate, PipelineTemplate, PipelineTemplateMetadata, PreDefinedDataSourceIds, RemotePipelineTemplate, TemplateAssetType, TemplateParameterType, TemplateType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -139,13 +139,12 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     return templateResult;
 }
 
-export async function analyzeRepoAndListAppropriatePipeline2(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
 
     var pipelineTemplates: PipelineTemplate[] = [];
     var localPipelineTemplatesPromise: Promise<LocalPipelineTemplate> = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
 
-    //let templateResult: PipelineTemplateMetadata[] = [];
-    let serviceClient = new TemplateServiceClient();
+    let serviceClient = new TemplateServiceClient(azureSession.credentials);
     var templateResultPromise = await serviceClient.getTemplates(repoAnalysisParameters);
 
     return Q.all([localPipelineTemplatesPromise, templateResultPromise])
@@ -172,9 +171,9 @@ export async function analyzeRepoAndListAppropriatePipeline2(repoPath: string, r
         });
 }
 
-export async function getTemplateParameteres(templateInfo: RemotePipelineTemplate): Promise<ExtendedPipelineTemplate> {
+export async function getTemplateParameteres(azureSession: AzureSession, templateInfo: RemotePipelineTemplate): Promise<ExtendedPipelineTemplate> {
     let parameters: ExtendedPipelineTemplate;
-    let serviceClient = new TemplateServiceClient();
+    let serviceClient = new TemplateServiceClient(azureSession.credentials);
     parameters = await serviceClient.getTemplateParameters(templateInfo.templateId);
     return parameters;
 }
@@ -300,20 +299,6 @@ function isFunctionApp(files: string[]): boolean {
 
 export function isFunctionAppType(targetKind: TargetKind): boolean {
     return targetKind === TargetKind.FunctionApp || targetKind === TargetKind.FunctionAppLinux || targetKind === TargetKind.FunctionAppLinuxContainer;
-}
-
-function removeDuplicates(templateList: LocalPipelineTemplate[]): LocalPipelineTemplate[] {
-    let templateMap: Map<string, LocalPipelineTemplate> = new Map<string, LocalPipelineTemplate>();
-    let tempList = templateList;
-    templateList = [];
-    tempList.forEach((template) => {
-        if (!templateMap[template.label]) {
-            templateMap[template.label] = template;
-            templateList.push(template);
-        }
-    });
-
-    return templateList;
 }
 
 export class AnalysisResult {
