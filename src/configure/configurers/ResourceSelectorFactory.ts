@@ -14,7 +14,7 @@ export class ResourceSelectorFactory {
             case TargetResourceType.WebApp:
                 return new WebAppAzureResourceSelector();
             default:
-                throw new Error("Not supported");
+                return new AksAzureResourceSelector();
         }
     }
 }

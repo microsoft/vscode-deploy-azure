@@ -18,9 +18,9 @@ export async function mergingRepoAnalysisResults(repoPath: string, repositoryPro
     let analysisResult = localRepoAnalysisResult;
 
     //If Repo analysis fails then we'll go with the basic existing analysis
-    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.repositoryAnalysisApplicationSettingsList) {
+    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.applicationSettingsList) {
         analysisResult = new AnalysisResult();
-        repoAnalysisParameters.repositoryAnalysisApplicationSettingsList.forEach((settings) => {
+        repoAnalysisParameters.applicationSettingsList.forEach((settings) => {
             analysisResult.languages.push(settings.language);
 
             //Check if Azure:Functions is value of any deployTargetName property
@@ -45,13 +45,15 @@ export async function mergingRepoAnalysisResults(repoPath: string, repositoryPro
 export function getTargetType(template: PipelineTemplateMetadata) {
     if (template.attributes.deployTarget.toLowerCase().includes("webapp")) {
         return TargetResourceType.WebApp;
+    } else if (template.attributes.deployTarget === "Azure:AKS") {
+        return TargetResourceType.WebApp;
     }
-    return TargetResourceType.None;
+    return TargetResourceType.WebApp;
 }
 
 export function getTargetKind(template: PipelineTemplateMetadata) {
 
-    var targetKind: TargetKind;
+    var targetKind: TargetKind = TargetKind.LinuxApp;
     if (template.attributes.deployTarget.toLowerCase().includes("container")) {
         targetKind = TargetKind.LinuxContainerApp;
     } else if (template.attributes.deployTarget.toLowerCase().includes("linux")) {
@@ -84,7 +86,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
 
 
     let templateResult: LocalPipelineTemplate[] = [];
-    let uniqueLanguages = (analysisResult.languages).filter(this.uniqueValues);
+    let uniqueLanguages = Array.from(new Set(analysisResult.languages));
 
     uniqueLanguages.forEach((language) => {
         switch (language) {
@@ -145,23 +147,23 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
 export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
 
     var pipelineTemplates: PipelineTemplate[] = [];
-    var localPipelineTemplatesPromise: Promise<LocalPipelineTemplate> = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
+    var localPipelineTemplatesPromise: Promise<LocalPipelineTemplate[]> = analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
 
     let serviceClient = new TemplateServiceClient(azureSession.credentials);
-    var templateResultPromise = await serviceClient.getTemplates(repoAnalysisParameters);
+    var templateResultPromise = serviceClient.getTemplates(repoAnalysisParameters);
 
-    return Q.all([localPipelineTemplatesPromise, templateResultPromise])
-        .spread((localPipelineTemplates: LocalPipelineTemplate, templateResult: PipelineTemplateMetadata[]) => {
-            templateResult.forEach((template: PipelineTemplateMetadata) => {
+    return Promise.all([localPipelineTemplatesPromise, templateResultPromise])
+        .then((result: any[]) => {
+            let localPipelineTemplates = result[0];
+            let remoteTemplateResult = result[1];
+            remoteTemplateResult.forEach((template: PipelineTemplateMetadata) => {
                 var remoteTemplate: RemotePipelineTemplate = {
                     label: template.templateDescription,
                     targetType: getTargetType(template),
                     targetKind: getTargetKind(template),
                     language: template.attributes.language,
-                    templateId: template.templateId,
-                    templateWeight: template.templateWeight,
                     templateType: TemplateType.remote,
-                    workingDirectory: template.workingDirectory
+                    ...template
                 };
                 pipelineTemplates.push(remoteTemplate);
             });

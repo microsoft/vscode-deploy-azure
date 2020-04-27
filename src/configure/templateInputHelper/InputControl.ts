@@ -72,10 +72,10 @@ export class InputControl {
                 this.value = await this.dataSource.evaluateDataSources(dependentInputs, azureSession);
             }
             else if (this.controlType === ControlType.QuickPick) {
-                let selectedValue = await this.dataSource.evaluateDataSources(dependentInputs, azureSession)
-                    .then((listItems: Array<{ label: string, data: any, group?: string }>) => {
-                        return this.showQuickPick(this.getInputControlId(), listItems, { placeHolder: this.inputDescriptor.name });
-                    });
+                let selectedValue = await this.showQuickPick(this.getInputControlId(),
+                    this.dataSource.evaluateDataSources(dependentInputs, azureSession)
+                        .then((listItems: Array<{ label: string, data: any, group?: string }>) => listItems),
+                    { placeHolder: this.inputDescriptor.name });
                 this.value = selectedValue.data;
             }
         }
@@ -110,7 +110,7 @@ export class InputControl {
 
         if (!!properties) {
             value = properties[propertyName];
-            if( !!value && !!inputs ) { return MustacheHelper.render(value, { inputs: inputs }); }
+            if (!!value && !!inputs) { return MustacheHelper.render(value, { inputs: inputs }); }
         }
         return value;
     }

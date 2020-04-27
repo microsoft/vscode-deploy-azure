@@ -23,6 +23,7 @@ export interface PipelineTemplateMetadata {
 
 export interface RemotePipelineTemplate extends PipelineTemplate {
     templateId: string;
+    attributes: TemplateAttributes;
     workingDirectory: string;
 }
 

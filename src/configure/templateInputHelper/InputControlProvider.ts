@@ -1,26 +1,36 @@
 import { GenericResource } from "azure-arm-resource/lib/resource/models";
+import { ControlProvider } from "../helper/controlProvider";
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputMode } from "../model/Contracts";
-import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
+import { AzureSession, ControlType, IPredicate, RepositoryAnalysisApplicationSettings, StringMap } from '../model/models';
 import { InputControl } from "./InputControl";
 import { DataSourceExpression } from "./utilities/DataSourceExpression";
 import { InputControlUtility } from "./utilities/InputControlUtility";
 import { VisibilityHelper } from "./utilities/VisibilityHelper";
 
 export class InputControlProvider {
+    private readonly repoAnalysisSettingKey: string = "repoAnalysisSettingKey";
     private _pipelineTemplate: ExtendedPipelineTemplate;
     private _inputControlsMap: Map<string, InputControl>;
+    private _repoAnalysisSettings: RepositoryAnalysisApplicationSettings[];
+    private _repoAnalysisSettingInUse: number;
 
-    constructor(pipelineTemplate: ExtendedPipelineTemplate, context: { [key: string]: any }) {
+    constructor(pipelineTemplate: ExtendedPipelineTemplate, repoAnalysisSettings: RepositoryAnalysisApplicationSettings[], context: { [key: string]: any }) {
         this._pipelineTemplate = pipelineTemplate;
         this._inputControlsMap = new Map<string, InputControl>();
+        this._repoAnalysisSettings = repoAnalysisSettings || [];
+        this._repoAnalysisSettingInUse = repoAnalysisSettings && repoAnalysisSettings.length > 1 ? -1 : 0;
         this._createControls(context);
     }
 
     public async getAllPipelineTemplateInputs(azureSession: AzureSession, resourceNode?: GenericResource) {
         let parameters: { [key: string]: any } = {};
         for (let inputControl of this._inputControlsMap.values()) {
-            if (inputControl.getPropertyValue('deployTarget') === "true" && !!resourceNode) {
+            const repoAnalysisSettingKey = inputControl.getPropertyValue(this.repoAnalysisSettingKey);
+            if (!!repoAnalysisSettingKey) {
+                await this.setInputControlValueFromRepoAnalysisResult(inputControl);
+            }
+            else if (inputControl.getPropertyValue('deployTarget') === "true" && !!resourceNode) {
                 inputControl.setValue(resourceNode.id);
             }
             else {
@@ -63,6 +73,50 @@ export class InputControlProvider {
         this._setInputControlDataSourceInputs();
     }
 
+    private async setInputControlValueFromRepoAnalysisResult(inputControl: InputControl): Promise<void> {
+        let repoAnalysisSettingKey = inputControl.getPropertyValue(this.repoAnalysisSettingKey);
+        if (this._repoAnalysisSettingInUse !== -1) {
+            if (this._repoAnalysisSettings.length === 0 || !this._repoAnalysisSettings[this._repoAnalysisSettingInUse].settings[repoAnalysisSettingKey]) {
+                let value = await new ControlProvider().showInputBox(repoAnalysisSettingKey, { placeHolder: inputControl.getInputDescriptor().name });
+                inputControl.setValue(value);
+            } else {
+                inputControl.setValue(this._repoAnalysisSettings[this._repoAnalysisSettingInUse].settings[repoAnalysisSettingKey]);
+            }
+        } else {
+            let settingIndexMap: Map<string, number[]> = new Map();
+            this._repoAnalysisSettings.forEach((analysisSetting, index: number) => {
+                if (!analysisSetting.settings[repoAnalysisSettingKey]) {
+                    return;
+                }
+                if (settingIndexMap.has(analysisSetting.settings[repoAnalysisSettingKey])) {
+                    settingIndexMap.get(analysisSetting.settings[repoAnalysisSettingKey]).push(index);
+                } else {
+                    settingIndexMap.set(analysisSetting.settings[repoAnalysisSettingKey], [index]);
+                }
+            });
+            if (settingIndexMap.size === 0) {
+                let value = await new ControlProvider().showInputBox(repoAnalysisSettingKey, { placeHolder: inputControl.getInputDescriptor().name });
+                inputControl.setValue(value);
+            }
+            else {
+                let possibleValues = Array.from(settingIndexMap.keys()).map((value) => ({ label: value, data: value }));
+                let selectedValue: { label: string, data: any };
+
+                if (possibleValues.length === 1) {
+                    selectedValue = possibleValues[0];
+                }
+                else {
+                    selectedValue = await new ControlProvider().showQuickPick(repoAnalysisSettingKey, possibleValues, { placeHolder: inputControl.getInputDescriptor().name });
+                }
+
+                if (settingIndexMap.get(selectedValue.data).length === 1) {
+                    this._repoAnalysisSettingInUse = settingIndexMap.get(selectedValue.data)[0];
+                }
+                inputControl.setValue(selectedValue.data);
+            }
+        }
+    }
+
     private _setInputControlDataSourceInputs(): void {
         this._pipelineTemplate.inputs.forEach((inputDes) => {
             if (!!inputDes.dataSourceId) {
@@ -75,7 +129,7 @@ export class InputControlProvider {
                         inputControl.dataSourceInputControls.push(...dependentInputControlArray);
                     }
                 } else {
-                    throw new Error(`Data source {inputDes.dataSourceId} specified for input {inputDes.id} is not present in pipeline template {this._pipelineTemplate.id}`);
+                    throw new Error(`Data source ${inputDes.dataSourceId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
                 }
             }
         });
@@ -129,7 +183,7 @@ export class InputControlProvider {
         }
 
         if (!allowSelfDependency && dependentInputIds.indexOf(inputControl.getInputControlId()) >= 0) {
-            throw new Error(`Input '{inputControl.getInputControlId()}' has dependency on its own in pipeline template {this._pipelineTemplate.id}.`);
+            throw new Error(`Input ${inputControl.getInputControlId()} has dependency on its own in pipeline template ${this._pipelineTemplate.id}.`);
         }
 
         var uniqueDependentInputIds = dependentInputIds.filter(function (item, pos) {
@@ -141,7 +195,7 @@ export class InputControlProvider {
             if (dependentInputControl) {
                 dependentInputControlArray.push(dependentInputControl);
             } else {
-                throw new Error(`Dependent input {inputId} specified for input {inputControl.getInputControlId()} is not present in pipeline template {this._pipelineTemplate.id}`);
+                throw new Error(`Dependent input ${inputId} specified for input ${inputControl.getInputControlId()} is not present in pipeline template ${this._pipelineTemplate.id}`);
             }
         }
         return dependentInputControlArray;

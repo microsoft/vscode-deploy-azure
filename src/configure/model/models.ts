@@ -39,7 +39,7 @@ export class WizardInputs {
 }
 
 export class RepositoryAnalysisParameters {
-    repositoryAnalysisApplicationSettingsList: RepositoryAnalysisApplicationSettings[];
+    applicationSettingsList: RepositoryAnalysisApplicationSettings[];
 }
 
 //VS Code side model to extract information in any format from RepoAnalysis service result.
@@ -47,7 +47,7 @@ export class RepositoryAnalysisApplicationSettings {
     language: SupportedLanguage;
     buildTargetName: string;
     deployTargetName: string;
-    settings: BuildAndDeploySettings = new BuildAndDeploySettings();
+    settings: { [key: string]: string } = {};
 }
 
 export class BuildAndDeploySettings {
@@ -202,7 +202,7 @@ export interface ApplicationSettings {
     buildTargetName: string;
     deployTargetName: string;
     language: string;
-    settings: { [key: string] : any; };
+    settings: { [key: string]: any; };
 }
 
 export interface RepositoryAnalysisResponse {
