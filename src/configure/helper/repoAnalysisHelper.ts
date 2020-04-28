@@ -28,9 +28,9 @@ export class RepoAnalysisHelper {
             repositoryDetails.type = RepositoryProvider.Github;
 
             let repositoryAnalysisRequestBody = {} as SourceRepository;
-            repositoryAnalysisRequestBody.Repository = repositoryDetails;
-            repositoryAnalysisRequestBody.WorkingDirectory = workspacePath;
-            repositoryAnalysisRequestBody.Repository.authorizationInfo = {
+            repositoryAnalysisRequestBody.repository = repositoryDetails;
+            repositoryAnalysisRequestBody.workingDirectory = workspacePath;
+            repositoryAnalysisRequestBody.repository.authorizationInfo = {
                 scheme: "Token",
                 parameters: {
                     accesstoken: this.githubPatToken
