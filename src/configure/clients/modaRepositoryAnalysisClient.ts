@@ -1,6 +1,6 @@
+import { RepositoryAnalysis, SourceRepository } from "azureintegration_repoanalysis_client_internal";
 import { RestClient } from "typed-rest-client";
 import vscodeUri from "vscode-uri";
-import { RepositoryAnalysisRequest, RepositoryAnalysisResponse } from "../model/models";
 import { IRepositoryAnalysisClient } from "./repositoryAnalyisClient";
 
 export class ModaRepositoryAnalysisClient implements IRepositoryAnalysisClient {
@@ -15,13 +15,13 @@ export class ModaRepositoryAnalysisClient implements IRepositoryAnalysisClient {
         this.githubPat = githubPat;
     }
 
-    public async getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<RepositoryAnalysisResponse> {
+    public async getRepositoryAnalysis(body: SourceRepository): Promise<RepositoryAnalysis> {
         const requestOptions = {
             acceptHeader: "application/json",
             additionalHeaders: {
                 "Authorization": "Bearer " + this.githubPat
             }
         };
-        return <RepositoryAnalysisResponse>((await this.restClient.create(this.pathUrl, body, requestOptions)).result);
+        return <RepositoryAnalysis>((await this.restClient.create(this.pathUrl, body, requestOptions)).result);
     }
 }

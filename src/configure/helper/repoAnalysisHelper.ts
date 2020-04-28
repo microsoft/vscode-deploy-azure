@@ -1,11 +1,11 @@
+import { CodeRepository, SourceRepository } from "azureintegration_repoanalysis_client_internal";
 import * as path from 'path';
 import { ModaRepositoryAnalysisClient } from '../clients/modaRepositoryAnalysisClient';
 import { PortalExtensionRepositoryAnalysisClient } from "../clients/portalExtensionRepositoryAnalysisClient";
 import { IRepositoryAnalysisClient } from '../clients/repositoryAnalyisClient';
-import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
+import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
 import { IServiceUrlDefinition, RemoteServiceUrlHelper, ServiceFramework } from './remoteServiceUrlHelper';
-
 
 export class RepoAnalysisHelper {
     private azureSession: AzureSession;
@@ -22,12 +22,12 @@ export class RepoAnalysisHelper {
             const serviceDefinition = await RemoteServiceUrlHelper.getRepositoryAnalysisDefinition();
             const client = this.getClient(serviceDefinition);
 
-            const repositoryDetails: RepositoryDetails = new RepositoryDetails();
+            const repositoryDetails: CodeRepository = {} as CodeRepository;
             repositoryDetails.id = sourceRepositoryDetails.repositoryId;
-            repositoryDetails.defaultbranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysisConstants.Master;
+            repositoryDetails.defaultBranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysisConstants.Master;
             repositoryDetails.type = RepositoryProvider.Github;
 
-            let repositoryAnalysisRequestBody = new RepositoryAnalysisRequest;
+            let repositoryAnalysisRequestBody = {} as SourceRepository;
             repositoryAnalysisRequestBody.Repository = repositoryDetails;
             repositoryAnalysisRequestBody.WorkingDirectory = workspacePath;
             repositoryAnalysisRequestBody.Repository.authorizationInfo = {

@@ -181,34 +181,6 @@ export class ParsedAzureResourceId {
 }
 
 //For multiple application we need to add Working directory here in future
-export class RepositoryAnalysisRequest {
-    Repository: RepositoryDetails;
-    WorkingDirectory: string;
-}
-
-export class RepositoryDetails {
-    id: string;
-    type: string;
-    defaultbranch: string;
-    authorizationInfo: {
-        scheme: string;
-        parameters: {
-            accesstoken: string;
-        }
-    };
-}
-
-export interface ApplicationSettings {
-    buildTargetName: string;
-    deployTargetName: string;
-    language: string;
-    settings: { [key: string] : any; };
-}
-
-export interface RepositoryAnalysisResponse {
-    applicationSettingsList: ApplicationSettings[];
-}
-
 export interface AzureAccountExtensionExports {
     sessions: AzureSession[];
     subscriptions: { session: AzureSession, subscription: SubscriptionModels.Subscription }[];
