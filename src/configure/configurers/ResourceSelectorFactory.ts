@@ -6,13 +6,11 @@ import { WebAppAzureResourceSelector } from "./WebAppAzureResourceSelector";
 export class ResourceSelectorFactory {
 
     public static getAzureResourceSelector(pipelineConfiguration: PipelineConfiguration): IAzureResourceSelector {
-        if (pipelineConfiguration.template.label === "Containerized application to AKS") {
-            return new AksAzureResourceSelector();
-        }
-
         switch (pipelineConfiguration.template.targetType) {
             case TargetResourceType.WebApp:
                 return new WebAppAzureResourceSelector();
+            case TargetResourceType.AKS:
+                return new AksAzureResourceSelector();
             default:
                 throw new Error("Not supported");
         }

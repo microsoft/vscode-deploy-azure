@@ -39,7 +39,7 @@ export class WizardInputs {
 }
 
 export class RepositoryAnalysisParameters {
-    repositoryAnalysisApplicationSettingsList: RepositoryAnalysisApplicationSettings[];
+    analysisApplicationSettingsList: RepositoryAnalysisApplicationSettings[];
 }
 
 //VS Code side model to extract information in any format from RepoAnalysis service result.

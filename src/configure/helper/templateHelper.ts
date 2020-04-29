@@ -18,9 +18,9 @@ export async function mergingRepoAnalysisResults(repoPath: string, repositoryPro
     let analysisResult = localRepoAnalysisResult;
 
     //If Repo analysis fails then we'll go with the basic existing analysis
-    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.repositoryAnalysisApplicationSettingsList) {
+    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.analysisApplicationSettingsList) {
         analysisResult = new AnalysisResult();
-        repoAnalysisParameters.repositoryAnalysisApplicationSettingsList.forEach((settings) => {
+        repoAnalysisParameters.analysisApplicationSettingsList.forEach((settings) => {
             analysisResult.languages.push(settings.language);
 
             //Check if Azure:Functions is value of any deployTargetName property
@@ -153,7 +153,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
     var pipelineTemplates: PipelineTemplate[] = [];
     var localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
 
-    if (repoAnalysisParameters && repoAnalysisParameters.repositoryAnalysisApplicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
+    if (repoAnalysisParameters && repoAnalysisParameters.analysisApplicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
         try {
             let serviceClient = new TemplateServiceClient(azureSession.credentials);
             var remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);

@@ -503,7 +503,7 @@ class Orchestrator {
     }
 
     private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
-        var applicationSettings = repoAnalysisResult.repositoryAnalysisApplicationSettingsList.filter(applicationSetting => {
+        var applicationSettings = repoAnalysisResult.analysisApplicationSettingsList.filter(applicationSetting => {
             return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
         });
 
@@ -529,7 +529,7 @@ class Orchestrator {
 
         this.inputs.pipelineConfiguration.workingDirectory = selectedWorkspacePathItem.data;
         this.inputs.repositoryAnalysisApplicationSettings =
-            repoAnalysisResult.repositoryAnalysisApplicationSettingsList.find(applicationSettings => {
+            repoAnalysisResult.analysisApplicationSettingsList.find(applicationSettings => {
                 return (applicationSettings.language === this.inputs.pipelineConfiguration.template.language
                     && applicationSettings.settings.workingDirectory === selectedWorkspacePathItem.data);
             });
