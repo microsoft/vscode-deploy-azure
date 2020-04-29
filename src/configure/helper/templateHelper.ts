@@ -151,9 +151,9 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
 export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
 
     var pipelineTemplates: PipelineTemplate[] = [];
-    var localPipelineTemplates = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
+    var localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
 
-    if (repoAnalysisParameters && repoAnalysisParameters.repositoryAnalysisApplicationSettingsList) {
+    if (repoAnalysisParameters && repoAnalysisParameters.repositoryAnalysisApplicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
         try {
             let serviceClient = new TemplateServiceClient(azureSession.credentials);
             var remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);

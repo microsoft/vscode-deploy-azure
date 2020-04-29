@@ -169,7 +169,9 @@ class Orchestrator {
             await this.getSelectedPipeline();
             if (!resourceNode) {
                 let selectedResource = await this.getAzureResource();
-                await this.selectTemplate(selectedResource);
+                if (!!selectedResource && this.continueOrchestration) {
+                    await this.selectTemplate(selectedResource);
+                }
             }
             else {
                 await this.selectTemplate(resourceNode);
