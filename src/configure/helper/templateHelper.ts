@@ -352,7 +352,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL,
         },
         {
@@ -377,7 +377,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         }
     ],
@@ -404,7 +404,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -429,7 +429,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -454,7 +454,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -479,7 +479,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -504,7 +504,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -529,7 +529,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -554,7 +554,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -579,7 +579,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -604,7 +604,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -629,7 +629,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         }
     ],
@@ -656,7 +656,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -668,7 +668,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
             enabled: true,
             parameters: [],
             azureConnectionType: AzureConnectionType.None,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         }
     ],
@@ -695,7 +695,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -720,7 +720,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         }
     ],
@@ -763,7 +763,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                     "type": TemplateAssetType.ACRServiceConnection
                 }
             ],
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         }
     ]
@@ -836,7 +836,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                     "type": TemplateAssetType.File
                 }
             ],
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         }
     ],
@@ -888,7 +888,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -913,7 +913,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 200,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -938,7 +938,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -963,7 +963,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 300,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -988,7 +988,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1013,7 +1013,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 400,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1038,7 +1038,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1063,7 +1063,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 400,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1088,7 +1088,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         }
     ],
@@ -1115,7 +1115,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMPublishProfile,
-            templateWeight: 200,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1140,7 +1140,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         }
     ],
@@ -1167,7 +1167,7 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
     ],
@@ -1199,7 +1199,7 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTe
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1224,7 +1224,7 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTe
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1235,7 +1235,7 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTe
             targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true,
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1260,7 +1260,7 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTe
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1285,7 +1285,7 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTe
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1296,7 +1296,7 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTe
             targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true,
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1321,7 +1321,7 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTe
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1332,7 +1332,7 @@ const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTe
             targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true,
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
     ]
@@ -1363,7 +1363,8 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineT
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            //To-DO : weight is greater than the remote templates, to be changed later
+            templateWeight: 999999,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1388,7 +1389,7 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineT
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1399,7 +1400,7 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineT
             targetKind: TargetKind.FunctionAppLinuxContainer,
             enabled: true,
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1424,7 +1425,7 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineT
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         },
         {
@@ -1449,7 +1450,7 @@ const githubWorkflowTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineT
                 }
             ],
             azureConnectionType: AzureConnectionType.AzureRMServicePrincipal,
-            templateWeight: 123,
+            templateWeight: 100,
             templateType: TemplateType.LOCAL
         }
     ]

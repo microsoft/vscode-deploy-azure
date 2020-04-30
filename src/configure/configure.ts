@@ -116,8 +116,8 @@ class Orchestrator {
         }
     }
 
-    private async getAzureResource() {
-        var azureResourceSelector = ResourceSelectorFactory.getAzureResourceSelector(this.inputs.pipelineConfiguration);
+    private async getAzureResource(targetType: TargetResourceType) {
+        var azureResourceSelector = ResourceSelectorFactory.getAzureResourceSelector(targetType);
         var resource = null;
         try {
             resource = await azureResourceSelector.getAzureResource(this.inputs);
@@ -166,9 +166,9 @@ class Orchestrator {
             await this.getSourceRepositoryDetails();
             await this.getAzureSession();
             await this.getGithubPatToken();
-            await this.getSelectedPipeline();
+            var targetType = await this.getSelectedPipeline();
             if (!resourceNode) {
-                let selectedResource = await this.getAzureResource();
+                let selectedResource = await this.getAzureResource(targetType);
                 if (!!selectedResource && this.continueOrchestration) {
                     await this.selectTemplate(selectedResource);
                 }
@@ -176,6 +176,7 @@ class Orchestrator {
             else {
                 await this.selectTemplate(resourceNode);
             }
+            telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
 
             if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
                 let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, (this.inputs.pipelineConfiguration.template as RemotePipelineTemplate));
@@ -428,7 +429,7 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
-    private async getSelectedPipeline(): Promise<void> {
+    private async getSelectedPipeline(): Promise<TargetResourceType> {
         const repoAnalysisHelper = new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken);
         let repoAnalysisResult = null;
         if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
@@ -459,18 +460,7 @@ class Orchestrator {
             );
             appropriatePipelines = remotePipelines;
         }
-
-        let pipelineMap: Map<string, PipelineTemplate[]> = new Map();
-
-        appropriatePipelines.forEach(element => {
-            if (pipelineMap.has(element.label)) {
-                pipelineMap.get(element.label).push(element);
-            }
-            else {
-                pipelineMap.set(element.label, [element]);
-            }
-        });
-
+        let pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
         let pipelineLabels = Array.from(pipelineMap.keys());
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
@@ -486,7 +476,7 @@ class Orchestrator {
         else {
             this.inputs.potentialTemplates = pipelineMap.get(pipelineLabels[0]);
         }
-        this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates[0];
+        var selectedTargetType: TargetResourceType = this.inputs.potentialTemplates[0].targetType;
 
         //If RepoAnalysis is disabled or didn't provided response related to language of selected template
         this.inputs.repositoryAnalysisApplicationSettings = new RepositoryAnalysisApplicationSettings();
@@ -498,8 +488,20 @@ class Orchestrator {
             //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
             await this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
         }
-        telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
+        return selectedTargetType;
+    }
 
+    private getMapOfUniqueLabels(pipelines: PipelineTemplate[]): Map<string, PipelineTemplate[]> {
+        let pipelineMap: Map<string, PipelineTemplate[]> = new Map();
+        pipelines.forEach(element => {
+            if (pipelineMap.has(element.label)) {
+                pipelineMap.get(element.label).push(element);
+            }
+            else {
+                pipelineMap.set(element.label, [element]);
+            }
+        });
+        return pipelineMap;
     }
 
     private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
