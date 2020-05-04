@@ -5,7 +5,7 @@ import { AzureEnvironment } from 'ms-rest-azure';
 import { ExtensionContext, OutputChannel, QuickPickItem, workspace } from 'vscode';
 import { IAzureUserInput, ITelemetryReporter, UIExtensionVariables } from 'vscode-azureextensionui';
 import { Messages } from '../resources/messages';
-import { PipelineTemplate, PipelineTemplateMetadata } from './templateModels';
+import { PipelineTemplate } from './templateModels';
 
 class ExtensionVariables implements UIExtensionVariables {
     public azureAccountExtensionApi: AzureAccountExtensionExports;
@@ -35,10 +35,11 @@ export class WizardInputs {
     azureSession: AzureSession;
     subscriptionId: string;
     githubPATToken?: string;
+    potentialTemplates?: PipelineTemplate[];
 }
 
 export class RepositoryAnalysisParameters {
-    repositoryAnalysisApplicationSettingsList: RepositoryAnalysisApplicationSettings[];
+    applicationSettingsList: RepositoryAnalysisApplicationSettings[];
 }
 
 //VS Code side model to extract information in any format from RepoAnalysis service result.
@@ -84,7 +85,6 @@ export class AzureSession {
 export class PipelineConfiguration {
     filePath: string;
     template: PipelineTemplate;
-    templateInfo: PipelineTemplateMetadata;
     workingDirectory: string;
     params: { [key: string]: any } = {};
     assets: { [key: string]: any } = {};
@@ -202,7 +202,7 @@ export interface ApplicationSettings {
     buildTargetName: string;
     deployTargetName: string;
     language: string;
-    settings: { [key: string] : any; };
+    settings: { [key: string]: any; };
 }
 
 export interface RepositoryAnalysisResponse {
