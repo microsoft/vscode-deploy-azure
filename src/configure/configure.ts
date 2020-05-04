@@ -146,16 +146,17 @@ class Orchestrator {
             case TargetResourceType.WebApp:
                 var shortlistedTemplates = [];
                 shortlistedTemplates = this.inputs.potentialTemplates.filter((template) => template.targetKind === resource.kind);
-                if (shortlistedTemplates.length > 1) {
+                if (!!shortlistedTemplates && shortlistedTemplates.length > 1) {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates.find((template) => template.templateType === TemplateType.REMOTE);
-                }
-                else {
+                } else if (!!shortlistedTemplates) {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates[0];
+                } else {
+                    throw new Error(Messages.TemplateNotFound);
                 }
                 break;
 
             default:
-                throw new Error("Resource not supported");
+                throw new Error(Messages.ResourceNotSupported);
         }
     }
 
@@ -169,7 +170,10 @@ class Orchestrator {
             var targetType = await this.getSelectedPipeline();
             if (!resourceNode) {
                 let selectedResource = await this.getAzureResource(targetType);
-                if (!!selectedResource && this.continueOrchestration) {
+                if (!this.continueOrchestration) {
+                    return;
+                }
+                else if (!!selectedResource) {
                     await this.selectTemplate(selectedResource);
                 }
             }
@@ -483,7 +487,7 @@ class Orchestrator {
 
         //Post selecting the template update this.inputs.repositoryAnalysisApplicationSettings with corresponding languageSettings
         if (!!repoAnalysisResult
-            && !!repoAnalysisResult.repositoryAnalysisApplicationSettingsList) {
+            && !!repoAnalysisResult.applicationSettingsList) {
 
             //Get languageSettings (corresponding to language of selected settings) provided by RepoAnalysis
             await this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
@@ -505,7 +509,7 @@ class Orchestrator {
     }
 
     private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
-        var applicationSettings = repoAnalysisResult.analysisApplicationSettingsList.filter(applicationSetting => {
+        var applicationSettings = repoAnalysisResult.applicationSettingsList.filter(applicationSetting => {
             return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
         });
 
@@ -531,7 +535,7 @@ class Orchestrator {
 
         this.inputs.pipelineConfiguration.workingDirectory = selectedWorkspacePathItem.data;
         this.inputs.repositoryAnalysisApplicationSettings =
-            repoAnalysisResult.analysisApplicationSettingsList.find(applicationSettings => {
+            repoAnalysisResult.applicationSettingsList.find(applicationSettings => {
                 return (applicationSettings.language === this.inputs.pipelineConfiguration.template.language
                     && applicationSettings.settings.workingDirectory === selectedWorkspacePathItem.data);
             });

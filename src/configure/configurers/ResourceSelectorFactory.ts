@@ -1,4 +1,5 @@
 import { TargetResourceType } from "../model/models";
+import { Messages } from "../resources/messages";
 import { AksAzureResourceSelector } from "./AksAzureResourceSelector";
 import { IAzureResourceSelector } from "./IAzureResourceSelector";
 import { WebAppAzureResourceSelector } from "./WebAppAzureResourceSelector";
@@ -12,7 +13,7 @@ export class ResourceSelectorFactory {
             case TargetResourceType.AKS:
                 return new AksAzureResourceSelector();
             default:
-                throw new Error("Not supported");
+                throw new Error(Messages.ResourceNotSupported);
         }
     }
 }

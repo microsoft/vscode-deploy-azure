@@ -18,9 +18,9 @@ export async function mergingRepoAnalysisResults(repoPath: string, repositoryPro
     let analysisResult = localRepoAnalysisResult;
 
     //If Repo analysis fails then we'll go with the basic existing analysis
-    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.analysisApplicationSettingsList) {
+    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.applicationSettingsList) {
         analysisResult = new AnalysisResult();
-        repoAnalysisParameters.analysisApplicationSettingsList.forEach((settings) => {
+        repoAnalysisParameters.applicationSettingsList.forEach((settings) => {
             analysisResult.languages.push(settings.language);
 
             //Check if Azure:Functions is value of any deployTargetName property
@@ -42,7 +42,7 @@ export async function mergingRepoAnalysisResults(repoPath: string, repositoryPro
     return analysisResult;
 }
 
-export function getTargetType(template: PipelineTemplateMetadata) {
+export function getTargetType(template: PipelineTemplateMetadata): TargetResourceType {
     if (template.attributes.deployTarget.toLowerCase().includes("webapp")) {
         return TargetResourceType.WebApp;
     } else if (template.attributes.deployTarget === "Azure:AKS") {
@@ -51,7 +51,7 @@ export function getTargetType(template: PipelineTemplateMetadata) {
     return TargetResourceType.None;
 }
 
-export function getTargetKind(template: PipelineTemplateMetadata) {
+export function getTargetKind(template: PipelineTemplateMetadata): TargetKind {
     var targetKind: TargetKind;
     if (template.attributes.deployTarget.toLowerCase().includes("webapp")) {
         if (template.attributes.deployTarget.toLowerCase().includes("container")) {
@@ -153,7 +153,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
     var pipelineTemplates: PipelineTemplate[] = [];
     var localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
 
-    if (repoAnalysisParameters && repoAnalysisParameters.analysisApplicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
+    if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
         try {
             let serviceClient = new TemplateServiceClient(azureSession.credentials);
             var remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);
