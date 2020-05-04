@@ -81,7 +81,7 @@ export class RepoAnalysisHelper {
                             }
                         }
                     }
-                    if (!!analysis.deployTargetName) {
+                    if (!!analysis.settings && !!analysis.deployTargetName) {
                         applicationSettings.deployTargetName = analysis.deployTargetName;
                         if (analysis.deployTargetName === RepoAnalysisConstants.AzureFunctions) {
                             applicationSettings.settings.azureFunctionsHostFilePath = analysis.settings[RepoAnalysisConstants.HostFilePath];

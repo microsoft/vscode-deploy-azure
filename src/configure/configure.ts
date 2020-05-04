@@ -17,15 +17,15 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, TargetKind, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, TargetResourceType, WizardInputs } from './model/models';
 import { LocalPipelineTemplate, PipelineTemplate, RemotePipelineTemplate, TemplateAssetType, TemplateType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
 import { InputControlProvider } from './templateInputHelper/InputControlProvider';
-const uuid = require('uuid/v4');
 
+const uuid = require('uuid/v4');
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
@@ -100,7 +100,7 @@ class Orchestrator {
             await pipelineConfigurer.createPreRequisites(this.inputs, !!this.azureResourceClient ? this.azureResourceClient : new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId));
 
             telemetryHelper.setCurrentStep('CreateAssets');
-            await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, type: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, type, data, inputs); });
+            await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, assetType, data, inputs); });
 
             telemetryHelper.setCurrentStep('CheckInPipeline');
             await this.checkInPipelineFileToRepository(pipelineConfigurer);
@@ -117,21 +117,21 @@ class Orchestrator {
         }
     }
 
-    private async getAzureResource() {
-        var azureResourceSelector = ResourceSelectorFactory.getAzureResourceSelector(this.inputs.pipelineConfiguration);
+    private async getAzureResource(targetType: TargetResourceType) {
+        var azureResourceSelector = ResourceSelectorFactory.getAzureResourceSelector(targetType);
         this.inputs.targetResource.resource = await azureResourceSelector.getAzureResource(this.inputs);
     }
 
     private async selectTemplate(resource: GenericResource): Promise<void> {
         switch (resource.type) {
             case TargetResourceType.AKS:
-                this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.local);
+                this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.LOCAL);
                 break;
             case TargetResourceType.WebApp:
                 var shortlistedTemplates = [];
                 shortlistedTemplates = this.inputs.potentialTemplates.filter((template) => template.targetKind === resource.kind);
                 if (shortlistedTemplates.length > 1) {
-                    this.inputs.pipelineConfiguration.template = shortlistedTemplates.find((template) => template.templateType === TemplateType.remote);
+                    this.inputs.pipelineConfiguration.template = shortlistedTemplates.find((template) => template.templateType === TemplateType.REMOTE);
                 }
                 else {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates[0];
@@ -139,27 +139,7 @@ class Orchestrator {
                 break;
 
             default:
-                let appServiceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
-                let selectedPipelineTemplate = this.inputs.pipelineConfiguration.template;
-                let matchingPipelineTemplates = templateHelper.getPipelineTemplatesForAllWebAppKind(this.inputs.sourceRepository.repositoryProvider,
-                    selectedPipelineTemplate.label, selectedPipelineTemplate.language, selectedPipelineTemplate.targetKind);
-
-                let webAppKinds = matchingPipelineTemplates.map((template) => template.targetKind);
-                let selectedResource: QuickPickItemWithData = await this.controlProvider.showQuickPick(
-                    Messages.selectTargetResource,
-                    appServiceClient.GetAppServices(webAppKinds)
-                        .then((webApps) => webApps.map(x => { return { label: x.name, data: x }; })),
-                    { placeHolder: Messages.selectTargetResource },
-                    TelemetryKeys.AzureResourceListCount);
-
-                if (await appServiceClient.isScmTypeSet((<GenericResource>selectedResource.data).id)) {
-                    this.continueOrchestration = false;
-                    await openBrowseExperience((<GenericResource>selectedResource.data).id);
-                }
-                else {
-                    this.inputs.targetResource.resource = selectedResource.data;
-                    this.inputs.pipelineConfiguration.template = matchingPipelineTemplates.find((template) => template.targetKind === <TargetKind>this.inputs.targetResource.resource.kind);
-                }
+                throw new Error(Messages.ResourceNotSupported);
         }
     }
 
@@ -170,11 +150,11 @@ class Orchestrator {
             await this.getSourceRepositoryDetails();
             await this.getAzureSession();
             let repoAnalysisResult = await this.getRepositoryAnalysis();
-            await this.getSelectedPipeline(repoAnalysisResult);
+            let targetType = await this.getSelectedPipeline(repoAnalysisResult);
 
             try {
                 if (!resourceNode) {
-                    await this.getAzureResource();
+                    await this.getAzureResource(targetType);
                 }
                 this.selectTemplate(this.inputs.targetResource.resource);
 
@@ -195,7 +175,7 @@ class Orchestrator {
     }
 
     private async getTemplateParameters() {
-        if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.remote) {
+        if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
             let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, this.inputs.pipelineConfiguration.template as RemotePipelineTemplate);
             let context: { [key: string]: any } = {};
             context['subscriptionId'] = this.inputs.subscriptionId;
@@ -459,8 +439,8 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
-    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
-        extensionVariables.templateServiceEnabled = true;
+    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysisParameters): Promise<TargetResourceType> {
+        extensionVariables.templateServiceEnabled = false;
         var appropriatePipelines: PipelineTemplate[] = [];
 
         if (!extensionVariables.templateServiceEnabled) {
@@ -485,18 +465,7 @@ class Orchestrator {
             );
             appropriatePipelines = remotePipelines;
         }
-
-        let pipelineMap: Map<string, PipelineTemplate[]> = new Map();
-
-        appropriatePipelines.forEach(element => {
-            if (pipelineMap.has(element.label)) {
-                pipelineMap.get(element.label).push(element);
-            }
-            else {
-                pipelineMap.set(element.label, [element]);
-            }
-        });
-
+        let pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
         let pipelineLabels = Array.from(pipelineMap.keys());
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
@@ -512,11 +481,22 @@ class Orchestrator {
         else {
             this.inputs.potentialTemplates = pipelineMap.get(pipelineLabels[0]);
         }
-        this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates[0];
-
-        telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);
+        return this.inputs.potentialTemplates[0].targetType;
     }
 
+    private getMapOfUniqueLabels(pipelines: PipelineTemplate[]): Map<string, PipelineTemplate[]> {
+        let pipelineMap: Map<string, PipelineTemplate[]> = new Map();
+        pipelines.forEach(element => {
+            if (pipelineMap.has(element.label)) {
+                pipelineMap.get(element.label).push(element);
+            }
+            else {
+                pipelineMap.set(element.label, [element]);
+            }
+        });
+        return pipelineMap;
+    }
+    
     private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
         //If RepoAnalysis is disabled or didn't provided response related to language of selected template
         this.inputs.repositoryAnalysisApplicationSettings = new RepositoryAnalysisApplicationSettings();
@@ -525,7 +505,7 @@ class Orchestrator {
             return;
         }
         var applicationSettings = repoAnalysisResult.applicationSettingsList.filter(applicationSetting => {
-            if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.remote) {
+            if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
                 const template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
                 if (applicationSetting.settings && applicationSetting.settings.workingDirectory === template.workingDirectory) {
                     return true;
@@ -546,7 +526,7 @@ class Orchestrator {
             return;
         }
 
-        if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.remote) {
+        if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
             return;
         }
 

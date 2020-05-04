@@ -1,8 +1,8 @@
 import { AzureConnectionType, ServiceConnectionType, TargetKind, TargetResourceType } from "./models";
 
 export enum TemplateType {
-    remote,
-    local
+    REMOTE,
+    LOCAL
 }
 export interface PipelineTemplate {
     label: string;
@@ -23,8 +23,8 @@ export interface PipelineTemplateMetadata {
 
 export interface RemotePipelineTemplate extends PipelineTemplate {
     templateId: string;
-    attributes: TemplateAttributes;
     workingDirectory: string;
+    attributes?: TemplateAttributes;
 }
 
 export interface LocalPipelineTemplate extends PipelineTemplate {
