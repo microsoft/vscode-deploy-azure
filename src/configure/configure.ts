@@ -161,6 +161,7 @@ class Orchestrator {
 
     private async getInputs(node: any): Promise<void> {
         let resourceNode = await this.analyzeNode(node);
+        let rightClickScenario = false;
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
@@ -174,6 +175,7 @@ class Orchestrator {
                 }
             }
             else {
+                rightClickScenario = true;
                 await this.selectTemplate(resourceNode);
             }
 
@@ -181,6 +183,7 @@ class Orchestrator {
                 let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, (this.inputs.pipelineConfiguration.template as RemotePipelineTemplate));
                 let context: { [key: string]: any } = {};
                 context['subscriptionId'] = this.inputs.subscriptionId;
+                context['rightClickScenario'] = rightClickScenario;
                 let controlProvider = new InputControlProvider(extendedPipelineTemplate, context);
                 this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession, resourceNode);
             }

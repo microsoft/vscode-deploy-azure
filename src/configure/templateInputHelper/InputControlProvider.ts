@@ -2,6 +2,7 @@ import { GenericResource } from "azure-arm-resource/lib/resource/models";
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputMode } from "../model/Contracts";
 import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
+import * as constants from '../resources/constants';
 import { InputControl } from "./InputControl";
 import { DataSourceExpression } from "./utilities/DataSourceExpression";
 import { InputControlUtility } from "./utilities/InputControlUtility";
@@ -10,24 +11,41 @@ import { VisibilityHelper } from "./utilities/VisibilityHelper";
 export class InputControlProvider {
     private _pipelineTemplate: ExtendedPipelineTemplate;
     private _inputControlsMap: Map<string, InputControl>;
+    private _context: { [key: string]: any };
 
     constructor(pipelineTemplate: ExtendedPipelineTemplate, context: { [key: string]: any }) {
         this._pipelineTemplate = pipelineTemplate;
         this._inputControlsMap = new Map<string, InputControl>();
+        this._context = context;
         this._createControls(context);
+    }
+
+    public async overrideParameters(inputControl: InputControl) {
+        var properties = inputControl.getPropertyValue(constants.clientPropertyKey);
+        var arrayofProperties = Object.keys(properties);
+
+        arrayofProperties.forEach(element => {
+            var key = element.split(".", 2)[1];
+            var dependentInputControlArray = this._getInputDependencyArray(inputControl, [properties[element]], false);
+            var dependentClientInputMap = this._getClientDependencyMap(inputControl, [properties[element]]);
+            var newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
+            inputControl.inputDescriptor[key] = newValue;
+            if (key === "inputMode") {
+                inputControl.updateInputControlType(parseInt(newValue)); //typecast thing to enum - do it
+            }
+        });
     }
 
     public async getAllPipelineTemplateInputs(azureSession: AzureSession, resourceNode?: GenericResource) {
         let parameters: { [key: string]: any } = {};
         for (let inputControl of this._inputControlsMap.values()) {
-            if (inputControl.getPropertyValue('deployTarget') === "true" && !!resourceNode) {
-                inputControl.setValue(resourceNode.id);
+            if (!!inputControl.getPropertyValue(constants.clientPropertyKey)) {
+                this.overrideParameters(inputControl);
             }
-            else {
-                this._setInputControlVisibility(inputControl);
-                this._setupInputControlDefaultValue(inputControl);
-                await inputControl.setInputControlValue(azureSession);
-            }
+            this._setInputControlDataSourceInputs(inputControl);
+            this._setInputControlVisibility(inputControl);
+            this._setupInputControlDefaultValue(inputControl);
+            await inputControl.setInputControlValue(azureSession);
             parameters[inputControl.getInputControlId()] = inputControl.getValue();
         }
         return parameters;
@@ -60,25 +78,23 @@ export class InputControlProvider {
                 this._inputControlsMap.set(input.id, inputControl);
             }
         }
-        this._setInputControlDataSourceInputs();
     }
 
-    private _setInputControlDataSourceInputs(): void {
-        this._pipelineTemplate.inputs.forEach((inputDes) => {
-            if (!!inputDes.dataSourceId) {
-                var inputControl = this._inputControlsMap.get(inputDes.id);
-                inputControl.dataSource = DataSourceExpression.parse(inputDes.dataSourceId, this._pipelineTemplate.dataSources);
+    private _setInputControlDataSourceInputs(inputControl: InputControl): void {
+        let inputDes = inputControl.getInputDescriptor();
+        if (!!inputDes.dataSourceId) {
+            var inputControl = this._inputControlsMap.get(inputDes.id);
+            inputControl.dataSource = DataSourceExpression.parse(inputDes.dataSourceId, this._pipelineTemplate.dataSources);
 
-                if (inputControl.dataSource) {
-                    var dependentInputControlArray = this._getInputDependencyArray(inputControl, inputControl.dataSource.getInputDependencyArray());
-                    if (dependentInputControlArray) {
-                        inputControl.dataSourceInputControls.push(...dependentInputControlArray);
-                    }
-                } else {
-                    throw new Error(`Data source {inputDes.dataSourceId} specified for input {inputDes.id} is not present in pipeline template {this._pipelineTemplate.id}`);
+            if (inputControl.dataSource) {
+                var dependentInputControlArray = this._getInputDependencyArray(inputControl, inputControl.dataSource.getInputDependencyArray());
+                if (dependentInputControlArray) {
+                    inputControl.dataSourceInputControls.push(...dependentInputControlArray);
                 }
+            } else {
+                throw new Error(`Data source {inputDes.dataSourceId} specified for input {inputDes.id} is not present in pipeline template {this._pipelineTemplate.id}`);
             }
-        });
+        }
     }
 
     private _setupInputControlDefaultValue(inputControl: InputControl): void {
@@ -87,21 +103,22 @@ export class InputControlProvider {
             return;
         }
         var dependentInputControlArray = this._getInputDependencyArray(inputControl, [inputDes.defaultValue], false);
+        var dependentClientInputMap = this._getClientDependencyMap(inputControl, [inputDes.defaultValue]);
 
-        var defaultValue = this._computeMustacheValue(inputDes.defaultValue, dependentInputControlArray);
+        var defaultValue = this._computeMustacheValue(inputDes.defaultValue, dependentInputControlArray, dependentClientInputMap);
         if (defaultValue !== inputControl.getValue()) {
             inputControl.setValue(defaultValue);
         }
     }
 
 
-    private _computeMustacheValue(mustacheExpression: string, dependentInputControlArray: InputControl[]): string {
+    private _computeMustacheValue(mustacheExpression: string, dependentInputControlArray: InputControl[], dependentClientInputMap: StringMap<any>): string {
 
         var dependentInputValues = this._getInputParameterValueIfAllSet(dependentInputControlArray);
         if (dependentInputControlArray && dependentInputControlArray.length > 0 && !dependentInputValues) {
             return "";
         } else {
-            return MustacheHelper.render(mustacheExpression, { inputs: dependentInputValues });
+            return MustacheHelper.render(mustacheExpression, { inputs: dependentInputValues, client: dependentClientInputMap });
         }
     }
 
@@ -114,7 +131,33 @@ export class InputControlProvider {
                 ? "" : inputDes.defaultValue;
         }
     }
+    private _getClientDependencyMap(inputControl: InputControl, dependencyExpressionArray: string[]) {
+        var dependentClientControlMap: StringMap<any> = {};
+        var dependentClientInputs: string[] = [];
+        for (var dependencyExpression of dependencyExpressionArray) {
+            if (dependencyExpression) {
+                dependentClientInputs = dependentClientInputs.concat(InputControlUtility.getDependentClientIdList(dependencyExpression));
+            }
+        }
 
+        if (dependentClientInputs.length === 0) {
+            return null;
+        }
+
+        var uniqueDependentClientInputs = dependentClientInputs.filter(function (item, pos) {
+            return dependentClientInputs.indexOf(item) === pos;
+        });
+
+        for (var clientInput of uniqueDependentClientInputs) {
+            var dependentInputControl = this._context[clientInput];
+            if (dependentInputControl) {
+                dependentClientControlMap[clientInput] = dependentInputControl;
+            } else {
+                throw new Error(`Dependent client input ${clientInput} specified is not present in client context.`);
+            }
+        }
+        return dependentClientControlMap;
+    }
     private _getInputDependencyArray(inputControl: InputControl, dependencyExpressionArray: string[], allowSelfDependency: boolean = true) {
         var dependentInputControlArray: InputControl[] = [];
         var dependentInputIds: string[] = [];

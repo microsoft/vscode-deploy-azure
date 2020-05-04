@@ -5,11 +5,15 @@ export class InputControlUtility {
             return false;
         }
 
-        return /{{{inputs\.\w+}}}|{{{system\.\w+}}}/g.test(expression);
+        return /{{{inputs\.\w+}}}|{{{system\.\w+}}}|{{{client\.\w+}}}/g.test(expression);
     }
 
     public static getDependentInputIdList(expression: string): string[] {
         return this._fetchIdsInExpressionByType(expression, DependencyType.Input);
+    }
+
+    public static getDependentClientIdList(expression: string): string[] {
+        return this._fetchIdsInExpressionByType(expression, DependencyType.Client);
     }
 
     public static getDependentSystemIdList(expression: string): string[] {
@@ -30,6 +34,10 @@ export class InputControlUtility {
             case DependencyType.System:
                 regex = /{{{system\.(\w+)}}}/g;
                 break;
+
+            case DependencyType.Client:
+                regex = /{{{client\.(\w+)}}}/g;
+                break;
         }
 
         var dependentIds: string[] = [];
@@ -48,5 +56,6 @@ export class InputControlUtility {
 
 enum DependencyType {
     Input,
-    System
+    System,
+    Client
 }

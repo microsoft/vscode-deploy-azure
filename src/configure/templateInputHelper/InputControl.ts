@@ -12,7 +12,7 @@ export class InputControl {
     public dataSource: DataSourceExpression;
     public dataSourceInputControls: Array<InputControl>;
     public dataSourceInputs: Map<string, any>;
-    private inputDescriptor: ExtendedInputDescriptor;
+    public inputDescriptor: ExtendedInputDescriptor;
     private value: any;
     private controlType: ControlType;
     private visible: boolean;
@@ -60,6 +60,24 @@ export class InputControl {
 
     public setVisibility(value: boolean): void {
         this.visible = value;
+    }
+
+    public updateInputControlType(inputMode: InputMode): void {
+        switch (inputMode) {
+            case InputMode.None:
+            case InputMode.AzureSubscription:
+                this.controlType = ControlType.None;
+                break;
+            case InputMode.TextBox:
+            case InputMode.PasswordBox:
+                this.controlType = ControlType.InputBox;
+                break;
+            case InputMode.Combo:
+            case InputMode.CheckBox:
+            case InputMode.RadioButtons:
+                this.controlType = ControlType.QuickPick;
+                break;
+        }
     }
 
     public async setInputControlValue(azureSession: AzureSession): Promise<any> {
@@ -110,7 +128,7 @@ export class InputControl {
 
         if (!!properties) {
             value = properties[propertyName];
-            if( !!value && !!inputs ) { return MustacheHelper.render(value, { inputs: inputs }); }
+            if (!!value && !!inputs) { return MustacheHelper.render(value, { inputs: inputs }); }
         }
         return value;
     }
