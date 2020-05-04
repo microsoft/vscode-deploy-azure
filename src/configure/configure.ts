@@ -127,11 +127,11 @@ class Orchestrator {
 
 
             if (this.inputs.pipelineConfiguration.templateInfo) {
-                let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, this.inputs.pipelineConfiguration.templateInfo);
+                let extendedPipelineTemplate = await templateHelper.getTemplateParameters(this.inputs.azureSession, this.inputs.pipelineConfiguration.templateInfo);
                 let context: { [key: string]: any } = {};
                 context['subscriptionId'] = this.inputs.subscriptionId;
-                let controlProvider = new InputControlProvider(extendedPipelineTemplate, context);
-                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession, resourceNode);
+                let controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, context);
+                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs();
             }
             else {
                 if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
@@ -446,7 +446,7 @@ class Orchestrator {
             repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('\\').join('/'));
         }
 
-        extensionVariables.templateServiceEnabled = false;
+        extensionVariables.templateServiceEnabled = true;
 
         let appropriatePipelines;
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
@@ -513,7 +513,7 @@ class Orchestrator {
         }
 
         if (extensionVariables.templateServiceEnabled) {
-            telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.templateInfo.label);
+            telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.templateInfo.templateDescription);
         }
         else {
             telemetryHelper.setTelemetry(TelemetryKeys.ChosenTemplate, this.inputs.pipelineConfiguration.template.label);

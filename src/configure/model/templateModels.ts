@@ -1,5 +1,5 @@
 import { ExtendedPipelineTemplate } from "./Contracts";
-import { AzureConnectionType, ServiceConnectionType, TargetKind, TargetResourceType } from "./models";
+import { AzureConnectionType, ServiceConnectionType, StringMap, TargetKind, TargetResourceType } from "./models";
 
 export interface PipelineTemplate {
     path: string;
@@ -17,10 +17,10 @@ export interface PipelineTemplate {
 
 export interface PipelineTemplateMetadata {
     templateId: string;
-    label: string;
+    templateDescription: string;
     workingDirectory: string;
     templateWeight: number;
-    description: string;
+    attributes: StringMap<string>;
 }
 
 export interface TemplateParameter {

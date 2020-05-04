@@ -1,5 +1,4 @@
 import { ServiceClientCredentials } from "ms-rest";
-import { ExtendedPipelineTemplate } from "../../model/Contracts";
 import { RepositoryAnalysisParameters } from "../../model/models";
 import { PipelineTemplateMetadata } from "../../model/templateModels";
 import { RestClient } from "../restClient";
@@ -20,7 +19,7 @@ export class TemplateServiceClient {
             body);
     }
 
-    public async getTemplateParameters(templateId: string): Promise<ExtendedPipelineTemplate> {
+    public async getTemplateParameters(templateId: string): Promise<any> {
         var requestUri = this.templateServiceUri + "/" + templateId + "/parameters";
         return this.restClient.sendRequest2(
             requestUri,

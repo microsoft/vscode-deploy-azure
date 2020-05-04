@@ -132,7 +132,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
     return templateResult;
 }
 
-export async function getTemplateParameteres(azureSession: AzureSession, templateInfo: PipelineTemplateMetadata): Promise<ExtendedPipelineTemplate> {
+export async function getTemplateParameters(azureSession: AzureSession, templateInfo: PipelineTemplateMetadata): Promise<ExtendedPipelineTemplate> {
     let parameters: ExtendedPipelineTemplate;
     let serviceClient = new TemplateServiceClient(azureSession.credentials);
     parameters = await serviceClient.getTemplateParameters(templateInfo.templateId);

@@ -20,4 +20,5 @@ export class TracePoints {
     public static CreatingManifestsFailed = 'CreatingManifestsFailed';
     public static ManifestsFolderCreationFailed = 'ManifestsFolderCreationFailed';
     public static RemoteServiceUrlFetchFailed = 'RemoteServiceUrlFetchFailed';
+    public static EvaluateDynamicValidation = 'EvalauteDynamicValidation';
 }
