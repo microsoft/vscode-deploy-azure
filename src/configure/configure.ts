@@ -175,6 +175,7 @@ class Orchestrator {
                     return;
                 }
                 else if (!!selectedResource) {
+                    rightClickScenario = true;
                     await this.selectTemplate(selectedResource);
                 }
             }

@@ -31,7 +31,7 @@ export class InputControlProvider {
             var newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
             inputControl.inputDescriptor[key] = newValue;
             if (key === "inputMode") {
-                inputControl.updateInputControlType(parseInt(newValue)); //typecast thing to enum - do it
+                inputControl.updateInputControlType(parseInt(newValue));
             }
         });
     }
