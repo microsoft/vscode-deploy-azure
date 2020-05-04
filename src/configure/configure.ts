@@ -527,16 +527,10 @@ class Orchestrator {
         var applicationSettings = repoAnalysisResult.applicationSettingsList.filter(applicationSetting => {
             if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.remote) {
                 const template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
-                if (applicationSetting.language && applicationSetting.language !== template.attributes.language.toLowerCase()) {
-                    return false;
+                if (applicationSetting.settings && applicationSetting.settings.workingDirectory === template.workingDirectory) {
+                    return true;
                 }
-                if (applicationSetting.buildTargetName && applicationSetting.buildTargetName !== template.attributes.buildTarget.toLowerCase()) {
-                    return false;
-                }
-                if (applicationSetting.deployTargetName && applicationSetting.deployTargetName !== template.attributes.deployTarget.toLowerCase()) {
-                    return false;
-                }
-                return true;
+                return false;
             }
             return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
 
