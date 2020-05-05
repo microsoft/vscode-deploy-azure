@@ -47,7 +47,7 @@ export class RepoAnalysisHelper {
         }
 
         let parameters: RepositoryAnalysisParameters = new RepositoryAnalysisParameters();
-        parameters.repositoryAnalysisApplicationSettingsList = [];
+        parameters.applicationSettingsList = [];
         repositoryAnalysisResponse.applicationSettingsList.forEach((analysis) => {
 
             //Process only for VSCode Supported Languages
@@ -89,7 +89,7 @@ export class RepoAnalysisHelper {
                         }
                     }
                 }
-                parameters.repositoryAnalysisApplicationSettingsList.push(applicationSettings);
+                parameters.applicationSettingsList.push(applicationSettings);
             }
         });
         return parameters;

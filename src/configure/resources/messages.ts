@@ -89,6 +89,8 @@ export class Messages {
     public static modifyAndCommitMultipleFiles: string = 'Modify and save your YAML files. %s will commit these files, push the branch \'%s\' to remote \'%s\' and proceed with deployment.';
     public static EmptyTagRowUnavailable = 'There is no space to create a new tag in the resource to store information to ';
     public static valueRequired = 'The value cannot be empty';
+    public static TemplateNotFound = 'Template not found';
+    public static ResourceNotSupported = 'Resource not supported';
     public static minLengthMessage = "The minimum length allowed is %s";
     public static maxLengthMessage = "The maximum length allowed is %s";
     public static minValueMessage = "The value should be greater than or equals to %s";
@@ -96,5 +98,4 @@ export class Messages {
     public static valueShouldBeNumber = "The value %s is not numberic";
     public static regexPatternNotMatchingMessage = "Value should match the following regex pattern: %s";
     public static fetchingInputMessage = "Fetching inputs for %s";
-
 }
