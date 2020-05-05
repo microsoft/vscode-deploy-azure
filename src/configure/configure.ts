@@ -130,11 +130,13 @@ class Orchestrator {
             case TargetResourceType.WebApp:
                 var shortlistedTemplates = [];
                 shortlistedTemplates = this.inputs.potentialTemplates.filter((template) => template.targetKind === resource.kind);
-                if (shortlistedTemplates.length > 1) {
+                if (!!shortlistedTemplates && shortlistedTemplates.length > 1) {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates.find((template) => template.templateType === TemplateType.REMOTE);
                 }
-                else {
+                else if (!!shortlistedTemplates) {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates[0];
+                } else {
+                    throw new Error(Messages.TemplateNotFound);
                 }
                 break;
 
@@ -496,7 +498,7 @@ class Orchestrator {
         });
         return pipelineMap;
     }
-    
+
     private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
         //If RepoAnalysis is disabled or didn't provided response related to language of selected template
         this.inputs.repositoryAnalysisApplicationSettings = new RepositoryAnalysisApplicationSettings();
