@@ -50,18 +50,6 @@ export class RepositoryAnalysisApplicationSettings {
     settings: { [key: string]: string } = {};
 }
 
-export class BuildAndDeploySettings {
-    workingDirectory?: string = ".";
-    nodeGulpFilePath?: string = "gulpfile.js";
-    nodeGruntFilePath?: string = "gruntfile.js";
-    nodePackageFilePath?: string = "package.json";
-    nodePackageFileDirectory?: string = ".";
-    pythonRequirementsFilePath?: string = "requirements.txt";
-    pythonRequirementsFileDirectory?: string = ".";
-    azureFunctionsHostFilePath?: string = "host.json";
-    azureFunctionsHostFileDirectory?: string = ".";
-}
-
 export class AzureParameters {
     resource: GenericResource;
     serviceConnectionId: string;

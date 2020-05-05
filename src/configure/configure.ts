@@ -508,11 +508,7 @@ class Orchestrator {
         }
         var applicationSettings = repoAnalysisResult.applicationSettingsList.filter(applicationSetting => {
             if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
-                const template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
-                if (applicationSetting.settings && applicationSetting.settings.workingDirectory === template.workingDirectory) {
-                    return true;
-                }
-                return false;
+                return true;
             }
             return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
 

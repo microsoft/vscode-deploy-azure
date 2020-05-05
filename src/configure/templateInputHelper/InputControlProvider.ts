@@ -19,7 +19,7 @@ export class InputControlProvider {
         this._pipelineTemplate = pipelineTemplate;
         this._inputControlsMap = new Map<string, InputControl>();
         this._repoAnalysisSettings = repoAnalysisSettings || [];
-        this._repoAnalysisSettingInUse = repoAnalysisSettings && repoAnalysisSettings.length > 1 ? -1 : 0;
+        this._repoAnalysisSettingInUse = repoAnalysisSettings.length > 1 ? -1 : 0;
         this._createControls(context);
     }
 
