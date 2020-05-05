@@ -1,4 +1,3 @@
-import { GenericResource } from "azure-arm-resource/lib/resource/models";
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputMode } from "../model/Contracts";
 import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
@@ -36,7 +35,7 @@ export class InputControlProvider {
         });
     }
 
-    public async getAllPipelineTemplateInputs(azureSession: AzureSession, resourceNode?: GenericResource) {
+    public async getAllPipelineTemplateInputs(azureSession: AzureSession) {
         let parameters: { [key: string]: any } = {};
         for (let inputControl of this._inputControlsMap.values()) {
             if (!!inputControl.getPropertyValue(constants.clientPropertyKey)) {

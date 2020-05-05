@@ -190,7 +190,7 @@ class Orchestrator {
                 context['subscriptionId'] = this.inputs.subscriptionId;
                 context['rightClickScenario'] = rightClickScenario;
                 let controlProvider = new InputControlProvider(extendedPipelineTemplate, context);
-                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession, resourceNode);
+                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession);
             }
         }
     }
