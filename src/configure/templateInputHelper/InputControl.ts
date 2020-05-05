@@ -25,7 +25,7 @@ export class InputControl {
     private visible: boolean;
     private validationDataSourceToInputsMap: Map<DataSource, InputControl[]>;
     private azureSession: AzureSession;
-    private _tempValue: any;
+    private _valuePendingValuation: any;
 
     constructor(inputDescriptor: ExtendedInputDescriptor, value: any, controlType: ControlType, azureSession: AzureSession) {
         this.inputDescriptor = inputDescriptor;
@@ -140,7 +140,7 @@ export class InputControl {
     }
 
     public async triggerControlValueValidations(value: string): Promise<string> {
-        this._tempValue = value;
+        this._valuePendingValuation = value;
         let errorMessage = this.getStaticValidationsResult(value);
         if (errorMessage) {
             return Promise.resolve(errorMessage);
@@ -208,7 +208,11 @@ export class InputControl {
 
     private async evaluateDynamicValidation(validation: InputDynamicValidation, value: string): Promise<string> {
         var requiredDataSource: DataSource = null;
-        this.validationDataSourceToInputsMap.forEach((descriptorsArray, dataSource) => { if (dataSource.id === validation.dataSourceId) { requiredDataSource = dataSource; } });
+        this.validationDataSourceToInputsMap.forEach((inputControlArray: InputControl[], dataSource: DataSource) =>{
+             if (dataSource.id === validation.dataSourceId) {
+                  requiredDataSource = dataSource; 
+                }
+             });
 
         var requiredInputsValueMap: StringMap<any> = {};
         var allRequiredInputValuesAvailable: boolean = true;
@@ -226,7 +230,7 @@ export class InputControl {
         if (allRequiredInputValuesAvailable) {
             return DataSourceUtility.evaluateDataSource(requiredDataSource, requiredInputsValueMap, this.azureSession)
                 .then((result) => {
-                    if (value === this._tempValue) {
+                    if (value === this._valuePendingValuation) {
                         if (!result) {
                             return validation.errorMessage;
                         }

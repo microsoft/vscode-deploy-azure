@@ -96,27 +96,7 @@ export class MustacheHelper {
 
                     return "";
                 };
-            },
-            "equals": function () {
-                return function (text: string, render: any) {
-                    var renderedText: string = render(text);
-                    var parts = MustacheHelper.getParts(renderedText);
-                    if (parts.length !== 5) {
-                        return "";
-                    }
-
-                    if (parts[4] === 'true') {
-                        parts[0] = parts[0].toLowerCase();
-                        parts[1] = parts[1].toLowerCase();
-                    }
-
-                    if (parts[0] === parts[1]) {
-                        return parts[2];
-                    }
-                    return parts[3];
-                }
-            },
-
+            }
         };
     }
 

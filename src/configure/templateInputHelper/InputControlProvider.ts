@@ -1,11 +1,15 @@
 import { MustacheHelper } from "../helper/mustacheHelper";
+import { telemetryHelper } from '../helper/telemetryHelper';
 import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation, InputMode } from "../model/Contracts";
 import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
+import { TracePoints } from "../resources/tracePoints";
 import { InputControl } from "./InputControl";
 import { DataSourceExpression } from "./utilities/DataSourceExpression";
 import { DataSourceUtility } from "./utilities/DataSourceUtility";
 import { InputControlUtility } from "./utilities/InputControlUtility";
 import { VisibilityHelper } from "./utilities/VisibilityHelper";
+
+const Layer: string = "InputControlProvider";
 
 export class InputControlProvider {
     private _pipelineTemplate: ExtendedPipelineTemplate;
@@ -13,7 +17,7 @@ export class InputControlProvider {
     private azureSession: AzureSession;
     private _context: StringMap<any>;
 
-    constructor(azureSession: AzureSession, pipelineTemplate: ExtendedPipelineTemplate, context: { [key: string]: any }) {
+    constructor(azureSession: AzureSession, pipelineTemplate: ExtendedPipelineTemplate, context: StringMap<any>) {
         this._pipelineTemplate = pipelineTemplate;
         this._inputControlsMap = new Map<string, InputControl>();
         this.azureSession = azureSession;
@@ -80,7 +84,7 @@ export class InputControlProvider {
                         inputControl.dataSourceInputControls.push(...dependentInputControlArray);
                     }
                 } else {
-                    throw new Error(`Data source {inputDes.dataSourceId} specified for input {inputDes.id} is not present in pipeline template {this._pipelineTemplate.id}`);
+                    throw new Error(`Data source ${inputDes.dataSourceId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
                 }
             }
         });
@@ -106,14 +110,16 @@ export class InputControlProvider {
                         dynamicValidationRequiredInputIds = Array.from(new Set(dynamicValidationRequiredInputIds));
                         dynamicValidationRequiredInputIds.forEach((dynamicValidationRequiredInputId) => {
                             var dependentInput = this._inputControlsMap.get(dynamicValidationRequiredInputId);
-                            if (dependentInput && dynamicValidationRequiredInputId !== inputDes.id) {
+                            if (dependentInput) {
                                 dataSourceToInputsMap.get(validationDataSource).push(dependentInput);
                             } else {
-                                //.logError("Dependent input {0} specified for input {1} is not present in pipeline template {2}".format(dynamicValidationRequiredInputId, inputDes.id, this._pipelineTemplate.id));
+                                let error: Error = new Error(`Dependent input ${dynamicValidationRequiredInputId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
+                                telemetryHelper.logError(Layer, TracePoints.InitializeDynamicValidation, error);
                             }
                         });
                     } else {
-                        //PipelineTemplateErrorLogger.logError("validation data source {0} specified for input {1} is not present in pipeline template {2}".format(validation.dataSourceId, inputDes.id, this._pipelineTemplate.id));
+                        let error = new Error(`validation data source ${validation.dataSourceId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
+                        telemetryHelper.logError(Layer, TracePoints.InitializeDynamicValidation, error);
                     }
                 });
                 inputControl.setValidationDataSources(dataSourceToInputsMap);
@@ -171,7 +177,7 @@ export class InputControlProvider {
         }
 
         if (!allowSelfDependency && dependentInputIds.indexOf(inputControl.getInputControlId()) >= 0) {
-            throw new Error(`Input '{inputControl.getInputControlId()}' has dependency on its own in pipeline template {this._pipelineTemplate.id}.`);
+            throw new Error(`Input ${inputControl.getInputControlId()} has dependency on its own in pipeline template ${this._pipelineTemplate.id}.`);
         }
 
         var uniqueDependentInputIds = dependentInputIds.filter(function (item, pos) {
@@ -183,7 +189,7 @@ export class InputControlProvider {
             if (dependentInputControl) {
                 dependentInputControlArray.push(dependentInputControl);
             } else {
-                throw new Error(`Dependent input {inputId} specified for input {inputControl.getInputControlId()} is not present in pipeline template {this._pipelineTemplate.id}`);
+                throw new Error(`Dependent input ${inputId} specified for input ${inputControl.getInputControlId()} is not present in pipeline template ${this._pipelineTemplate.id}`);
             }
         }
         return dependentInputControlArray;
