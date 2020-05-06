@@ -47,19 +47,7 @@ export class RepositoryAnalysisApplicationSettings {
     language: SupportedLanguage;
     buildTargetName: string;
     deployTargetName: string;
-    settings: BuildAndDeploySettings = new BuildAndDeploySettings();
-}
-
-export class BuildAndDeploySettings {
-    workingDirectory?: string = ".";
-    nodeGulpFilePath?: string = "gulpfile.js";
-    nodeGruntFilePath?: string = "gruntfile.js";
-    nodePackageFilePath?: string = "package.json";
-    nodePackageFileDirectory?: string = ".";
-    pythonRequirementsFilePath?: string = "requirements.txt";
-    pythonRequirementsFileDirectory?: string = ".";
-    azureFunctionsHostFilePath?: string = "host.json";
-    azureFunctionsHostFileDirectory?: string = ".";
+    settings: StringMap<string> = {};
 }
 
 export class AzureParameters {

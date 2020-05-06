@@ -22,4 +22,5 @@ export class TracePoints {
     public static RemoteServiceUrlFetchFailed = 'RemoteServiceUrlFetchFailed';
     public static EvaluateDynamicValidation = 'EvalauteDynamicValidation';
     public static InitializeDynamicValidation = 'InitializeDynamicValidation';
+    public static SetInputControlValueFromRepoAnalysisResult = 'setInputControlValueFromRepoAnalysisResult';
 }

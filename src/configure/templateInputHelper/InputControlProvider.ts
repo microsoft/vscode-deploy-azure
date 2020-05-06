@@ -1,9 +1,10 @@
 import { MustacheHelper } from "../helper/mustacheHelper";
-import { telemetryHelper } from '../helper/telemetryHelper';
+import { telemetryHelper } from "../helper/telemetryHelper";
 import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation, InputMode } from "../model/Contracts";
-import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
+import { AzureSession, ControlType, IPredicate, RepositoryAnalysisApplicationSettings, StringMap } from '../model/models';
 import { TracePoints } from "../resources/tracePoints";
 import { InputControl } from "./InputControl";
+import { RepoAnalysisSettingInputProvider } from "./RepoAnalysisSettingInputProvider";
 import { DataSourceExpression } from "./utilities/DataSourceExpression";
 import { DataSourceUtility } from "./utilities/DataSourceUtility";
 import { InputControlUtility } from "./utilities/InputControlUtility";
@@ -15,12 +16,14 @@ export class InputControlProvider {
     private _pipelineTemplate: ExtendedPipelineTemplate;
     private _inputControlsMap: Map<string, InputControl>;
     private azureSession: AzureSession;
+    private repoAnalysisSettingInputProvider: RepoAnalysisSettingInputProvider;
     private _context: StringMap<any>;
 
     constructor(azureSession: AzureSession, pipelineTemplate: ExtendedPipelineTemplate, context: StringMap<any>) {
         this._pipelineTemplate = pipelineTemplate;
         this._inputControlsMap = new Map<string, InputControl>();
         this.azureSession = azureSession;
+        this.repoAnalysisSettingInputProvider = new RepoAnalysisSettingInputProvider(context['repoAnalysisSettings'] as RepositoryAnalysisApplicationSettings[]);
         this._context = context;
         this._createControls();
     }
@@ -28,7 +31,10 @@ export class InputControlProvider {
     public async getAllPipelineTemplateInputs() {
         let parameters: { [key: string]: any } = {};
         for (let inputControl of this._inputControlsMap.values()) {
-            if (inputControl.getPropertyValue('deployTarget') === "true" && !!this._context["resourceId"]) {
+            if (this.repoAnalysisSettingInputProvider.inputFromRepoAnalysisSetting(inputControl)) {
+                await this.repoAnalysisSettingInputProvider.setInputControlValueFromRepoAnalysisResult(inputControl);
+            }
+            else if (inputControl.getPropertyValue('deployTarget') === "true" && !!this._context["resourceId"]) {
                 inputControl.setValue(this._context["resourceId"]);
             }
             else {
@@ -43,8 +49,8 @@ export class InputControlProvider {
 
     private _createControls() {
         for (let input of this._pipelineTemplate.inputs) {
-            var inputControl: InputControl = null;
-            var inputControlValue = this._getInputControlValue(input);
+            let inputControl: InputControl = null;
+            let inputControlValue = this._getInputControlValue(input);
 
             switch (input.inputMode) {
                 case InputMode.None:

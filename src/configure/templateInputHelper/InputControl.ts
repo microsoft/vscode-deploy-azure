@@ -269,6 +269,5 @@ export class InputControl {
             // Resolve as valid here as other validation for required input will be shown
             return null;
         }
-
     }
 }

@@ -162,11 +162,9 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
                     label: template.templateDescription,
                     targetType: getTargetType(template),
                     targetKind: getTargetKind(template),
-                    language: template.attributes.language,
-                    templateId: template.templateId,
-                    templateWeight: template.templateWeight,
                     templateType: TemplateType.REMOTE,
-                    workingDirectory: template.workingDirectory
+                    language: template.attributes.language,
+                    ...template
                 };
                 pipelineTemplates.push(remoteTemplate);
             });
