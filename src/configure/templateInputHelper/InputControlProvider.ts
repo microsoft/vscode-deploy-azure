@@ -1,10 +1,10 @@
-import { ControlProvider } from "../helper/controlProvider";
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { telemetryHelper } from "../helper/telemetryHelper";
 import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation, InputMode } from "../model/Contracts";
 import { AzureSession, ControlType, IPredicate, RepositoryAnalysisApplicationSettings, StringMap } from '../model/models';
 import { TracePoints } from "../resources/tracePoints";
 import { InputControl } from "./InputControl";
+import { RepoAnalysisSettingInputProvider } from "./RepoAnalysisSettingInputProvider";
 import { DataSourceExpression } from "./utilities/DataSourceExpression";
 import { DataSourceUtility } from "./utilities/DataSourceUtility";
 import { InputControlUtility } from "./utilities/InputControlUtility";
@@ -13,20 +13,17 @@ import { VisibilityHelper } from "./utilities/VisibilityHelper";
 const Layer: string = "InputControlProvider";
 
 export class InputControlProvider {
-    private readonly repoAnalysisSettingKey: string = "repoAnalysisSettingKey";
     private _pipelineTemplate: ExtendedPipelineTemplate;
     private _inputControlsMap: Map<string, InputControl>;
     private azureSession: AzureSession;
+    private repoAnalysisSettingInputProvider: RepoAnalysisSettingInputProvider;
     private _context: StringMap<any>;
-    private _repoAnalysisSettings: RepositoryAnalysisApplicationSettings[];
-    private _repoAnalysisSettingInUse: number;
 
-    constructor(azureSession: AzureSession, pipelineTemplate: ExtendedPipelineTemplate, repoAnalysisSettings: RepositoryAnalysisApplicationSettings[], context: StringMap<any>) {
+    constructor(azureSession: AzureSession, pipelineTemplate: ExtendedPipelineTemplate, context: StringMap<any>) {
         this._pipelineTemplate = pipelineTemplate;
         this._inputControlsMap = new Map<string, InputControl>();
-        this._repoAnalysisSettings = repoAnalysisSettings || [];
-        this._repoAnalysisSettingInUse = repoAnalysisSettings.length > 1 ? -1 : 0;
         this.azureSession = azureSession;
+        this.repoAnalysisSettingInputProvider = new RepoAnalysisSettingInputProvider(context['repoAnalysisSettings'] as RepositoryAnalysisApplicationSettings[]);
         this._context = context;
         this._createControls();
     }
@@ -34,9 +31,8 @@ export class InputControlProvider {
     public async getAllPipelineTemplateInputs() {
         let parameters: { [key: string]: any } = {};
         for (let inputControl of this._inputControlsMap.values()) {
-            const repoAnalysisSettingKey = inputControl.getPropertyValue(this.repoAnalysisSettingKey);
-            if (!!repoAnalysisSettingKey) {
-                await this.setInputControlValueFromRepoAnalysisResult(inputControl);
+            if (this.repoAnalysisSettingInputProvider.inputFromRepoAnalysisSetting(inputControl)) {
+                await this.repoAnalysisSettingInputProvider.setInputControlValueFromRepoAnalysisResult(inputControl);
             }
             else if (inputControl.getPropertyValue('deployTarget') === "true" && !!this._context["resourceId"]) {
                 inputControl.setValue(this._context["resourceId"]);
@@ -53,8 +49,8 @@ export class InputControlProvider {
 
     private _createControls() {
         for (let input of this._pipelineTemplate.inputs) {
-            var inputControl: InputControl = null;
-            var inputControlValue = this._getInputControlValue(input);
+            let inputControl: InputControl = null;
+            let inputControlValue = this._getInputControlValue(input);
 
             switch (input.inputMode) {
                 case InputMode.None:
@@ -80,50 +76,6 @@ export class InputControlProvider {
         }
         this._setInputControlDataSourceInputs();
         this._initializeDynamicValidations();
-    }
-
-    private async setInputControlValueFromRepoAnalysisResult(inputControl: InputControl): Promise<void> {
-        let repoAnalysisSettingKey = inputControl.getPropertyValue(this.repoAnalysisSettingKey);
-        if (this._repoAnalysisSettingInUse !== -1) {
-            if (this._repoAnalysisSettings.length === 0 || !this._repoAnalysisSettings[this._repoAnalysisSettingInUse].settings[repoAnalysisSettingKey]) {
-                let value = await new ControlProvider().showInputBox(repoAnalysisSettingKey, { placeHolder: inputControl.getInputDescriptor().name });
-                inputControl.setValue(value);
-            } else {
-                inputControl.setValue(this._repoAnalysisSettings[this._repoAnalysisSettingInUse].settings[repoAnalysisSettingKey]);
-            }
-        } else {
-            let settingIndexMap: Map<string, number[]> = new Map();
-            this._repoAnalysisSettings.forEach((analysisSetting, index: number) => {
-                if (!analysisSetting.settings[repoAnalysisSettingKey]) {
-                    return;
-                }
-                if (settingIndexMap.has(analysisSetting.settings[repoAnalysisSettingKey])) {
-                    settingIndexMap.get(analysisSetting.settings[repoAnalysisSettingKey]).push(index);
-                } else {
-                    settingIndexMap.set(analysisSetting.settings[repoAnalysisSettingKey], [index]);
-                }
-            });
-            if (settingIndexMap.size === 0) {
-                let value = await new ControlProvider().showInputBox(repoAnalysisSettingKey, { placeHolder: inputControl.getInputDescriptor().name });
-                inputControl.setValue(value);
-            }
-            else {
-                let possibleValues = Array.from(settingIndexMap.keys()).map((value) => ({ label: value, data: value }));
-                let selectedValue: { label: string, data: any };
-
-                if (possibleValues.length === 1) {
-                    selectedValue = possibleValues[0];
-                }
-                else {
-                    selectedValue = await new ControlProvider().showQuickPick(repoAnalysisSettingKey, possibleValues, { placeHolder: inputControl.getInputDescriptor().name });
-                }
-
-                if (settingIndexMap.get(selectedValue.data).length === 1) {
-                    this._repoAnalysisSettingInUse = settingIndexMap.get(selectedValue.data)[0];
-                }
-                inputControl.setValue(selectedValue.data);
-            }
-        }
     }
 
     private _setInputControlDataSourceInputs(): void {

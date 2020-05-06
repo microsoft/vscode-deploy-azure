@@ -17,7 +17,7 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
 import { LocalPipelineTemplate, PipelineTemplate, RemotePipelineTemplate, TemplateAssetType, TemplateType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -78,7 +78,7 @@ class Orchestrator {
     private workspacePath: string;
     private controlProvider: ControlProvider;
     private continueOrchestration: boolean = true;
-    private _repoAnalysisSettings: RepositoryAnalysisApplicationSettings[];
+    private context: StringMap<any> = {};
 
     public constructor() {
         this.inputs = new WizardInputs();
@@ -132,7 +132,7 @@ class Orchestrator {
                 shortlistedTemplates = this.inputs.potentialTemplates.filter((template) => template.targetKind === resource.kind);
                 if (!!shortlistedTemplates && shortlistedTemplates.length > 1) {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates.find((template) => template.templateType === TemplateType.REMOTE);
-                } 
+                }
                 else if (!!shortlistedTemplates) {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates[0];
                 }
@@ -180,9 +180,8 @@ class Orchestrator {
     private async getTemplateParameters() {
         if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
             let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, this.inputs.pipelineConfiguration.template as RemotePipelineTemplate);
-            let context: { [key: string]: any } = {};
-            context['subscriptionId'] = this.inputs.subscriptionId;
-            let controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this._repoAnalysisSettings, context);
+            this.context['subscriptionId'] = this.inputs.subscriptionId;
+            let controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this.context);
             this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs();
         }
         else if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
@@ -213,7 +212,7 @@ class Orchestrator {
         return null;
     }
 
-    private getSelectedPipelineTargetType(): TargetResourceType{
+    private getSelectedPipelineTargetType(): TargetResourceType {
         return this.inputs.potentialTemplates[0].targetType
     }
 
@@ -518,17 +517,16 @@ class Orchestrator {
 
         });
 
-        if (!applicationSettings || applicationSettings.length === 0) {
-            return;
-        }
-        this._repoAnalysisSettings = applicationSettings;
-        if (applicationSettings.length === 1) {
-            this.inputs.repositoryAnalysisApplicationSettings = applicationSettings[0];
-            this.inputs.pipelineConfiguration.workingDirectory = applicationSettings[0].settings.workingDirectory;
+        this.context['repoAnalysisSettings'] = applicationSettings;
+
+        if (!applicationSettings || applicationSettings.length === 0 ||
+            this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
             return;
         }
 
-        if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
+        if (applicationSettings.length === 1) {
+            this.inputs.repositoryAnalysisApplicationSettings = applicationSettings[0];
+            this.inputs.pipelineConfiguration.workingDirectory = applicationSettings[0].settings.workingDirectory;
             return;
         }
 

@@ -47,7 +47,7 @@ export class RepositoryAnalysisApplicationSettings {
     language: SupportedLanguage;
     buildTargetName: string;
     deployTargetName: string;
-    settings: { [key: string]: string } = {};
+    settings: StringMap<string> = {};
 }
 
 export class AzureParameters {
