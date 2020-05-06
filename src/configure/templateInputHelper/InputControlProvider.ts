@@ -1,68 +1,76 @@
-import { GenericResource } from "azure-arm-resource/lib/resource/models";
 import { ControlProvider } from "../helper/controlProvider";
 import { MustacheHelper } from "../helper/mustacheHelper";
-import { ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputMode } from "../model/Contracts";
+import { telemetryHelper } from "../helper/telemetryHelper";
+import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation, InputMode } from "../model/Contracts";
 import { AzureSession, ControlType, IPredicate, RepositoryAnalysisApplicationSettings, StringMap } from '../model/models';
+import { TracePoints } from "../resources/tracePoints";
 import { InputControl } from "./InputControl";
 import { DataSourceExpression } from "./utilities/DataSourceExpression";
+import { DataSourceUtility } from "./utilities/DataSourceUtility";
 import { InputControlUtility } from "./utilities/InputControlUtility";
 import { VisibilityHelper } from "./utilities/VisibilityHelper";
+
+const Layer: string = "InputControlProvider";
 
 export class InputControlProvider {
     private readonly repoAnalysisSettingKey: string = "repoAnalysisSettingKey";
     private _pipelineTemplate: ExtendedPipelineTemplate;
     private _inputControlsMap: Map<string, InputControl>;
+    private azureSession: AzureSession;
+    private _context: StringMap<any>;
     private _repoAnalysisSettings: RepositoryAnalysisApplicationSettings[];
     private _repoAnalysisSettingInUse: number;
 
-    constructor(pipelineTemplate: ExtendedPipelineTemplate, repoAnalysisSettings: RepositoryAnalysisApplicationSettings[], context: { [key: string]: any }) {
+    constructor(azureSession: AzureSession, pipelineTemplate: ExtendedPipelineTemplate, repoAnalysisSettings: RepositoryAnalysisApplicationSettings[], context: StringMap<any>) {
         this._pipelineTemplate = pipelineTemplate;
         this._inputControlsMap = new Map<string, InputControl>();
         this._repoAnalysisSettings = repoAnalysisSettings || [];
         this._repoAnalysisSettingInUse = repoAnalysisSettings.length > 1 ? -1 : 0;
-        this._createControls(context);
+        this.azureSession = azureSession;
+        this._context = context;
+        this._createControls();
     }
 
-    public async getAllPipelineTemplateInputs(azureSession: AzureSession, resourceNode?: GenericResource) {
+    public async getAllPipelineTemplateInputs() {
         let parameters: { [key: string]: any } = {};
         for (let inputControl of this._inputControlsMap.values()) {
             const repoAnalysisSettingKey = inputControl.getPropertyValue(this.repoAnalysisSettingKey);
             if (!!repoAnalysisSettingKey) {
                 await this.setInputControlValueFromRepoAnalysisResult(inputControl);
             }
-            else if (inputControl.getPropertyValue('deployTarget') === "true" && !!resourceNode) {
-                inputControl.setValue(resourceNode.id);
+            else if (inputControl.getPropertyValue('deployTarget') === "true" && !!this._context["resourceId"]) {
+                inputControl.setValue(this._context["resourceId"]);
             }
             else {
                 this._setInputControlVisibility(inputControl);
                 this._setupInputControlDefaultValue(inputControl);
-                await inputControl.setInputControlValue(azureSession);
+                await inputControl.setInputControlValue();
             }
             parameters[inputControl.getInputControlId()] = inputControl.getValue();
         }
         return parameters;
     }
 
-    private _createControls(context: { [key: string]: any }) {
+    private _createControls() {
         for (let input of this._pipelineTemplate.inputs) {
             var inputControl: InputControl = null;
-            var inputControlValue = this._getInputControlValue(input, context);
+            var inputControlValue = this._getInputControlValue(input);
 
             switch (input.inputMode) {
                 case InputMode.None:
                 case InputMode.AzureSubscription:
                     if (input.type !== InputDataType.Authorization) {
-                        inputControl = new InputControl(input, inputControlValue, ControlType.None);
+                        inputControl = new InputControl(input, inputControlValue, ControlType.None, this.azureSession);
                     }
                     break;
                 case InputMode.TextBox:
                 case InputMode.PasswordBox:
-                    inputControl = new InputControl(input, inputControlValue, ControlType.InputBox);
+                    inputControl = new InputControl(input, inputControlValue, ControlType.InputBox, this.azureSession);
                     break;
                 case InputMode.Combo:
                 case InputMode.CheckBox:
                 case InputMode.RadioButtons:
-                    inputControl = new InputControl(input, inputControlValue, ControlType.QuickPick);
+                    inputControl = new InputControl(input, inputControlValue, ControlType.QuickPick, this.azureSession);
                     break;
 
             }
@@ -71,6 +79,7 @@ export class InputControlProvider {
             }
         }
         this._setInputControlDataSourceInputs();
+        this._initializeDynamicValidations();
     }
 
     private async setInputControlValueFromRepoAnalysisResult(inputControl: InputControl): Promise<void> {
@@ -135,6 +144,44 @@ export class InputControlProvider {
         });
     }
 
+    private _initializeDynamicValidations() {
+        this._pipelineTemplate.inputs.forEach((inputDes) => {
+
+            var inputControl = this._inputControlsMap.get(inputDes.id);
+
+            if (!!inputControl && !!inputDes.dynamicValidations && inputDes.dynamicValidations.length > 0) {
+                var dataSourceToInputsMap = new Map<DataSource, InputControl[]>();
+                inputDes.dynamicValidations.forEach((validation: InputDynamicValidation) => {
+                    var validationDataSource = DataSourceUtility.getDataSourceById(this._pipelineTemplate.dataSources, validation.dataSourceId);
+                    if (validationDataSource) {
+                        dataSourceToInputsMap.set(validationDataSource, []);
+
+                        let dynamicValidationRequiredInputIds = DataSourceUtility.getDependentInputIdList(validationDataSource.endpointUrlStem);
+                        dynamicValidationRequiredInputIds = dynamicValidationRequiredInputIds.concat(DataSourceUtility.getDependentInputIdList(validationDataSource.requestBody));
+                        dynamicValidationRequiredInputIds = dynamicValidationRequiredInputIds.concat(DataSourceUtility.getDependentInputIdList(validationDataSource.resultTemplate));
+                        dynamicValidationRequiredInputIds = dynamicValidationRequiredInputIds.concat(DataSourceUtility.getDependentInputIdList(validationDataSource.resultSelector));
+
+                        dynamicValidationRequiredInputIds = Array.from(new Set(dynamicValidationRequiredInputIds));
+                        dynamicValidationRequiredInputIds.forEach((dynamicValidationRequiredInputId) => {
+                            var dependentInput = this._inputControlsMap.get(dynamicValidationRequiredInputId);
+                            if (dependentInput) {
+                                dataSourceToInputsMap.get(validationDataSource).push(dependentInput);
+                            } else {
+                                let error: Error = new Error(`Dependent input ${dynamicValidationRequiredInputId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
+                                telemetryHelper.logError(Layer, TracePoints.InitializeDynamicValidation, error);
+                            }
+                        });
+                    } else {
+                        let error = new Error(`validation data source ${validation.dataSourceId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
+                        telemetryHelper.logError(Layer, TracePoints.InitializeDynamicValidation, error);
+                    }
+                });
+                inputControl.setValidationDataSources(dataSourceToInputsMap);
+            }
+        });
+    }
+
+
     private _setupInputControlDefaultValue(inputControl: InputControl): void {
         var inputDes = inputControl.getInputDescriptor();
         if (!inputDes.defaultValue || !InputControlUtility.doesExpressionContainsDependency(inputDes.defaultValue)) {
@@ -159,9 +206,10 @@ export class InputControlProvider {
         }
     }
 
-    private _getInputControlValue(inputDes: ExtendedInputDescriptor, context: { [key: string]: any }) {
-        if (!!context && !!context[inputDes.id]) {
-            return context[inputDes.id];
+    private _getInputControlValue(inputDes: ExtendedInputDescriptor) {
+        if (!!this._context && !!this._context
+        [inputDes.id]) {
+            return this._context[inputDes.id];
         } else {
             return !inputDes.defaultValue
                 || InputControlUtility.doesExpressionContainsDependency(inputDes.defaultValue)

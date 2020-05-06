@@ -1,8 +1,9 @@
 import { JSONPath } from 'jsonpath-plus';
+import { isNullOrUndefined } from 'util';
 import { ArmRestClient } from "../../clients/azure/armRestClient";
 import { MustacheHelper } from "../../helper/mustacheHelper";
 import { DataSource } from "../../model/Contracts";
-import { AzureSession, StringMap } from "../../model/models";
+import { AzureSession, QuickPickItemWithData, StringMap } from "../../model/models";
 
 export class DataSourceUtility {
 
@@ -39,7 +40,7 @@ export class DataSourceUtility {
         var httpMethod = dataSource.httpMethod || "GET";
         var requestBody = !!dataSource.requestBody ? MustacheHelper.render(dataSource.requestBody, view) : null;
         let amrClient = new ArmRestClient(azureSession);
-        return amrClient.fetchArmData(armUri, httpMethod, requestBody)
+        return amrClient.fetchArmData(armUri, httpMethod, JSON.parse(requestBody))
             .then((response: any) => {
                 return this.evaluateDataSourceResponse(dataSource, response, view);
             });
@@ -49,13 +50,13 @@ export class DataSourceUtility {
         if (!!dataSource.resultSelector) {
             var resultSelector = MustacheHelper.render(dataSource.resultSelector, view);
             response = JSONPath({ json: response, path: resultSelector, wrap: false, flatten: true });
-            if (!response) {
+            if (response === "" || response === isNullOrUndefined) {
                 return null;
             }
         }
 
         if (Array.isArray(response)) {
-            var quickPickItems: Array<{ label: string, data: any, group?: string }> = [];
+            var quickPickItems: Array<QuickPickItemWithData> = [];
 
             if (!!dataSource.resultTemplate) {
                 // Apply resultTemplate to each element in the Array
@@ -64,7 +65,7 @@ export class DataSourceUtility {
                         item = { "result": item };
                     }
                     var resultObj = JSON.parse(MustacheHelper.render(dataSource.resultTemplate, { ...view, ...item }));
-                    quickPickItems.push({ label: resultObj.DisplayValue, data: resultObj.Value, group: resultObj.Group || "" });
+                    quickPickItems.push({ label: resultObj.DisplayValue, data: resultObj.Value });
                 }
             }
             else {

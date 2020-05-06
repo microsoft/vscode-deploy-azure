@@ -132,10 +132,11 @@ class Orchestrator {
                 shortlistedTemplates = this.inputs.potentialTemplates.filter((template) => template.targetKind === resource.kind);
                 if (!!shortlistedTemplates && shortlistedTemplates.length > 1) {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates.find((template) => template.templateType === TemplateType.REMOTE);
-                }
+                } 
                 else if (!!shortlistedTemplates) {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates[0];
-                } else {
+                }
+                else {
                     throw new Error(Messages.TemplateNotFound);
                 }
                 break;
@@ -152,11 +153,11 @@ class Orchestrator {
             await this.getSourceRepositoryDetails();
             await this.getAzureSession();
             let repoAnalysisResult = await this.getRepositoryAnalysis();
-            let targetType = await this.getSelectedPipeline(repoAnalysisResult);
+            await this.getSelectedPipeline(repoAnalysisResult);
 
             try {
                 if (!resourceNode) {
-                    await this.getAzureResource(targetType);
+                    await this.getAzureResource(this.getSelectedPipelineTargetType());
                 }
                 this.selectTemplate(this.inputs.targetResource.resource);
 
@@ -181,8 +182,8 @@ class Orchestrator {
             let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, this.inputs.pipelineConfiguration.template as RemotePipelineTemplate);
             let context: { [key: string]: any } = {};
             context['subscriptionId'] = this.inputs.subscriptionId;
-            let controlProvider = new InputControlProvider(extendedPipelineTemplate, this._repoAnalysisSettings, context);
-            this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession);
+            let controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this._repoAnalysisSettings, context);
+            this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs();
         }
         else if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
             let templateParameterHelper = new TemplateParameterHelper();
@@ -210,6 +211,10 @@ class Orchestrator {
                 this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
         }
         return null;
+    }
+
+    private getSelectedPipelineTargetType(): TargetResourceType{
+        return this.inputs.potentialTemplates[0].targetType
     }
 
     private async analyzeNode(node: any): Promise<GenericResource> {
@@ -441,7 +446,7 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
-    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysisParameters): Promise<TargetResourceType> {
+    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
         extensionVariables.templateServiceEnabled = false;
         var appropriatePipelines: PipelineTemplate[] = [];
 
@@ -483,7 +488,6 @@ class Orchestrator {
         else {
             this.inputs.potentialTemplates = pipelineMap.get(pipelineLabels[0]);
         }
-        return this.inputs.potentialTemplates[0].targetType;
     }
 
     private getMapOfUniqueLabels(pipelines: PipelineTemplate[]): Map<string, PipelineTemplate[]> {

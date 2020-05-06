@@ -4,10 +4,10 @@ export class MustacheHelper {
     public static getHelperMethods(): any {
         return {
             "if": function () {
-                 /*
-                 * if returns first parameter if given clause is positive, otherwise second parameter
-                 * Usage: {{#if}}clause trueValue falseValue{{/if}}
-                 */
+                /*
+                * if returns first parameter if given clause is positive, otherwise second parameter
+                * Usage: {{#if}}clause trueValue falseValue{{/if}}
+                */
                 return function (text: string, render: any) {
                     let parts = MustacheHelper.getParts(text);
                     if (parts.length > 1) {
@@ -26,20 +26,20 @@ export class MustacheHelper {
             },
 
             "toLower": function () {
-                 /*
-                 * converts the string to lower case
-                 * Usage: {{#toLower}} String to convert to lower case {{/toLower}}
-                 */
+                /*
+                * converts the string to lower case
+                * Usage: {{#toLower}} String to convert to lower case {{/toLower}}
+                */
                 return function (text: string, render: any) {
                     return render(text).toLowerCase();
                 };
             },
 
             "tinyguid": function () {
-                  /*
-                 * Generates 4 character random string
-                 * Usage: {{#tinyguid}} {{/tinyguid}}
-                 */
+                /*
+               * Generates 4 character random string
+               * Usage: {{#tinyguid}} {{/tinyguid}}
+               */
                 return function () {
                     return "yxxx".replace(/[xy]/g, function (c) {
                         var r = Math.random() * 16 | 0;
@@ -95,9 +95,8 @@ export class MustacheHelper {
                     }
 
                     return "";
-                }
-            },
-
+                };
+            }
         };
     }
 

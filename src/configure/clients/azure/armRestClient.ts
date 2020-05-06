@@ -10,7 +10,7 @@ export class ArmRestClient {
         this.restClient = new RestClient(azureSession.credentials);
     }
 
-    public fetchArmData(endPointUri: string, httpMethod: string, body?: string) {
+    public fetchArmData(endPointUri: string, httpMethod: string, body?: any) {
         return this.sendRequest(
             this.resourceManagerEndpointUrl + endPointUri,
             httpMethod,
@@ -37,7 +37,7 @@ export class ArmRestClient {
             null);
     }
 
-    private async sendRequest(url: string, httpMethod: string, apiVersion: string, body?: string): Promise<any> {
+    private async sendRequest(url: string, httpMethod: string, apiVersion: string, body?: any): Promise<any> {
         return this.restClient.sendRequest(
             {
                 url: url,
