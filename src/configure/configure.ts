@@ -24,8 +24,8 @@ import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
 import { InputControlProvider as InputControlProvider } from './templateInputHelper/InputControlProvider';
-import uuid = require('uuid/v4');
 
+const uuid = require('uuid/v4');
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
@@ -99,7 +99,7 @@ class Orchestrator {
             await pipelineConfigurer.createPreRequisites(this.inputs, !!this.azureResourceClient ? this.azureResourceClient : new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId));
 
             telemetryHelper.setCurrentStep('CreateAssets');
-            await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, type: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, type, data, inputs); });
+            await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, assetType, data, inputs); });
 
             telemetryHelper.setCurrentStep('CheckInPipeline');
             await this.checkInPipelineFileToRepository(pipelineConfigurer);
@@ -186,8 +186,8 @@ class Orchestrator {
                 let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, (this.inputs.pipelineConfiguration.template as RemotePipelineTemplate));
                 let context: { [key: string]: any } = {};
                 context['subscriptionId'] = this.inputs.subscriptionId;
-                let controlProvider = new InputControlProvider(extendedPipelineTemplate, context);
-                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession, resourceNode);
+                let controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, context);
+                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs();
             }
         }
     }
