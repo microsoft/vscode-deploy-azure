@@ -1,13 +1,11 @@
 import * as utils from 'util';
 import * as vscode from 'vscode';
-import { QuickPickItem } from 'vscode';
-import { IAzureQuickPickOptions } from 'vscode-azureextensionui';
+import { ControlProvider } from '../helper/controlProvider';
 import { MustacheHelper } from '../helper/mustacheHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { DataSource, ExtendedInputDescriptor, InputDataType, InputDynamicValidation, InputMode } from "../model/Contracts";
-import { AzureSession, ControlType, extensionVariables, QuickPickItemWithData, StringMap } from '../model/models';
+import { AzureSession, ControlType, QuickPickItemWithData, StringMap } from '../model/models';
 import { Messages } from '../resources/messages';
-import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { DataSourceExpression } from './utilities/DataSourceExpression';
 import { DataSourceUtility } from './utilities/DataSourceUtility';
@@ -26,6 +24,7 @@ export class InputControl {
     private validationDataSourceToInputsMap: Map<DataSource, InputControl[]>;
     private azureSession: AzureSession;
     private _valuePendingValuation: any;
+    private controlProvider: ControlProvider;
 
     constructor(inputDescriptor: ExtendedInputDescriptor, value: any, controlType: ControlType, azureSession: AzureSession) {
         this.inputDescriptor = inputDescriptor;
@@ -35,6 +34,7 @@ export class InputControl {
         this.azureSession = azureSession;
         this.dataSourceInputControls = [];
         this.dataSourceInputs = new Map<string, any>();
+        this.controlProvider = new ControlProvider();
     }
 
     public getValue(): any {
@@ -81,6 +81,15 @@ export class InputControl {
             var dependentInputs = this._getDataSourceInputs();
             if (this.controlType === ControlType.None || this.controlType === ControlType.InputBox) {
                 this.value = await this.dataSource.evaluateDataSources(dependentInputs, this.azureSession);
+                let errorMessage = await this.triggerControlValueValidations(this.value);
+                if(!errorMessage){
+                    vscode.window.showErrorMessage(errorMessage);
+                    this.value = this.controlProvider.showInputBox(this.getInputControlId(), {
+                        value: this.value,
+                        placeHolder: this.inputDescriptor.name,
+                        validateInput: (value) => this.triggerControlValueValidations(value)
+                    });
+                }
             }
             else if (this.controlType === ControlType.QuickPick) {
                 let listItems: Array<QuickPickItemWithData> = await vscode.window.withProgress(
@@ -88,14 +97,14 @@ export class InputControl {
                     () => this.dataSource.evaluateDataSources(dependentInputs, this.azureSession));
                 let selectedItem: QuickPickItemWithData;
                 while (1) {
-                    selectedItem = await this.showQuickPick(this.getInputControlId(), listItems, {
+                    selectedItem = await this.controlProvider.showQuickPick(this.getInputControlId(), listItems, {
                         placeHolder: this.inputDescriptor.name
                     });
                     let errorMessage = await this.triggerControlValueValidations(selectedItem.data);
                     if (!errorMessage) {
                         break;
                     }
-                    await vscode.window.showErrorMessage(errorMessage);
+                    vscode.window.showErrorMessage(errorMessage);
                 }
                 this.value = selectedItem.data;
             }
@@ -112,10 +121,10 @@ export class InputControl {
                     listItems.push({ label: "Yes", data: "true" });
                     listItems.push({ label: "No", data: "false" });
                 }
-                this.value = (await this.showQuickPick(this.getInputControlId(), listItems, { placeHolder: this.inputDescriptor.name })).data;
+                this.value = (await this.controlProvider.showQuickPick(this.getInputControlId(), listItems, { placeHolder: this.inputDescriptor.name })).data;
             }
             else if (this.controlType === ControlType.InputBox) {
-                this.value = await this.showInputBox(this.getInputControlId(), {
+                this.value = await this.controlProvider.showInputBox(this.getInputControlId(), {
                     value: this.value,
                     placeHolder: this.inputDescriptor.name,
                     validateInput: (value) => this.triggerControlValueValidations(value)
@@ -261,22 +270,5 @@ export class InputControl {
             return null;
         }
 
-    }
-
-    private async showQuickPick<T extends QuickPickItem>(listName: string, listItems: T[] | Thenable<T[]>, options: IAzureQuickPickOptions, itemCountTelemetryKey?: string): Promise<T> {
-        try {
-            telemetryHelper.setTelemetry(TelemetryKeys.CurrentUserInput, listName);
-            return await extensionVariables.ui.showQuickPick(listItems, options);
-        }
-        finally {
-            if (itemCountTelemetryKey) {
-                telemetryHelper.setTelemetry(itemCountTelemetryKey, (await listItems).length.toString());
-            }
-        }
-    }
-
-    private async showInputBox(inputName: string, options: vscode.InputBoxOptions): Promise<string> {
-        telemetryHelper.setTelemetry(TelemetryKeys.CurrentUserInput, inputName);
-        return await extensionVariables.ui.showInputBox(options);
     }
 }
