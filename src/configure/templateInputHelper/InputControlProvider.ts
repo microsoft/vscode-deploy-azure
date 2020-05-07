@@ -49,11 +49,13 @@ export class InputControlProvider {
     public async getAllPipelineTemplateInputs() {
         let parameters: { [key: string]: any } = {};
         for (let inputControl of this._inputControlsMap.values()) {
+            if (!!inputControl.getPropertyValue(constants.clientPropertyKey)) {
+                this.overrideParameters(inputControl);
+            }
+            this._setInputControlDataSourceInputs(inputControl);
+            this._initializeDynamicValidations(inputControl);
             if (this.repoAnalysisSettingInputProvider.inputFromRepoAnalysisSetting(inputControl)) {
                 await this.repoAnalysisSettingInputProvider.setInputControlValueFromRepoAnalysisResult(inputControl);
-            }
-            else if (!!inputControl.getPropertyValue(constants.clientPropertyKey)) {
-                this.overrideParameters(inputControl);
             }
             else {
                 this._setInputControlVisibility(inputControl);
@@ -74,10 +76,8 @@ export class InputControlProvider {
                 inputControl = new InputControl(input, inputControlValue, controlType, this.azureSession);
                 if (inputControl) {
                     this._inputControlsMap.set(input.id, inputControl);
-                    this._setInputControlDataSourceInputs(inputControl);
                 }
             }
-            this._initializeDynamicValidations(input);
         }
     }
 
@@ -98,8 +98,8 @@ export class InputControlProvider {
         }
     }
 
-    private _initializeDynamicValidations(inputDes: ExtendedInputDescriptor) {
-        var inputControl = this._inputControlsMap.get(inputDes.id);
+    private _initializeDynamicValidations(inputControl: InputControl) {
+        var inputDes = inputControl.getInputDescriptor();
 
         if (!!inputControl && !!inputDes.dynamicValidations && inputDes.dynamicValidations.length > 0) {
             var dataSourceToInputsMap = new Map<DataSource, InputControl[]>();
@@ -146,7 +146,6 @@ export class InputControlProvider {
         }
     }
 
-
     private _computeMustacheValue(mustacheExpression: string, dependentInputControlArray: InputControl[], dependentClientInputMap: StringMap<any>): string {
 
         var dependentInputValues = this._getInputParameterValueIfAllSet(dependentInputControlArray);
@@ -167,6 +166,7 @@ export class InputControlProvider {
                 ? "" : inputDes.defaultValue;
         }
     }
+
     private _getClientDependencyMap(inputControl: InputControl, dependencyExpressionArray: string[]) {
         var dependentClientControlMap: StringMap<any> = {};
         var dependentClientInputs: string[] = [];
@@ -194,6 +194,7 @@ export class InputControlProvider {
         }
         return dependentClientControlMap;
     }
+
     private _getInputDependencyArray(inputControl: InputControl, dependencyExpressionArray: string[], allowSelfDependency: boolean = true) {
         var dependentInputControlArray: InputControl[] = [];
         var dependentInputIds: string[] = [];

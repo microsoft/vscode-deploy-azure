@@ -39,6 +39,7 @@ export class InputControlUtility {
                 return null;
         }
     }
+
     private static _fetchIdsInExpressionByType(expression: string, dependencyType: DependencyType): string[] {
         if (!expression) {
             return [];
