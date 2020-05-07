@@ -17,7 +17,7 @@ export class InputControl {
     public dataSource: DataSourceExpression;
     public dataSourceInputControls: Array<InputControl>;
     public dataSourceInputs: Map<string, any>;
-    private inputDescriptor: ExtendedInputDescriptor;
+    public inputDescriptor: ExtendedInputDescriptor;
     private value: any;
     private controlType: ControlType;
     private visible: boolean;
@@ -73,6 +73,14 @@ export class InputControl {
         this.visible = value;
     }
 
+    public updateInputDescriptorProperty(key: string, value: any): void {
+        this.inputDescriptor[key] = value;
+    }
+
+    public updateControlType(controlType: ControlType): void {
+        this.controlType = controlType;
+    }
+
     public async setInputControlValue(): Promise<any> {
         if (!this.isVisible()) {
             return;
@@ -82,7 +90,7 @@ export class InputControl {
             if (this.controlType === ControlType.None || this.controlType === ControlType.InputBox) {
                 this.value = await this.dataSource.evaluateDataSources(dependentInputs, this.azureSession);
                 let errorMessage = await this.triggerControlValueValidations(this.value);
-                if(!errorMessage){
+                if (!errorMessage) {
                     vscode.window.showErrorMessage(errorMessage);
                     this.value = this.controlProvider.showInputBox(this.getInputControlId(), {
                         value: this.value,
@@ -217,11 +225,11 @@ export class InputControl {
 
     private async evaluateDynamicValidation(validation: InputDynamicValidation, value: string): Promise<string> {
         var requiredDataSource: DataSource = null;
-        this.validationDataSourceToInputsMap.forEach((inputControlArray: InputControl[], dataSource: DataSource) =>{
-             if (dataSource.id === validation.dataSourceId) {
-                  requiredDataSource = dataSource; 
-                }
-             });
+        this.validationDataSourceToInputsMap.forEach((inputControlArray: InputControl[], dataSource: DataSource) => {
+            if (dataSource.id === validation.dataSourceId) {
+                requiredDataSource = dataSource;
+            }
+        });
 
         var requiredInputsValueMap: StringMap<any> = {};
         var allRequiredInputValuesAvailable: boolean = true;

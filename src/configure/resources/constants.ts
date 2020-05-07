@@ -159,9 +159,9 @@ export const GitHubPat = 'gitHubPat';
 export const SelectFromMultipleWorkSpace = 'selectFromMultipleWorkSpace';
 export const SelectRemoteForRepo = 'selectRemoteForRepo';
 export const VstsRmScmType = 'VSTSRM';
-export const BrowseNotAvailableConfigurePipeline =  'BrowseNotAvailableConfigurePipeline';
+export const BrowseNotAvailableConfigurePipeline = 'BrowseNotAvailableConfigurePipeline';
 export const DeploymentMessageType = 'CDDeploymentConfiguration';
-export const SetupAlreadyExists =  'SetupAlreadyExists';
+export const SetupAlreadyExists = 'SetupAlreadyExists';
 export const Browse = 'Browse';
 export const TargetResource = 'targetResource';
 export const ResourceDynamicValidationFailure = 'ResourceDynamicValidationFailure';
@@ -187,9 +187,11 @@ export const RepoAnalysisConstants = {
     HostFilePath: 'hostFilePath'
 };
 
-export const deploymentManifest:string = "deployment";
-export const serviceManifest:string = "service";
-export const serviceIngressManifest:string = "service-ingress";
-export const ingressManifest:string = "ingress";
-export const azurePipeline:string = "Azure-pipeline";
-export const githubWorkflow:string = "Github-workflow";
+export const deploymentManifest: string = "deployment";
+export const serviceManifest: string = "service";
+export const serviceIngressManifest: string = "service-ingress";
+export const ingressManifest: string = "ingress";
+export const azurePipeline: string = "Azure-pipeline";
+export const githubWorkflow: string = "Github-workflow";
+export const clientPropertyKey: string = "ms.client.vscode";
+export const inputModeProperty: string = "inputMode";

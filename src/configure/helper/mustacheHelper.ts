@@ -3,6 +3,37 @@ import * as Mustache from 'mustache';
 export class MustacheHelper {
     public static getHelperMethods(): any {
         return {
+
+            "equals": function () {
+                /*
+                 * Usage: {{#equals}}value1 value2 true/false(ignorecase) returnIfTrue returnIfFalse(optional){{/regexReplace}}
+                 * {{#equals}}{{{inputs.Input1}}} value1 true value1 'input 1 has invalid input'{{/regexReplace}}
+                 */
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length < 4) {
+                        return "";
+                    }
+
+                    var ignoreCase = parts[2];
+                    if (ignoreCase) {
+                        if (parts[0].toLowerCase() === parts[1].toLowerCase()) {
+                            return parts[3];
+                        }
+                    } else {
+                        if (parts[0] === parts[1]) {
+                            return parts[3];
+                        }
+                    }
+                    if (parts.length >= 5) {
+                        return parts[4];
+                    } else {
+                        return "";
+                    }
+                };
+            },
+
             "if": function () {
                 /*
                 * if returns first parameter if given clause is positive, otherwise second parameter
