@@ -12,7 +12,7 @@ export class Messages {
     public static cannotAddFileRemoteMissing: string = 'Couldn\'t add YAML file to your repo because the remote isn\'t set';
     public static cannotIdentifyRespositoryDetails: string = 'Couldn\'t get repository details. Ensure your repo is hosted on [Azure Repos](https://docs.microsoft.com/azure/devops/repos/get-started) or [GitHub](https://guides.github.com/activities/hello-world/).';
     public static commitAndPush: string = 'Commit & push';
-    public static commitFailedErrorMessage: string =`Commit failed due to error: %s`;
+    public static commitFailedErrorMessage: string = `Commit failed due to error: %s`;
     public static configuringPipelineAndDeployment: string = 'Configuring pipeline and proceeding to deployment...';
     public static couldNotAuthorizeEndpoint: string = 'Couldn\'t authorize endpoint for use in Azure Pipelines.';
     public static creatingAzureDevOpsOrganization: string = 'Creating Azure DevOps organization.';
@@ -55,11 +55,11 @@ export class Messages {
     public static signInLabel: string = 'Sign In';
     public static signUpLabel: string = 'Sign Up';
     public static unableToCreateAzureServiceConnection: string = `Unable to store connection details for Azure subscription.\nOperation Status: %s\nMessage: %s\nService connection is not in ready state.`;
-    public static unableToCreateGitHubServiceConnection: string =`Unable to store connection details for GitHub.\nOperation Status: %s\nService connection is not in ready state.`;
-    public static retryFailedMessage: string =`Failed after retrying: %s times. Internal Error: %s`;
-    public static azureServicePrincipalFailedMessage: string =`Failed while creating Azure service principal.`;
-    public static roleAssignmentFailedMessage: string =`Failed while role assignement.`;
-    public static waitForAzureSignIn: string =`Waiting for Azure sign-in...`;
+    public static unableToCreateGitHubServiceConnection: string = `Unable to store connection details for GitHub.\nOperation Status: %s\nService connection is not in ready state.`;
+    public static retryFailedMessage: string = `Failed after retrying: %s times. Internal Error: %s`;
+    public static azureServicePrincipalFailedMessage: string = `Failed while creating Azure service principal.`;
+    public static roleAssignmentFailedMessage: string = `Failed while role assignement.`;
+    public static waitForAzureSignIn: string = `Waiting for Azure sign-in...`;
     public static userCancelledExcecption = 'User cancelled the action';
     public static cannotFindPipelineUrlInMetaDataException = 'We were unable to find pipeline associated with the Azure Web App. Please click on "Browse Pipeline" to explore.';
     public static cannotFindOrganizationWithName = 'Unable to find organization with name: %s';
@@ -88,7 +88,14 @@ export class Messages {
     public static unableToGetAksKubeConfig = 'We are unable to fetch kube config for the AKS cluster: %s, due to permission issues. Kindly choose a different one, over which you have access.';
     public static modifyAndCommitMultipleFiles: string = 'Modify and save your YAML files. %s will commit these files, push the branch \'%s\' to remote \'%s\' and proceed with deployment.';
     public static EmptyTagRowUnavailable = 'There is no space to create a new tag in the resource to store information to ';
-    public static valueRequired = 'The value cannot be blank';
+    public static valueRequired = 'The value cannot be empty';
     public static TemplateNotFound = 'Template not found';
     public static ResourceNotSupported = 'Resource not supported';
+    public static minLengthMessage = "The minimum length allowed is %s";
+    public static maxLengthMessage = "The maximum length allowed is %s";
+    public static minValueMessage = "The value should be greater than or equals to %s";
+    public static maxValueMessage = "The value should be less than or equals to %s";
+    public static valueShouldBeNumber = "The value %s is not numberic";
+    public static regexPatternNotMatchingMessage = "Value should match the following regex pattern: %s";
+    public static fetchingInputMessage = "Fetching inputs for %s";
 }

@@ -126,9 +126,8 @@ export class MustacheHelper {
                     }
 
                     return "";
-                }
-            },
-
+                };
+            }
         };
     }
 

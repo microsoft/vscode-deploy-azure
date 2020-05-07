@@ -162,11 +162,9 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
                     label: template.templateDescription,
                     targetType: getTargetType(template),
                     targetKind: getTargetKind(template),
-                    language: template.attributes.language,
-                    templateId: template.templateId,
-                    templateWeight: template.templateWeight,
                     templateType: TemplateType.REMOTE,
-                    workingDirectory: template.workingDirectory
+                    language: template.attributes.language,
+                    ...template
                 };
                 pipelineTemplates.push(remoteTemplate);
             });
@@ -187,10 +185,10 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
     }
 }
 
-export async function getTemplateParameteres(azureSession: AzureSession, templateInfo: RemotePipelineTemplate): Promise<ExtendedPipelineTemplate> {
+export async function getTemplateParameteres(azureSession: AzureSession, template: RemotePipelineTemplate): Promise<ExtendedPipelineTemplate> {
     let parameters: ExtendedPipelineTemplate;
     let serviceClient = new TemplateServiceClient(azureSession.credentials);
-    parameters = await serviceClient.getTemplateParameters(templateInfo.templateId);
+    parameters = await serviceClient.getTemplateParameters(template.templateId);
     return parameters;
 }
 

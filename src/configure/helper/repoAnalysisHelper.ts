@@ -79,15 +79,18 @@ export class RepoAnalysisHelper {
                                     applicationSettings.settings.workingDirectory, analysis.settings[RepoAnalysisConstants.RequirementsFilePath]);
                                 applicationSettings.settings.pythonRequirementsFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.RequirementsFilePath]);
                             }
+                        } else {
+                            applicationSettings.settings = analysis.settings;
                         }
                     }
-                    if (!!analysis.settings && !!analysis.deployTargetName) {
+                    if (!!analysis.deployTargetName) {
                         applicationSettings.deployTargetName = analysis.deployTargetName;
-                        if (analysis.deployTargetName == RepoAnalysisConstants.AzureFunctions) {
+                        if (analysis.deployTargetName === RepoAnalysisConstants.AzureFunctions) {
                             applicationSettings.settings.azureFunctionsHostFilePath = analysis.settings[RepoAnalysisConstants.HostFilePath];
                             applicationSettings.settings.azureFunctionsHostFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.HostFilePath]);
                         }
                     }
+
                 }
                 parameters.applicationSettingsList.push(applicationSettings);
             }
