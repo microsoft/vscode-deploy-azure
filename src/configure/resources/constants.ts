@@ -194,3 +194,4 @@ export const ingressManifest: string = "ingress";
 export const azurePipeline: string = "Azure-pipeline";
 export const githubWorkflow: string = "Github-workflow";
 export const clientPropertyKey: string = "ms.client.vscode";
+export const inputModeProperty: string = "inputMode";

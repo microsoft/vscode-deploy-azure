@@ -148,7 +148,6 @@ class Orchestrator {
 
     private async getInputs(node: any): Promise<void> {
         let resourceNode = await this.analyzeNode(node);
-        let rightClickScenario = false;
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
@@ -158,7 +157,11 @@ class Orchestrator {
 
             try {
                 if (!resourceNode) {
+                    this.context['rightClickScenario'] = false;
                     await this.getAzureResource(this.getSelectedPipelineTargetType());
+                }
+                else {
+                    this.context['rightClickScenario'] = true;
                 }
                 this.selectTemplate(this.inputs.targetResource.resource);
 
@@ -181,7 +184,6 @@ class Orchestrator {
     private async getTemplateParameters() {
         if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
             let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, this.inputs.pipelineConfiguration.template as RemotePipelineTemplate);
-            this.context['subscriptionId'] = this.inputs.subscriptionId;
             let controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this.context);
             this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs();
         }
@@ -214,7 +216,7 @@ class Orchestrator {
     }
 
     private getSelectedPipelineTargetType(): TargetResourceType {
-        return this.inputs.potentialTemplates[0].targetType
+        return this.inputs.potentialTemplates[0].targetType;
     }
 
     private async analyzeNode(node: any): Promise<GenericResource> {
@@ -442,6 +444,7 @@ class Orchestrator {
         let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
         this.inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
         this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+        this.context['subscriptionId'] = this.inputs.subscriptionId;
 
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }

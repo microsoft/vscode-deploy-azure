@@ -1,7 +1,8 @@
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { telemetryHelper } from "../helper/telemetryHelper";
-import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation, InputMode } from "../model/Contracts";
+import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation } from "../model/Contracts";
 import { AzureSession, ControlType, IPredicate, RepositoryAnalysisApplicationSettings, StringMap } from '../model/models';
+import * as constants from '../resources/constants';
 import { TracePoints } from "../resources/tracePoints";
 import { InputControl } from "./InputControl";
 import { RepoAnalysisSettingInputProvider } from "./RepoAnalysisSettingInputProvider";
@@ -29,22 +30,23 @@ export class InputControlProvider {
     }
 
     public async overrideParameters(inputControl: InputControl) {
-        var properties = inputControl.getPropertyValue(constants.clientPropertyKey);
-        var arrayofProperties = Object.keys(properties);
+        let properties = inputControl.getPropertyValue(constants.clientPropertyKey);
+        let arrayofProperties = Object.keys(properties);
 
         arrayofProperties.forEach(element => {
-            var key = element.split(".", 2)[1];
-            var dependentInputControlArray = this._getInputDependencyArray(inputControl, [properties[element]], false);
-            var dependentClientInputMap = this._getClientDependencyMap(inputControl, [properties[element]]);
-            var newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
-            inputControl.inputDescriptor[key] = newValue;
-            if (key === "inputMode") {
-                inputControl.updateInputControlType(parseInt(newValue));
+            let key = element.split(".", 2)[1];
+            let dependentInputControlArray = this._getInputDependencyArray(inputControl, [properties[element]], false);
+            let dependentClientInputMap = this._getClientDependencyMap(inputControl, [properties[element]]);
+            let newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
+            inputControl.updateInputDescriptorProperty(key, newValue);
+            if (key === constants.inputModeProperty) {
+                let updatedControlType = InputControlUtility.getInputControlType(parseInt(newValue));
+                inputControl.updateControlType(updatedControlType);
             }
         });
     }
 
-    public async getAllPipelineTemplateInputs(azureSession: AzureSession) {
+    public async getAllPipelineTemplateInputs() {
         let parameters: { [key: string]: any } = {};
         for (let inputControl of this._inputControlsMap.values()) {
             if (this.repoAnalysisSettingInputProvider.inputFromRepoAnalysisSetting(inputControl)) {
@@ -67,31 +69,16 @@ export class InputControlProvider {
         for (let input of this._pipelineTemplate.inputs) {
             let inputControl: InputControl = null;
             let inputControlValue = this._getInputControlValue(input);
-
-            switch (input.inputMode) {
-                case InputMode.None:
-                case InputMode.AzureSubscription:
-                    if (input.type !== InputDataType.Authorization) {
-                        inputControl = new InputControl(input, inputControlValue, ControlType.None, this.azureSession);
-                    }
-                    break;
-                case InputMode.TextBox:
-                case InputMode.PasswordBox:
-                    inputControl = new InputControl(input, inputControlValue, ControlType.InputBox, this.azureSession);
-                    break;
-                case InputMode.Combo:
-                case InputMode.CheckBox:
-                case InputMode.RadioButtons:
-                    inputControl = new InputControl(input, inputControlValue, ControlType.QuickPick, this.azureSession);
-                    break;
-
+            if (input.type !== InputDataType.Authorization) {
+                let controlType: ControlType = InputControlUtility.getInputControlType(input.inputMode);
+                inputControl = new InputControl(input, inputControlValue, controlType, this.azureSession);
+                if (inputControl) {
+                    this._inputControlsMap.set(input.id, inputControl);
+                    this._setInputControlDataSourceInputs(inputControl);
+                }
             }
-            if (inputControl) {
-                this._inputControlsMap.set(input.id, inputControl);
-            }
+            this._initializeDynamicValidations(input);
         }
-        this._setInputControlDataSourceInputs();
-        this._initializeDynamicValidations();
     }
 
     private _setInputControlDataSourceInputs(inputControl: InputControl): void {
@@ -100,55 +87,50 @@ export class InputControlProvider {
             var inputControl = this._inputControlsMap.get(inputDes.id);
             inputControl.dataSource = DataSourceExpression.parse(inputDes.dataSourceId, this._pipelineTemplate.dataSources);
 
-                if (inputControl.dataSource) {
-                    var dependentInputControlArray = this._getInputDependencyArray(inputControl, inputControl.dataSource.getInputDependencyArray());
-                    if (dependentInputControlArray) {
-                        inputControl.dataSourceInputControls.push(...dependentInputControlArray);
-                    }
-                } else {
-                    throw new Error(`Data source ${inputDes.dataSourceId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
+            if (inputControl.dataSource) {
+                var dependentInputControlArray = this._getInputDependencyArray(inputControl, inputControl.dataSource.getInputDependencyArray());
+                if (dependentInputControlArray) {
+                    inputControl.dataSourceInputControls.push(...dependentInputControlArray);
                 }
+            } else {
+                throw new Error(`Data source ${inputDes.dataSourceId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
             }
-        });
+        }
     }
 
-    private _initializeDynamicValidations() {
-        this._pipelineTemplate.inputs.forEach((inputDes) => {
+    private _initializeDynamicValidations(inputDes: ExtendedInputDescriptor) {
+        var inputControl = this._inputControlsMap.get(inputDes.id);
 
-            var inputControl = this._inputControlsMap.get(inputDes.id);
+        if (!!inputControl && !!inputDes.dynamicValidations && inputDes.dynamicValidations.length > 0) {
+            var dataSourceToInputsMap = new Map<DataSource, InputControl[]>();
+            inputDes.dynamicValidations.forEach((validation: InputDynamicValidation) => {
+                var validationDataSource = DataSourceUtility.getDataSourceById(this._pipelineTemplate.dataSources, validation.dataSourceId);
+                if (validationDataSource) {
+                    dataSourceToInputsMap.set(validationDataSource, []);
 
-            if (!!inputControl && !!inputDes.dynamicValidations && inputDes.dynamicValidations.length > 0) {
-                var dataSourceToInputsMap = new Map<DataSource, InputControl[]>();
-                inputDes.dynamicValidations.forEach((validation: InputDynamicValidation) => {
-                    var validationDataSource = DataSourceUtility.getDataSourceById(this._pipelineTemplate.dataSources, validation.dataSourceId);
-                    if (validationDataSource) {
-                        dataSourceToInputsMap.set(validationDataSource, []);
+                    let dynamicValidationRequiredInputIds = DataSourceUtility.getDependentInputIdList(validationDataSource.endpointUrlStem);
+                    dynamicValidationRequiredInputIds = dynamicValidationRequiredInputIds.concat(DataSourceUtility.getDependentInputIdList(validationDataSource.requestBody));
+                    dynamicValidationRequiredInputIds = dynamicValidationRequiredInputIds.concat(DataSourceUtility.getDependentInputIdList(validationDataSource.resultTemplate));
+                    dynamicValidationRequiredInputIds = dynamicValidationRequiredInputIds.concat(DataSourceUtility.getDependentInputIdList(validationDataSource.resultSelector));
 
-                        let dynamicValidationRequiredInputIds = DataSourceUtility.getDependentInputIdList(validationDataSource.endpointUrlStem);
-                        dynamicValidationRequiredInputIds = dynamicValidationRequiredInputIds.concat(DataSourceUtility.getDependentInputIdList(validationDataSource.requestBody));
-                        dynamicValidationRequiredInputIds = dynamicValidationRequiredInputIds.concat(DataSourceUtility.getDependentInputIdList(validationDataSource.resultTemplate));
-                        dynamicValidationRequiredInputIds = dynamicValidationRequiredInputIds.concat(DataSourceUtility.getDependentInputIdList(validationDataSource.resultSelector));
-
-                        dynamicValidationRequiredInputIds = Array.from(new Set(dynamicValidationRequiredInputIds));
-                        dynamicValidationRequiredInputIds.forEach((dynamicValidationRequiredInputId) => {
-                            var dependentInput = this._inputControlsMap.get(dynamicValidationRequiredInputId);
-                            if (dependentInput) {
-                                dataSourceToInputsMap.get(validationDataSource).push(dependentInput);
-                            } else {
-                                let error: Error = new Error(`Dependent input ${dynamicValidationRequiredInputId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
-                                telemetryHelper.logError(Layer, TracePoints.InitializeDynamicValidation, error);
-                            }
-                        });
-                    } else {
-                        let error = new Error(`validation data source ${validation.dataSourceId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
-                        telemetryHelper.logError(Layer, TracePoints.InitializeDynamicValidation, error);
-                    }
-                });
-                inputControl.setValidationDataSources(dataSourceToInputsMap);
-            }
-        });
+                    dynamicValidationRequiredInputIds = Array.from(new Set(dynamicValidationRequiredInputIds));
+                    dynamicValidationRequiredInputIds.forEach((dynamicValidationRequiredInputId) => {
+                        var dependentInput = this._inputControlsMap.get(dynamicValidationRequiredInputId);
+                        if (dependentInput) {
+                            dataSourceToInputsMap.get(validationDataSource).push(dependentInput);
+                        } else {
+                            let error: Error = new Error(`Dependent input ${dynamicValidationRequiredInputId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
+                            telemetryHelper.logError(Layer, TracePoints.InitializeDynamicValidation, error);
+                        }
+                    });
+                } else {
+                    let error = new Error(`validation data source ${validation.dataSourceId} specified for input ${inputDes.id} is not present in pipeline template ${this._pipelineTemplate.id}`);
+                    telemetryHelper.logError(Layer, TracePoints.InitializeDynamicValidation, error);
+                }
+            });
+            inputControl.setValidationDataSources(dataSourceToInputsMap);
+        }
     }
-
 
     private _setupInputControlDefaultValue(inputControl: InputControl): void {
         var inputDes = inputControl.getInputDescriptor();
