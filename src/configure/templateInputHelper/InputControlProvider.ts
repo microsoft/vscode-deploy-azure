@@ -29,24 +29,7 @@ export class InputControlProvider {
         this._createControls();
     }
 
-    public async overrideParameters(inputControl: InputControl) {
-        let properties = inputControl.getPropertyValue(constants.clientPropertyKey);
-        let arrayofProperties = Object.keys(properties);
-
-        arrayofProperties.forEach(element => {
-            let key = element.split(".", 2)[1];
-            let dependentInputControlArray = this._getInputDependencyArray(inputControl, [properties[element]], false);
-            let dependentClientInputMap = this._getClientDependencyMap(inputControl, [properties[element]]);
-            let newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
-            inputControl.updateInputDescriptorProperty(key, newValue);
-            if (key === constants.inputModeProperty) {
-                let updatedControlType = InputControlUtility.getInputControlType(parseInt(newValue));
-                inputControl.updateControlType(updatedControlType);
-            }
-        });
-    }
-
-    public async getAllPipelineTemplateInputs() {
+    public async getAllPipelineTemplateInputs(): Promise<{ [key: string]: any }> {
         let parameters: { [key: string]: any } = {};
         for (let inputControl of this._inputControlsMap.values()) {
             if (!!inputControl.getPropertyValue(constants.clientPropertyKey)) {
@@ -67,7 +50,24 @@ export class InputControlProvider {
         return parameters;
     }
 
-    private _createControls() {
+    private overrideParameters(inputControl: InputControl): void {
+        let properties = inputControl.getPropertyValue(constants.clientPropertyKey);
+        let arrayofProperties = Object.keys(properties);
+
+        arrayofProperties.forEach(element => {
+            let key = element.split(".", 2)[1];
+            let dependentInputControlArray = this._getInputDependencyArray(inputControl, [properties[element]], false);
+            let dependentClientInputMap = this._getClientDependencyMap(inputControl, [properties[element]]);
+            let newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
+            inputControl.updateInputDescriptorProperty(key, newValue);
+            if (key === constants.inputModeProperty) {
+                let updatedControlType = InputControlUtility.getInputControlType(parseInt(newValue));
+                inputControl.updateControlType(updatedControlType);
+            }
+        });
+    }
+
+    private _createControls(): void {
         for (let input of this._pipelineTemplate.inputs) {
             let inputControl: InputControl = null;
             let inputControlValue = this._getInputControlValue(input);
@@ -98,7 +98,7 @@ export class InputControlProvider {
         }
     }
 
-    private _initializeDynamicValidations(inputControl: InputControl) {
+    private _initializeDynamicValidations(inputControl: InputControl): void {
         var inputDes = inputControl.getInputDescriptor();
 
         if (!!inputControl && !!inputDes.dynamicValidations && inputDes.dynamicValidations.length > 0) {
@@ -156,7 +156,7 @@ export class InputControlProvider {
         }
     }
 
-    private _getInputControlValue(inputDes: ExtendedInputDescriptor) {
+    private _getInputControlValue(inputDes: ExtendedInputDescriptor): string {
         if (!!this._context && !!this._context
         [inputDes.id]) {
             return this._context[inputDes.id];
@@ -167,7 +167,7 @@ export class InputControlProvider {
         }
     }
 
-    private _getClientDependencyMap(inputControl: InputControl, dependencyExpressionArray: string[]) {
+    private _getClientDependencyMap(inputControl: InputControl, dependencyExpressionArray: string[]): StringMap<any> {
         var dependentClientControlMap: StringMap<any> = {};
         var dependentClientInputs: string[] = [];
         for (var dependencyExpression of dependencyExpressionArray) {
@@ -195,7 +195,7 @@ export class InputControlProvider {
         return dependentClientControlMap;
     }
 
-    private _getInputDependencyArray(inputControl: InputControl, dependencyExpressionArray: string[], allowSelfDependency: boolean = true) {
+    private _getInputDependencyArray(inputControl: InputControl, dependencyExpressionArray: string[], allowSelfDependency: boolean = true): InputControl[] {
         var dependentInputControlArray: InputControl[] = [];
         var dependentInputIds: string[] = [];
         for (var dependencyExpression of dependencyExpressionArray) {

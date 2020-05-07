@@ -73,11 +73,11 @@ export class InputControl {
         this.visible = value;
     }
 
-    public updateInputDescriptorProperty(key: string, value: any) {
+    public updateInputDescriptorProperty(key: string, value: any): void {
         this.inputDescriptor[key] = value;
     }
 
-    public updateControlType(controlType: ControlType) {
+    public updateControlType(controlType: ControlType): void {
         this.controlType = controlType;
     }
 
