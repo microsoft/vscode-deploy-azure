@@ -17,7 +17,7 @@ import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
 import { Build } from '../model/azureDevOps';
 import { AzureConnectionType, AzureSession, RepositoryProvider, TargetResourceType, WizardInputs } from "../model/models";
-import { TemplateAssetType } from '../model/templateModels';
+import { LocalPipelineTemplate, TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
@@ -166,7 +166,7 @@ export class AzurePipelineConfigurer implements Configurer {
                 async () => {
                     try {
                         let serviceConnectionName = `${inputs.targetResource.resource.name}-${UniqueResourceNameSuffix}`;
-                        switch (inputs.pipelineConfiguration.template.azureConnectionType) {
+                        switch ((inputs.pipelineConfiguration.template as LocalPipelineTemplate).azureConnectionType) {
                             case AzureConnectionType.None:
                                 return '';
                             case AzureConnectionType.AzureRMPublishProfile:
@@ -357,7 +357,7 @@ export class AzurePipelineConfigurer implements Configurer {
     private static getTargetResource(inputs: WizardInputs): GenericResource {
         let targetResource = !!inputs.targetResource.resource ? inputs.targetResource.resource : null;
         if (!targetResource) {
-            let targetParam = TemplateParameterHelper.getParameterForTargetResourceType(inputs.pipelineConfiguration.template.parameters, inputs.pipelineConfiguration.template.targetType);
+            let targetParam = TemplateParameterHelper.getParameterForTargetResourceType((inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters, inputs.pipelineConfiguration.template.targetType);
             if (!!targetParam && !!inputs.pipelineConfiguration.params[targetParam.name]) {
                 targetResource = inputs.pipelineConfiguration.params[targetParam.name];
             }

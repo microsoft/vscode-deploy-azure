@@ -18,7 +18,7 @@ export class RepoAnalysisHelper {
     public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters, workspacePath: string): Promise<RepositoryAnalysisParameters> {
 
         let repositoryAnalysisResponse;
-        try{
+        try {
             const serviceDefinition = await RemoteServiceUrlHelper.getRepositoryAnalysisDefinition();
             const client = this.getClient(serviceDefinition);
 
@@ -41,25 +41,25 @@ export class RepoAnalysisHelper {
                 return null;
             }
         }
-        catch(e) {
+        catch (e) {
             //Return empty if Repo Analysis fails
             return null;
         }
 
         let parameters: RepositoryAnalysisParameters = new RepositoryAnalysisParameters();
-        parameters.repositoryAnalysisApplicationSettingsList = [];
+        parameters.applicationSettingsList = [];
         repositoryAnalysisResponse.applicationSettingsList.forEach((analysis) => {
 
             //Process only for VSCode Supported Languages
-            if(Object.keys(SupportedLanguage).indexOf(analysis.language.toUpperCase()) > -1) {
+            if (Object.keys(SupportedLanguage).indexOf(analysis.language.toUpperCase()) > -1) {
                 let applicationSettings: RepositoryAnalysisApplicationSettings = new RepositoryAnalysisApplicationSettings();
                 applicationSettings.language = analysis.language;
 
-                if(!!analysis.settings){
-                    if(!!analysis.settings.workingDirectory){
+                if (!!analysis.settings) {
+                    if (!!analysis.settings.workingDirectory) {
                         applicationSettings.settings.workingDirectory = analysis.settings.workingDirectory.split('\\').join('/');
                     }
-                    if(!!analysis.buildTargetName) {
+                    if (!!analysis.buildTargetName) {
                         applicationSettings.buildTargetName = analysis.buildTargetName;
                         if (analysis.language === SupportedLanguage.NODE) {
                             applicationSettings.settings.nodePackageFilePath = analysis.settings[RepoAnalysisConstants.PackageFilePath];
@@ -79,23 +79,26 @@ export class RepoAnalysisHelper {
                                     applicationSettings.settings.workingDirectory, analysis.settings[RepoAnalysisConstants.RequirementsFilePath]);
                                 applicationSettings.settings.pythonRequirementsFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.RequirementsFilePath]);
                             }
+                        } else {
+                            applicationSettings.settings = analysis.settings;
                         }
                     }
-                    if(!!analysis.settings && !!analysis.deployTargetName) {
+                    if (!!analysis.deployTargetName) {
                         applicationSettings.deployTargetName = analysis.deployTargetName;
-                        if(analysis.deployTargetName == RepoAnalysisConstants.AzureFunctions){
+                        if (analysis.deployTargetName === RepoAnalysisConstants.AzureFunctions) {
                             applicationSettings.settings.azureFunctionsHostFilePath = analysis.settings[RepoAnalysisConstants.HostFilePath];
                             applicationSettings.settings.azureFunctionsHostFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.HostFilePath]);
                         }
                     }
+
                 }
-                parameters.repositoryAnalysisApplicationSettingsList.push(applicationSettings);
+                parameters.applicationSettingsList.push(applicationSettings);
             }
         });
         return parameters;
     }
 
-    private GetRelativePath(workingDirectory: string, filePath: string): string{
+    private GetRelativePath(workingDirectory: string, filePath: string): string {
         return path.relative(workingDirectory, filePath).split(path.sep).join('/');
     }
 

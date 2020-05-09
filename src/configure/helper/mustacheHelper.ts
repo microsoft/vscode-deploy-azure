@@ -3,11 +3,42 @@ import * as Mustache from 'mustache';
 export class MustacheHelper {
     public static getHelperMethods(): any {
         return {
-            "if": function () {
-                 /*
-                 * if returns first parameter if given clause is positive, otherwise second parameter
-                 * Usage: {{#if}}clause trueValue falseValue{{/if}}
+
+            "equals": function () {
+                /*
+                 * Usage: {{#equals}}value1 value2 true/false(ignorecase) returnIfTrue returnIfFalse(optional){{/regexReplace}}
+                 * {{#equals}}{{{inputs.Input1}}} value1 true value1 'input 1 has invalid input'{{/regexReplace}}
                  */
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length < 4) {
+                        return "";
+                    }
+
+                    var ignoreCase = parts[2];
+                    if (ignoreCase) {
+                        if (parts[0].toLowerCase() === parts[1].toLowerCase()) {
+                            return parts[3];
+                        }
+                    } else {
+                        if (parts[0] === parts[1]) {
+                            return parts[3];
+                        }
+                    }
+                    if (parts.length >= 5) {
+                        return parts[4];
+                    } else {
+                        return "";
+                    }
+                };
+            },
+
+            "if": function () {
+                /*
+                * if returns first parameter if given clause is positive, otherwise second parameter
+                * Usage: {{#if}}clause trueValue falseValue{{/if}}
+                */
                 return function (text: string, render: any) {
                     let parts = MustacheHelper.getParts(text);
                     if (parts.length > 1) {
@@ -26,20 +57,20 @@ export class MustacheHelper {
             },
 
             "toLower": function () {
-                 /*
-                 * converts the string to lower case
-                 * Usage: {{#toLower}} String to convert to lower case {{/toLower}}
-                 */
+                /*
+                * converts the string to lower case
+                * Usage: {{#toLower}} String to convert to lower case {{/toLower}}
+                */
                 return function (text: string, render: any) {
                     return render(text).toLowerCase();
                 };
             },
 
             "tinyguid": function () {
-                  /*
-                 * Generates 4 character random string
-                 * Usage: {{#tinyguid}} {{/tinyguid}}
-                 */
+                /*
+               * Generates 4 character random string
+               * Usage: {{#tinyguid}} {{/tinyguid}}
+               */
                 return function () {
                     return "yxxx".replace(/[xy]/g, function (c) {
                         var r = Math.random() * 16 | 0;
@@ -95,9 +126,8 @@ export class MustacheHelper {
                     }
 
                     return "";
-                }
-            },
-
+                };
+            }
         };
     }
 

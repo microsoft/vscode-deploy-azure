@@ -2,7 +2,7 @@ import { InputBoxOptions, QuickPickItem, window } from 'vscode';
 import { IAzureQuickPickOptions, UserCancelledError } from 'vscode-azureextensionui';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { extensionVariables } from '../model/models';
-import {Messages} from '../resources/messages';
+import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 
 export class ControlProvider {
