@@ -1,4 +1,4 @@
-import { CodeRepository, SourceRepository } from "azureintegration_repoanalysis_client_internal";
+import { CodeRepository, SourceRepository } from "azureintegration-repoanalysis-client-internal";
 import * as path from 'path';
 import { ModaRepositoryAnalysisClient } from '../clients/modaRepositoryAnalysisClient';
 import { PortalExtensionRepositoryAnalysisClient } from "../clients/portalExtensionRepositoryAnalysisClient";
