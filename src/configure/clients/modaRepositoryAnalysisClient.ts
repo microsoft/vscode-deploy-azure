@@ -1,4 +1,4 @@
-import { RepositoryAnalysis, SourceRepository } from "azureintegration_repoanalysis_client_internal";
+import { RepositoryAnalysis, SourceRepository } from "azureintegration-repoanalysis-client-internal";
 import { RestClient } from "typed-rest-client";
 import vscodeUri from "vscode-uri";
 import { IRepositoryAnalysisClient } from "./repositoryAnalyisClient";
