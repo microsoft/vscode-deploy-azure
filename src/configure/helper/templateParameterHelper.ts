@@ -6,7 +6,7 @@ import { ApiVersions, AzureResourceClient } from "../clients/azure/azureResource
 import { openBrowseExperience } from '../configure';
 import * as templateHelper from '../helper/templateHelper';
 import { extensionVariables, MustacheContext, PipelineConfiguration, QuickPickItemWithData, TargetKind, TargetResourceType, WizardInputs } from "../model/models";
-import { PreDefinedDataSourceIds, TemplateParameter, TemplateParameterType } from '../model/templateModels';
+import { LocalPipelineTemplate, PreDefinedDataSourceIds, TemplateParameter, TemplateParameterType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from "../resources/messages";
 import { TelemetryKeys } from "../resources/telemetryKeys";
@@ -22,7 +22,7 @@ export class TemplateParameterHelper {
 
     public static getParameterValueForTargetResourceType(pipelineConfiguration: PipelineConfiguration, targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): GenericResource {
         let dataSourceIdForResourceType = TemplateParameterHelper.convertAzureResourceToDataSourceId(targetResourceType, targetResourceKind);
-        let resourceTemplateParameter = pipelineConfiguration.template.parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(dataSourceIdForResourceType)); });
+        let resourceTemplateParameter = (pipelineConfiguration.template as LocalPipelineTemplate).parameters.find((parameter) => { return (parameter.type === TemplateParameterType.GenericAzureResource && parameter.dataSourceId.startsWith(dataSourceIdForResourceType)); });
         if (!resourceTemplateParameter) {
             throw utils.format(Messages.azureResourceTemplateParameterCouldNotBeFound, targetResourceType);
         }

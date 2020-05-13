@@ -1,0 +1,9 @@
+{
+  "tool": "Credential Scanner",
+  "suppressions": [
+    {
+      "placeholder": "GitHubRegistryPassword",
+      "_justification": "This is an asset type and does not really contain a secret"
+    }
+  ]
+}

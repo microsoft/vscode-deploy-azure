@@ -4,7 +4,7 @@ import { AppServiceClient } from '../clients/azure/appServiceClient';
 import { ArmRestClient } from '../clients/azure/armRestClient';
 import { UniqueResourceNameSuffix } from '../configure';
 import { TargetResourceType, WizardInputs } from "../model/models";
-import { TemplateAsset, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
+import { LocalPipelineTemplate, TemplateAsset, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
 import { GraphHelper } from './graphHelper';
@@ -41,7 +41,7 @@ export class AssetHandler {
                                 let aadAppName = GraphHelper.generateAadApplicationName(inputs.organizationName, inputs.project.name);
                                 let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
                                 // Use param name for first azure resource param
-                                let serviceConnectionName = `${inputs.pipelineConfiguration.params[inputs.pipelineConfiguration.template.parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${UniqueResourceNameSuffix}`;
+                                let serviceConnectionName = `${inputs.pipelineConfiguration.params[(inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${UniqueResourceNameSuffix}`;
                                 return await createAsset(serviceConnectionName, asset.type, { "aadApp": aadApp, "scope": scope }, inputs);
                             }
                             catch (error) {
@@ -146,7 +146,7 @@ export class AssetHandler {
                     break;
 
                 case TemplateAssetType.File:
-                    break;                    
+                    break;
                 case TemplateAssetType.GitHubARM:
                 case TemplateAssetType.GitHubARMPublishProfile:
                 default:
