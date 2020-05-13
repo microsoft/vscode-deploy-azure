@@ -1,4 +1,4 @@
-import { RepositoryAnalysis, SourceRepository } from "azureintegration_repoanalysis_client_internal";
+import { RepositoryAnalysis, SourceRepository } from "azureintegration-repoanalysis-client-internal";
 
 export interface IRepositoryAnalysisClient {
     getRepositoryAnalysis(body: SourceRepository): Promise<RepositoryAnalysis>;
