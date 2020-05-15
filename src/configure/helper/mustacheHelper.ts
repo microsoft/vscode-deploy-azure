@@ -164,6 +164,27 @@ export class MustacheHelper {
                     }
                     return "{{ " + parts[0] + " }}";
                 };
+            },
+
+            "intSorter": function () {
+                return function (text: string, render: any) {
+                    var parts = MustacheHelper.getParts(text);
+                    if (parts.length < 2) {
+                        return "";
+                    }
+
+                    var order = parts[1].toLowerCase();
+                    var arr = render(parts[0]).split(",");
+                    var sorter = 1;
+                    if (order === "dsc") {
+                        sorter = -1;
+                    }
+                    arr = arr.sort((a, b) => {
+                        if (a > b) { return 1 * sorter; }
+                        else { return -1 * sorter; }
+                    });
+                    return arr;
+                };
             }
         };
     }
@@ -196,8 +217,8 @@ export class MustacheHelper {
         return result;
     }
 
-    public static getParts(text: string): Array<string> {
-        var parts: Array<string> = [];
+    public static getParts(text: string): Array<any> {
+        var parts: Array<any> = [];
         /* Following regex is to fetch different parts in the text e.g. "test 'hello world' output" => test, 'hello world', output*/
         var fetchPartsRegex = new RegExp(/[\'](.+?)[\']|[^ ]+/g);
         var resultArray;
