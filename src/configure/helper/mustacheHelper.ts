@@ -129,6 +129,10 @@ export class MustacheHelper {
                 };
             },
 
+            /*
+            * Checks if a string begins with some string
+            * Usage: {{#beginsWith}} StringToCheck BeginningPart true/false(for case-sensitivity) IfTrueValue IfFalseValue{{/beginsWith}}
+            */
             "beginsWith": function () {
                 return function (text: string, render: any) {
                     var renderedText: string = render(text);
@@ -155,6 +159,10 @@ export class MustacheHelper {
                 };
             },
 
+            /*
+            * If some variable is the environment variable, adding {{ }}
+            * Usage: {{#EnvironmentVariable}} VariableName {{/EnvironmentVariable}}
+            */
             "EnvironmentVariable": function () {
                 return function (text: string, render: any) {
                     var renderedText: string = render(text);
@@ -166,6 +174,10 @@ export class MustacheHelper {
                 };
             },
 
+            /*
+            * Sort an integer array
+            * Usage: {{#intSorter}} IntegerArrayToBeSorted asc/dsc(order in which it is to be sorted) {{/intSorter}}
+            */
             "intSorter": function () {
                 return function (text: string, render: any) {
                     var parts = MustacheHelper.getParts(text);
