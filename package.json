@@ -105,7 +105,7 @@
         "typescript": "3.3.1",
         "typescript-tslint-plugin": "^0.5.5",
         "vscode": "1.1.33",
-        "vscode-azureextensiondev": "0.2.1"
+        "vscode-azureextensiondev": "^0.3.1"
     },
     "dependencies": {
         "azure-arm-resource": "7.3.0",
