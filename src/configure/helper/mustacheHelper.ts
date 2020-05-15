@@ -127,6 +127,43 @@ export class MustacheHelper {
 
                     return "";
                 };
+            },
+
+            "beginsWith": function () {
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length < 4) {
+                        return "";
+                    }
+
+                    var ignoreCase = parts[2];
+                    if (ignoreCase) {
+                        if (parts[0].toLowerCase().startsWith(parts[1].toLowerCase())) {
+                            return parts[3];
+                        }
+                    } else {
+                        if (parts[0].startsWith(parts[1])) {
+                            return parts[3];
+                        }
+                    }
+                    if (parts.length >= 5) {
+                        return parts[4];
+                    } else {
+                        return "";
+                    }
+                };
+            },
+
+            "EnvironmentVariable": function () {
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length < 1) {
+                        return "";
+                    }
+                    return "{{ " + parts[0] + " }}";
+                };
             }
         };
     }
