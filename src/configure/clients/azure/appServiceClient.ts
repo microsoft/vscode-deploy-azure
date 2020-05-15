@@ -6,7 +6,7 @@ import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from 'ms-rest
 import { AzureEnvironment } from 'ms-rest-azure';
 import { telemetryHelper } from '../../helper/telemetryHelper';
 import { ParsedAzureResourceId, TargetKind, WebAppSourceControl } from '../../model/models';
-import {Messages} from '../../resources/messages';
+import { Messages } from '../../resources/messages';
 import { TelemetryKeys } from '../../resources/telemetryKeys';
 import { AzureResourceClient } from './azureResourceClient';
 
@@ -168,6 +168,7 @@ export enum ScmType {
 }
 
 export interface DeploymentMessage {
+    // tslint:disable-next-line: no-reserved-keywords
     type: string;
     message: string;
 }

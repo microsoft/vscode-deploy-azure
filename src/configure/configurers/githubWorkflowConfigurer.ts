@@ -30,7 +30,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
     private githubClient: GithubClient;
 
     constructor(azureSession: AzureSession, subscriptionId: string) {
-        
+
     }
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
@@ -88,6 +88,7 @@ export class GitHubWorkflowConfigurer implements Configurer {
 
     public async createAsset(
         name: string,
+        // tslint:disable-next-line:no-reserved-keywords
         type: TemplateAssetType,
         data: any,
         inputs: WizardInputs): Promise<string> {
