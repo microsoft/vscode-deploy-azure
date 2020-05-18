@@ -176,6 +176,7 @@ export class RepositoryAnalysisRequest {
 
 export class RepositoryDetails {
     id: string;
+    // tslint:disable-next-line:no-reserved-keywords
     type: string;
     defaultbranch: string;
     authorizationInfo: {

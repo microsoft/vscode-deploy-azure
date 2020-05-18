@@ -186,6 +186,7 @@ export interface InputDescriptor {
     /**
      * Data type of the input
      */
+    // tslint:disable-next-line:no-reserved-keywords
     type: InputDataType;
 }
 

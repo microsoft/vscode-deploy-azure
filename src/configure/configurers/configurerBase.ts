@@ -9,6 +9,7 @@ export interface Configurer {
     createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void>;
     createAsset(
         name: string,
+        // tslint:disable-next-line:no-reserved-keywords
         type: TemplateAssetType,
         data: any,
         inputs: WizardInputs): Promise<string>;

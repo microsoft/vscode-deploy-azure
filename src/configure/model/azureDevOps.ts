@@ -3,6 +3,7 @@ import { RepositoryProvider } from "./models";
 export interface BuildDefinition {
     name: string;
     path: string;
+    // tslint:disable-next-line:no-reserved-keywords
     type: number;
     quality: number;
     process: YamlProcess;
@@ -16,6 +17,7 @@ export interface BuildDefinition {
 export interface BuildDefinitionRepository {
     id: string;
     name: string;
+    // tslint:disable-next-line:no-reserved-keywords
     type: RepositoryProvider;
     defaultBranch: string;
     url: string;
@@ -39,6 +41,7 @@ export interface BuildDefinitionTrigger {
 }
 
 export interface YamlProcess {
+    // tslint:disable-next-line:no-reserved-keywords
     type: number;
     yamlFileName: string;
 }
