@@ -171,6 +171,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
         }
         catch (err) {
             pipelineTemplates = [];
+            telemetryHelper.logError('TemplateHelper', TracePoints.ReadingDockerFileFailed, err);
         }
         pipelineTemplates = pipelineTemplates.concat(localPipelineTemplates);
         // sorted by weight
@@ -253,7 +254,7 @@ export function getDockerPort(repoPath: string, relativeDockerFilePath?: string)
         return null;
     }
     catch (err) {
-        telemetryHelper.logError('TemplateHelper', TracePoints.ReadingDockerFileFailed, err);
+        telemetryHelper.logError('TemplateHelper', TracePoints.TemplateServiceCallFailed, err);
     }
 
     return null;

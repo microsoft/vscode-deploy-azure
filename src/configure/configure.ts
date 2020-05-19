@@ -209,8 +209,10 @@ class Orchestrator {
     private async getRepositoryAnalysis() {
         if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
             await this.getGithubPatToken();
-            return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
-                this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+            await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+                return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
+                    this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+            }, TelemetryKeys.RepositoryAnalysisDuration);
         }
         return null;
     }
@@ -453,44 +455,46 @@ class Orchestrator {
         extensionVariables.templateServiceEnabled = false;
         var appropriatePipelines: PipelineTemplate[] = [];
 
-        if (!extensionVariables.templateServiceEnabled) {
-            var localPipelines = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
-                () => templateHelper.analyzeRepoAndListAppropriatePipeline(
-                    this.inputs.sourceRepository.localPath,
-                    this.inputs.sourceRepository.repositoryProvider,
-                    repoAnalysisResult,
-                    this.inputs.pipelineConfiguration.params[constants.TargetResource])
-            );
-            appropriatePipelines = localPipelines;
-        } else {
-            var remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
-                () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
-                    this.inputs.azureSession,
-                    this.inputs.sourceRepository.localPath,
-                    this.inputs.sourceRepository.repositoryProvider,
-                    repoAnalysisResult,
-                    this.inputs.pipelineConfiguration.params[constants.TargetResource])
-            );
-            appropriatePipelines = remotePipelines;
-        }
-        let pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
-        let pipelineLabels = Array.from(pipelineMap.keys());
+        await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+            if (!extensionVariables.templateServiceEnabled) {
+                var localPipelines = await vscode.window.withProgress(
+                    { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                    () => templateHelper.analyzeRepoAndListAppropriatePipeline(
+                        this.inputs.sourceRepository.localPath,
+                        this.inputs.sourceRepository.repositoryProvider,
+                        repoAnalysisResult,
+                        this.inputs.pipelineConfiguration.params[constants.TargetResource])
+                );
+                appropriatePipelines = localPipelines;
+            } else {
+                var remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
+                    { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                    () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
+                        this.inputs.azureSession,
+                        this.inputs.sourceRepository.localPath,
+                        this.inputs.sourceRepository.repositoryProvider,
+                        repoAnalysisResult,
+                        this.inputs.pipelineConfiguration.params[constants.TargetResource])
+                );
+                appropriatePipelines = remotePipelines;
+            }
+            let pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
+            let pipelineLabels = Array.from(pipelineMap.keys());
 
-        // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
-        if (pipelineLabels.length > 1) {
-            var selectedOption = await this.controlProvider.showQuickPick(
-                constants.SelectPipelineTemplate,
-                pipelineLabels.map((pipeline) => { return { label: pipeline }; }),
-                { placeHolder: Messages.selectPipelineTemplate },
-                TelemetryKeys.PipelineTempateListCount);
-            //only label gets finalized, template isn't final yet
-            this.inputs.potentialTemplates = pipelineMap.get(selectedOption.label);
-        }
-        else {
-            this.inputs.potentialTemplates = pipelineMap.get(pipelineLabels[0]);
-        }
+            // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
+            if (pipelineLabels.length > 1) {
+                var selectedOption = await this.controlProvider.showQuickPick(
+                    constants.SelectPipelineTemplate,
+                    pipelineLabels.map((pipeline) => { return { label: pipeline }; }),
+                    { placeHolder: Messages.selectPipelineTemplate },
+                    TelemetryKeys.PipelineTempateListCount);
+                //only label gets finalized, template isn't final yet
+                this.inputs.potentialTemplates = pipelineMap.get(selectedOption.label);
+            }
+            else {
+                this.inputs.potentialTemplates = pipelineMap.get(pipelineLabels[0]);
+            }
+        }, TelemetryKeys.TemplateDisplayDuration);
     }
 
     private getMapOfUniqueLabels(pipelines: PipelineTemplate[]): Map<string, PipelineTemplate[]> {

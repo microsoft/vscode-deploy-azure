@@ -31,6 +31,8 @@ export class TelemetryKeys {
     public static ExtensionActivationDuration = 'extensionActivationDuration';
     public static CommandExecutionDuration = 'commandExecutionDuration';
     public static GitHubPatDuration = 'gitHubPatDuration';
+    public static RepositoryAnalysisDuration = 'repositoryAnalysisDuration';
+    public static TemplateDisplayDuration = 'templateDisplayDuration';
 
     // Count of drop down items
     public static OrganizationListCount = 'OrganizationListCount';
