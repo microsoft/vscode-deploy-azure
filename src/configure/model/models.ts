@@ -76,7 +76,6 @@ export class PipelineConfiguration {
     workingDirectory: string;
     params: { [key: string]: any } = {};
     assets: { [key: string]: any } = {};
-    parameters: { [key: string]: any } = {};
 }
 
 export class MustacheContext {

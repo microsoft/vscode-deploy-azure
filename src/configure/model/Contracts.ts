@@ -1,4 +1,3 @@
-
 export interface ExtendedInputDescriptor extends InputDescriptor {
     /**
      * Name of the data source which can be used to fetch possible values for this input
@@ -31,7 +30,7 @@ export interface ExtendedInputDescriptor extends InputDescriptor {
     /**
      * Additional properties for the input group. This can contains UI hints for input placement, decoration, summary, etc
      */
-    properties: { [key: string] : any; };
+    properties: { [key: string]: any; };
     /**
      * Static validation which can be performed on the input
      */
@@ -51,9 +50,9 @@ export interface ExtendedInputDescriptor extends InputDescriptor {
  * Extended version of pipeline template. It will additionally contains UX hints and other information which can be helpful to draw UX for this template
  */
 export interface ExtendedPipelineTemplate {
-     /**
-     * Description of the CI/CD pipeline which is enabled by this template
-     */
+    /**
+    * Description of the CI/CD pipeline which is enabled by this template
+    */
     description: string;
     /**
      * Unique id of the pipeline template
@@ -62,19 +61,26 @@ export interface ExtendedPipelineTemplate {
     /**
      * List of the inputs required to create CI/CD pipeline
      */
-    inputs: ExtendedInputDescriptor[];
+    inputs?: ExtendedInputDescriptor[];
     /**
      * A dictionary of key-value pairs which defines various key scenarios this template enables. It should mandatorily contain entries with following keys: 1. CodeRepositoryType - its value should either be 'Sample' or 'Custom' 2. RuntimeId - its value should be contribution id of a contribution which describes the runtime supported by template 2. FrameworkId - its value should be contribution id of a contribution which describes the framework supported by template 2. ServiceId - its value should be contribution id of a contribution which describes the service supported by template
      */
-    attributes: { [key: string] : string; };
+    attributes?: { [key: string]: string; };
     /**
      * List of data sources associated with this template
      */
-    dataSources: DataSource[];
+    dataSources?: DataSource[];
     /**
      * List of input groups
      */
-    groups: InputGroup[];
+    groups?: InputGroup[];
+
+    variables?: Variable[];
+
+    pipelineDefinition?: { [key: string]: string; };
+
+    assets?: Asset[];
+
 }
 
 export interface DataSource {
@@ -113,7 +119,7 @@ export interface InputGroup {
     /**
      * Additional properties for the input group. This can contains UI hints for group placement etc.
      */
-    properties: { [key: string] : string; };
+    properties: { [key: string]: string; };
 }
 
 /**
@@ -251,3 +257,22 @@ export interface InputValue {
      */
     value: string;
 }
+
+export interface Variable {
+    id: string;
+    value: string;
+    logTelemetry?: boolean;
+    hashTelemetryValue?: boolean;
+}
+
+export interface Asset {
+    id: string;
+    type: string;
+    stage: ConfigurationStage;
+    inputs: { [key: string]: any };
+}
+
+export enum ConfigurationStage {
+    Pre = "Pre",
+    Post = "Post"
+};
