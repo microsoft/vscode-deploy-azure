@@ -1,31 +1,51 @@
-import { ExtendedPipelineTemplate } from "./Contracts";
 import { AzureConnectionType, ServiceConnectionType, TargetKind, TargetResourceType } from "./models";
 
+export enum TemplateType {
+    REMOTE,
+    LOCAL
+}
 export interface PipelineTemplate {
-    path: string;
     label: string;
-    language: string;
+    templateWeight: number;
+    templateType: TemplateType;
     targetType: TargetResourceType;
     targetKind: TargetKind;
+    language: string;
+}
+
+export interface PipelineTemplateMetadata {
+    templateId: string;
+    workingDirectory: string;
+    templateWeight: number;
+    templateDescription: string;
+    attributes: TemplateAttributes;
+}
+
+export interface RemotePipelineTemplate extends PipelineTemplate {
+    templateId: string;
+    workingDirectory: string;
+    attributes?: TemplateAttributes;
+}
+
+export interface LocalPipelineTemplate extends PipelineTemplate {
+    path: string;
     enabled: boolean;
-    extendedPipelineTemplate?: ExtendedPipelineTemplate;
     parameters?: TemplateParameter[];
     assets?: TemplateAsset[];
     // this should be removed as we will have endpoints/secrets as assets and not a first class property
     azureConnectionType?: AzureConnectionType;
 }
 
-export interface PipelineTemplateMetadata {
-    templateId: string;
-    label: string;
-    workingDirectory: string;
-    templateWeight: number;
-    description: string;
+export interface TemplateAttributes {
+    language: string;
+    buildTarget: string;
+    deployTarget: string;
 }
 
 export interface TemplateParameter {
     name: string;
     displayName: string;
+    // tslint:disable-next-line:no-reserved-keywords
     type: TemplateParameterType;
     dataSourceId?: string;
     defaultValue?: any;
@@ -34,6 +54,7 @@ export interface TemplateParameter {
 
 export interface TemplateAsset {
     id: string;
+    // tslint:disable-next-line:no-reserved-keywords
     type: TemplateAssetType;
 }
 

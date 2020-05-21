@@ -4,7 +4,7 @@ import { AppServiceClient } from '../clients/azure/appServiceClient';
 import { ArmRestClient } from '../clients/azure/armRestClient';
 import { UniqueResourceNameSuffix } from '../configure';
 import { TargetResourceType, WizardInputs } from "../model/models";
-import { TemplateAsset, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
+import { LocalPipelineTemplate, TemplateAsset, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
 import { GraphHelper } from './graphHelper';
@@ -15,6 +15,7 @@ import { TemplateParameterHelper } from './templateParameterHelper';
 const Layer = "AssetCreationHandler";
 
 export class AssetHandler {
+    // tslint:disable-next-line:no-reserved-keywords
     public async createAssets(assets: TemplateAsset[], inputs: WizardInputs, createAsset: (name: string, type: TemplateAssetType, data: any, inputs: WizardInputs) => Promise<string>): Promise<void> {
         if (inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
             if (!!assets && assets.length > 0) {
@@ -25,6 +26,7 @@ export class AssetHandler {
         }
     }
 
+    // tslint:disable-next-line:no-reserved-keywords
     private async createAssetInternal(asset: TemplateAsset, inputs: WizardInputs, createAsset: (name: string, type: TemplateAssetType, data: any, inputs: WizardInputs) => Promise<string>): Promise<void> {
         if (!!asset) {
             switch (asset.type) {
@@ -41,7 +43,7 @@ export class AssetHandler {
                                 let aadAppName = GraphHelper.generateAadApplicationName(inputs.organizationName, inputs.project.name);
                                 let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
                                 // Use param name for first azure resource param
-                                let serviceConnectionName = `${inputs.pipelineConfiguration.params[inputs.pipelineConfiguration.template.parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${UniqueResourceNameSuffix}`;
+                                let serviceConnectionName = `${inputs.pipelineConfiguration.params[(inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${UniqueResourceNameSuffix}`;
                                 return await createAsset(serviceConnectionName, asset.type, { "aadApp": aadApp, "scope": scope }, inputs);
                             }
                             catch (error) {
@@ -146,7 +148,7 @@ export class AssetHandler {
                     break;
 
                 case TemplateAssetType.File:
-                    break;                    
+                    break;
                 case TemplateAssetType.GitHubARM:
                 case TemplateAssetType.GitHubARMPublishProfile:
                 default:
