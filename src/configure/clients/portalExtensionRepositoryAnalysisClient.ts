@@ -1,4 +1,4 @@
-import { RepositoryAnalysis, SourceRepository } from "azureintegration_repoanalysis_client_internal";
+import { RepositoryAnalysis, SourceRepository } from "azureintegration-repoanalysis-client-internal";
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from "ms-rest";
 import { IRepositoryAnalysisClient } from "./repositoryAnalyisClient";
 import { RestClient } from "./restClient";
