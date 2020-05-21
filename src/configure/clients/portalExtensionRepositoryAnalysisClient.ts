@@ -1,5 +1,5 @@
+import { RepositoryAnalysis, SourceRepository } from "azureintegration-repoanalysis-client-internal";
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from "ms-rest";
-import { RepositoryAnalysisRequest, RepositoryAnalysisResponse } from "../model/models";
 import { IRepositoryAnalysisClient } from "./repositoryAnalyisClient";
 import { RestClient } from "./restClient";
 
@@ -11,7 +11,7 @@ export class PortalExtensionRepositoryAnalysisClient implements IRepositoryAnaly
         this.url = url;
     }
 
-    public async getRepositoryAnalysis(body: RepositoryAnalysisRequest): Promise<RepositoryAnalysisResponse> {
+    public async getRepositoryAnalysis(body: SourceRepository): Promise<RepositoryAnalysis> {
 
         return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
             url: this.url,
