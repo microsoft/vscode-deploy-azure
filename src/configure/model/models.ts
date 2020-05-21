@@ -1,5 +1,6 @@
 import { SubscriptionModels } from 'azure-arm-resource';
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
+import { ApplicationSettings } from "azureintegration-repoanalysis-client-internal";
 import { ServiceClientCredentials } from 'ms-rest';
 import { AzureEnvironment } from 'ms-rest-azure';
 import { ExtensionContext, OutputChannel, QuickPickItem, workspace } from 'vscode';
@@ -30,24 +31,12 @@ export class WizardInputs {
     isNewOrganization: boolean;
     sourceRepository: GitRepositoryParameters;
     targetResource: AzureParameters = new AzureParameters();
-    repositoryAnalysisApplicationSettings: RepositoryAnalysisApplicationSettings;
+    repositoryAnalysisApplicationSettings: ApplicationSettings;
     pipelineConfiguration: PipelineConfiguration = new PipelineConfiguration();
     azureSession: AzureSession;
     subscriptionId: string;
     githubPATToken?: string;
     potentialTemplates?: PipelineTemplate[];
-}
-
-export class RepositoryAnalysisParameters {
-    applicationSettingsList: RepositoryAnalysisApplicationSettings[];
-}
-
-//VS Code side model to extract information in any format from RepoAnalysis service result.
-export class RepositoryAnalysisApplicationSettings {
-    language: SupportedLanguage;
-    buildTargetName: string;
-    deployTargetName: string;
-    settings: StringMap<string> = {};
 }
 
 export class AzureParameters {
@@ -96,7 +85,7 @@ export class MustacheContext {
     // the below two properties will be removed during transition to parameterized templates.
     sourceRepository: GitRepositoryParameters;
     targetResource: AzureParameters;
-    repositoryAnalysisApplicationSettings: RepositoryAnalysisApplicationSettings;
+    repositoryAnalysisApplicationSettings: ApplicationSettings;
 }
 
 export class QuickPickItemWithData implements QuickPickItem {
