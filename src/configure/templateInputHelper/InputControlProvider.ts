@@ -1,3 +1,4 @@
+import { ApplicationSettings } from "azureintegration-repoanalysis-client-internal";
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { telemetryHelper } from "../helper/telemetryHelper";
 import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation, InputMode } from "../model/Contracts";
@@ -24,7 +25,7 @@ export class InputControlProvider {
         this._pipelineTemplate = pipelineTemplate;
         this._inputControlsMap = new Map<string, InputControl>();
         this.azureSession = azureSession;
-        this.repoAnalysisSettingInputProvider = new RepoAnalysisSettingInputProvider(context['repoAnalysisSettings'] as RepositoryAnalysisApplicationSettings[]);
+        this.repoAnalysisSettingInputProvider = new RepoAnalysisSettingInputProvider(context['repoAnalysisSettings'] as ApplicationSettings[]);
         this._context = context;
         this._createControls();
     }

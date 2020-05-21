@@ -1,11 +1,11 @@
+import { ApplicationSettings, CodeRepository, RepositoryAnalysis, SourceRepository } from "azureintegration-repoanalysis-client-internal";
 import * as path from 'path';
 import { ModaRepositoryAnalysisClient } from '../clients/modaRepositoryAnalysisClient';
 import { PortalExtensionRepositoryAnalysisClient } from "../clients/portalExtensionRepositoryAnalysisClient";
 import { IRepositoryAnalysisClient } from '../clients/repositoryAnalyisClient';
-import { AzureSession, GitRepositoryParameters, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryAnalysisRequest, RepositoryDetails, RepositoryProvider, SupportedLanguage } from "../model/models";
+import { AzureSession, GitRepositoryParameters, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
 import { IServiceUrlDefinition, RemoteServiceUrlHelper, ServiceFramework } from './remoteServiceUrlHelper';
-
 
 export class RepoAnalysisHelper {
     private azureSession: AzureSession;
@@ -15,22 +15,22 @@ export class RepoAnalysisHelper {
         this.githubPatToken = githubPatToken;
     }
 
-    public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters, workspacePath: string): Promise<RepositoryAnalysisParameters> {
+    public async getRepositoryAnalysis(sourceRepositoryDetails: GitRepositoryParameters, workspacePath: string): Promise<RepositoryAnalysis> {
 
         let repositoryAnalysisResponse;
         try {
             const serviceDefinition = await RemoteServiceUrlHelper.getRepositoryAnalysisDefinition();
             const client = this.getClient(serviceDefinition);
 
-            const repositoryDetails: RepositoryDetails = new RepositoryDetails();
+            const repositoryDetails: CodeRepository = {} as CodeRepository;
             repositoryDetails.id = sourceRepositoryDetails.repositoryId;
-            repositoryDetails.defaultbranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysisConstants.Master;
+            repositoryDetails.defaultBranch = !!sourceRepositoryDetails.branch ? sourceRepositoryDetails.branch : RepoAnalysisConstants.Master;
             repositoryDetails.type = RepositoryProvider.Github;
 
-            let repositoryAnalysisRequestBody = new RepositoryAnalysisRequest;
-            repositoryAnalysisRequestBody.Repository = repositoryDetails;
-            repositoryAnalysisRequestBody.WorkingDirectory = workspacePath;
-            repositoryAnalysisRequestBody.Repository.authorizationInfo = {
+            let repositoryAnalysisRequestBody = {} as SourceRepository;
+            repositoryAnalysisRequestBody.repository = repositoryDetails;
+            repositoryAnalysisRequestBody.workingDirectory = workspacePath;
+            repositoryAnalysisRequestBody.repository.authorizationInfo = {
                 scheme: "Token",
                 parameters: {
                     accesstoken: this.githubPatToken
@@ -46,17 +46,20 @@ export class RepoAnalysisHelper {
             return null;
         }
 
-        let parameters: RepositoryAnalysisParameters = new RepositoryAnalysisParameters();
+        let parameters: RepositoryAnalysis = {} as RepositoryAnalysis;
         parameters.applicationSettingsList = [];
         repositoryAnalysisResponse.applicationSettingsList.forEach((analysis) => {
 
             //Process only for VSCode Supported Languages
             if (Object.keys(SupportedLanguage).indexOf(analysis.language.toUpperCase()) > -1) {
-                let applicationSettings: RepositoryAnalysisApplicationSettings = new RepositoryAnalysisApplicationSettings();
+                let applicationSettings: ApplicationSettings = {} as ApplicationSettings;
                 applicationSettings.language = analysis.language;
 
                 if (!!analysis.settings) {
                     if (!!analysis.settings.workingDirectory) {
+                        if(!applicationSettings.settings) {
+                            applicationSettings.settings = {};
+                        }
                         applicationSettings.settings.workingDirectory = analysis.settings.workingDirectory.split('\\').join('/');
                     }
                     if (!!analysis.buildTargetName) {

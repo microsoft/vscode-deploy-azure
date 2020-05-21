@@ -104,9 +104,9 @@ export class MustacheHelper {
                         return render("");
                     }
                     else {
-                        var from = +parts[1];
+                        var start = +parts[1];
                         var length = +parts[2];
-                        return render(parts[0].substr(from, length));
+                        return render(parts[0].substr(start, length));
                     }
                 };
             },

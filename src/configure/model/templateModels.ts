@@ -46,6 +46,7 @@ export interface TemplateAttributes {
 export interface TemplateParameter {
     name: string;
     displayName: string;
+    // tslint:disable-next-line:no-reserved-keywords
     type: TemplateParameterType;
     dataSourceId?: string;
     defaultValue?: any;
@@ -54,6 +55,7 @@ export interface TemplateParameter {
 
 export interface TemplateAsset {
     id: string;
+    // tslint:disable-next-line:no-reserved-keywords
     type: TemplateAssetType;
 }
 
