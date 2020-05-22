@@ -131,7 +131,7 @@ export class MustacheHelper {
 
             /*
             * Checks if a string begins with some string
-            * Usage: {{#beginsWith}} StringToCheck BeginningPart true/false(for case-sensitivity) IfTrueValue IfFalseValue{{/beginsWith}}
+            * Usage: {{#beginsWith}} StringToCheck BeginningPart true/false(for case-sensitivity) IfTrueValue IfFalseValue(optional){{/beginsWith}}
             */
             "beginsWith": function () {
                 return function (text: string, render: any) {
@@ -163,7 +163,7 @@ export class MustacheHelper {
             * If some variable is the environment variable, adding {{ }}
             * Usage: {{#EnvironmentVariable}} VariableName {{/EnvironmentVariable}}
             */
-            "EnvironmentVariable": function () {
+            "environmentVariable": function () {
                 return function (text: string, render: any) {
                     var renderedText: string = render(text);
                     var parts = MustacheHelper.getParts(renderedText);
