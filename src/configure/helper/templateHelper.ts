@@ -9,6 +9,7 @@ import { AzureConnectionType, AzureSession, extensionVariables, MustacheContext,
 import { LocalPipelineTemplate, PipelineTemplate, PipelineTemplateMetadata, PreDefinedDataSourceIds, RemotePipelineTemplate, TemplateAssetType, TemplateParameterType, TemplateType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
+import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { MustacheHelper } from './mustacheHelper';
 import { telemetryHelper } from './telemetryHelper';
@@ -151,12 +152,15 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
 export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
 
     var pipelineTemplates: PipelineTemplate[] = [];
+    var remoteTemplates: PipelineTemplateMetadata[] = [];
     var localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
 
     if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
         try {
             let serviceClient = new TemplateServiceClient(azureSession.credentials);
-            var remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);
+            await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+                remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);
+            }, TelemetryKeys.TemplateServiceDuration);
             remoteTemplates.forEach((template: PipelineTemplateMetadata) => {
                 var remoteTemplate: RemotePipelineTemplate = {
                     label: template.templateDescription,

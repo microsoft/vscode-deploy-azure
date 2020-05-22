@@ -32,7 +32,7 @@ export class TelemetryKeys {
     public static CommandExecutionDuration = 'commandExecutionDuration';
     public static GitHubPatDuration = 'gitHubPatDuration';
     public static RepositoryAnalysisDuration = 'repositoryAnalysisDuration';
-    public static TemplateDisplayDuration = 'templateDisplayDuration';
+    public static TemplateServiceDuration = 'templateServiceDuration';
 
     // Count of drop down items
     public static OrganizationListCount = 'OrganizationListCount';
