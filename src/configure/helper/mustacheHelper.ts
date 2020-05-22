@@ -127,6 +127,76 @@ export class MustacheHelper {
 
                     return "";
                 };
+            },
+
+            /*
+            * Checks if a string begins with some string
+            * Usage: {{#beginsWith}} StringToCheck BeginningPart true/false(for case-sensitivity) IfTrueValue IfFalseValue(optional){{/beginsWith}}
+            */
+            "beginsWith": function () {
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length < 4) {
+                        return "";
+                    }
+
+                    var ignoreCase = parts[2];
+                    if (ignoreCase) {
+                        if (parts[0].toLowerCase().startsWith(parts[1].toLowerCase())) {
+                            return parts[3];
+                        }
+                    } else {
+                        if (parts[0].startsWith(parts[1])) {
+                            return parts[3];
+                        }
+                    }
+                    if (parts.length >= 5) {
+                        return parts[4];
+                    } else {
+                        return "";
+                    }
+                };
+            },
+
+            /*
+            * If some variable is the environment variable, adding {{ }}
+            * Usage: {{#EnvironmentVariable}} VariableName {{/EnvironmentVariable}}
+            */
+            "environmentVariable": function () {
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length < 1) {
+                        return "";
+                    }
+                    return "{{ " + parts[0] + " }}";
+                };
+            },
+
+            /*
+            * Sort an integer array
+            * Usage: {{#intSorter}} IntegerArrayToBeSorted asc/dsc(order in which it is to be sorted) {{/intSorter}}
+            */
+            "intSorter": function () {
+                return function (text: string, render: any) {
+                    var parts = MustacheHelper.getParts(text);
+                    if (parts.length < 2) {
+                        return "";
+                    }
+
+                    var order = parts[1].toLowerCase();
+                    var arr = render(parts[0]).split(",");
+                    var sorter = 1;
+                    if (order === "dsc") {
+                        sorter = -1;
+                    }
+                    arr = arr.sort((a, b) => {
+                        if (a > b) { return 1 * sorter; }
+                        else { return -1 * sorter; }
+                    });
+                    return arr;
+                };
             }
         };
     }
