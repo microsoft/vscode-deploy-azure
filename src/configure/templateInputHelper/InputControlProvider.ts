@@ -1,8 +1,8 @@
 import { ApplicationSettings } from "azureintegration-repoanalysis-client-internal";
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { telemetryHelper } from "../helper/telemetryHelper";
-import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation, InputMode } from "../model/Contracts";
-import { AzureSession, ControlType, IPredicate, RepositoryAnalysisApplicationSettings, StringMap } from '../model/models';
+import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation } from "../model/Contracts";
+import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
 import * as constants from '../resources/constants';
 import { TracePoints } from "../resources/tracePoints";
 import { InputControl } from "./InputControl";
@@ -60,9 +60,12 @@ export class InputControlProvider {
             let dependentInputControlArray = this._getInputDependencyArray(inputControl, [properties[element]], false);
             let dependentClientInputMap = this._getClientDependencyMap(inputControl, [properties[element]]);
             let newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
+            if (!Object.keys(newValue).length) {
+                newValue = properties[element];
+            }
             inputControl.updateInputDescriptorProperty(key, newValue);
             if (key === constants.inputModeProperty) {
-                let updatedControlType = InputControlUtility.getInputControlType(InputMode[newValue]);
+                let updatedControlType = InputControlUtility.getInputControlType(parseInt(newValue.toString()));
                 inputControl.updateControlType(updatedControlType);
             }
         });
@@ -148,12 +151,11 @@ export class InputControlProvider {
     }
 
     private _computeMustacheValue(mustacheExpression: string, dependentInputControlArray: InputControl[], dependentClientInputMap: StringMap<any>): string {
-
         var dependentInputValues = this._getInputParameterValueIfAllSet(dependentInputControlArray);
         if (dependentInputControlArray && dependentInputControlArray.length > 0 && !dependentInputValues) {
             return "";
         } else {
-            return MustacheHelper.render(mustacheExpression, { inputs: dependentInputValues, client: dependentClientInputMap });
+            return MustacheHelper.renderObject(mustacheExpression, { inputs: dependentInputValues, client: dependentClientInputMap });
         }
     }
 
