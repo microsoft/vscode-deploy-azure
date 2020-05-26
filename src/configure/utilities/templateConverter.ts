@@ -1,6 +1,6 @@
-const templateParametersRegex = /(inputs|variables|assets|secrets)\.\w+/g;
-const templateEnclosedParametersRegex = /{{{?\s*(inputs|variables|assets|secrets)\.\w+\s*}?}}/g;
-const mustacheHelperRegex = /{?{{\s*#(\w+)(.*?)({?{{\s*\/\1)}}}?/;
+const parametersRegex = /(inputs|variables|assets|secrets|system)\.\w+/g;
+const enclosedParametersRegex = /{{{?\s*(inputs|variables|assets|secrets|system)\.\w+\s*}?}}/g;
+const mustacheHelperRegex = /{{{?\s*#(\w+)(.*?)({?{{\s*\/\1)}?}}/;
 
 export function convertExpression(expression: string): string {
     let match = expression.match(mustacheHelperRegex);
@@ -22,7 +22,7 @@ export function convertExpression(expression: string): string {
         helperName = expression.substring(openingHelperFunc.length + 1, expression.indexOf(' '));
         parts.push(expression.substring(0, expression.indexOf(' ')) + closingHelperFunc);
         let part = expression.substring(expression.indexOf(' '), expression.indexOf(closingHelperFunc)).trim();
-        let inputs = part.match(templateParametersRegex) || [];
+        let inputs = part.match(parametersRegex) || [];
         for (let input of inputs) {
             part = part.replace(input, "{{{" + input + "}}}")
         }
@@ -53,17 +53,7 @@ export function convertExpression(expression: string): string {
 
 }
 
-function replaceAtIndex(text: string, searchValue: string, replaceValue: string, index: number) {
-    if (text.indexOf(searchValue, index) !== -1) {
-        let preStr = text.substr(0, index);
-        let postStr = text.substr(index + searchValue.length);
-        text = preStr + replaceValue + postStr;
-    }
-    return text;
-}
-
 export function convertStringMustachExpression(text: string): string {
-    text = sanitizeExpression(text);
     let helperRegExp = /{?{{\s*#(\w+)(.*?)({?{{\s*\/\1)}}}?/g;
     let result = helperRegExp.exec(text);
     while (result) {
@@ -75,32 +65,43 @@ export function convertStringMustachExpression(text: string): string {
 }
 
 export function sanitizeExpression(text: string): string {
-    let result = templateEnclosedParametersRegex.exec(text);
+    let result = enclosedParametersRegex.exec(text);
     while (result) {
         if (!result[0].startsWith('{{{')) {
             text = replaceAtIndex(text, result[0], '{' + result[0] + '}', result.index);
         }
-        result = templateEnclosedParametersRegex.exec(text);
+        result = enclosedParametersRegex.exec(text);
     }
     return text;
 }
 
-export function convertObjectMustacheExpression(object: any): any {
+export function convertToLocalMustacheExpression(object: any): any {
     if (typeof object === "string") {
+        object = sanitizeExpression(object);
         return convertStringMustachExpression(object);
     }
 
     if (Array.isArray(object)) {
         for (let i = 0; i < object.length; i++) {
-            object[i] = convertObjectMustacheExpression(object[i]);
+            object[i] = convertToLocalMustacheExpression(object[i]);
         }
+        return object;
     }
 
     Object.keys(object).forEach(key => {
         if (!!key && !!object[key]) {
-            object[key] = convertObjectMustacheExpression(object[key]);
+            object[key] = convertToLocalMustacheExpression(object[key]);
         }
     });
 
     return object;
+}
+
+function replaceAtIndex(text: string, searchValue: string, replaceValue: string, index: number) {
+    if (text.indexOf(searchValue, index) !== -1) {
+        let preStr = text.substr(0, index);
+        let postStr = text.substr(index + searchValue.length);
+        text = preStr + replaceValue + postStr;
+    }
+    return text;
 }

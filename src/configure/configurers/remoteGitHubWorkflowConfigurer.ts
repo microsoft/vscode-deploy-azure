@@ -1,47 +1,54 @@
+import { JSONPath } from 'jsonpath-plus';
 import * as Path from 'path';
 import * as utils from 'util';
 import * as vscode from 'vscode';
+import { ArmRestClient } from '../clients/azure/armRestClient';
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { GithubClient } from '../clients/github/githubClient';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { MustacheHelper } from '../helper/mustacheHelper';
+import { telemetryHelper } from '../helper/telemetryHelper';
 import { Asset, ConfigurationStage, ExtendedInputDescriptor, InputDataType } from "../model/Contracts";
 import { AzureSession, StringMap, WizardInputs } from "../model/models";
 import { RemotePipelineTemplate } from "../model/templateModels";
 import { Messages } from '../resources/messages';
+import { TracePoints } from '../resources/tracePoints';
 import { InputControl } from '../templateInputHelper/InputControl';
 import * as templateConverter from '../utilities/templateConverter';
-import { GitHubWorkflowConfigurer } from './githubWorkflowConfigurer';
+import { LocalGitHubWorkflowConfigurer } from './localGithubWorkflowConfigurer';
 
 export interface File {
     path: string;
     content: string;
 }
 
-export class RemoteGitHubWorkflowConfigurer extends GitHubWorkflowConfigurer {
+const Layer: string = "RemoteGitHubWorkflowConfigurer";
+
+export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigurer {
     private azureSession: AzureSession;
     private assets: { [key: string]: any } = {};
     private secrets: { [key: string]: any } = {};
     private variables: { [key: string]: any } = {};
+    private system: { [key: string]: any } = {};
     private filesToCommit: File[] = [];
     private mustacheContext: StringMap<any>;
     private template: RemotePipelineTemplate;
     private localGitHelper: LocalGitRepoHelper;
+    private templateServiceClient: TemplateServiceClient;
 
     constructor(azureSession: AzureSession, subscriptionId: string, localGitHelper: LocalGitRepoHelper) {
         super(azureSession, subscriptionId);
         this.azureSession = azureSession;
         this.localGitHelper = localGitHelper;
-
     }
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
         this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
-
+        this.templateServiceClient = new TemplateServiceClient(inputs.azureSession.credentials);
         this.template = inputs.pipelineConfiguration.template as RemotePipelineTemplate;
         let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
-        extendedPipelineTemplate = templateConverter.convertObjectMustacheExpression(extendedPipelineTemplate);
+        extendedPipelineTemplate = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate);
 
         this.template.variables = extendedPipelineTemplate.variables;
         this.template.pipelineDefinition = extendedPipelineTemplate.pipelineDefinition;
@@ -53,12 +60,14 @@ export class RemoteGitHubWorkflowConfigurer extends GitHubWorkflowConfigurer {
             }
         });
 
+        this.system["sourceRepository"] = inputs.sourceRepository;
 
         this.mustacheContext = {
             inputs: inputs.pipelineConfiguration.params,
             variables: this.variables,
             assets: this.assets,
-            secrets: this.secrets
+            secrets: this.secrets,
+            system: this.system
         }
 
         for (let variable of this.template.variables) {
@@ -89,7 +98,13 @@ export class RemoteGitHubWorkflowConfigurer extends GitHubWorkflowConfigurer {
             for (let asset of assets) {
                 if (asset.stage === stage) {
                     asset = MustacheHelper.renderObject(asset, this.mustacheContext)
-                    await this.createAssetInternal(asset);
+                    try {
+                        await this.createAssetInternal(asset);
+                    }
+                    catch (error) {
+                        telemetryHelper.logError(Layer, TracePoints.AssetCreationFailure, error)
+                        throw error;
+                    }
                 }
             }
         }
@@ -113,19 +128,65 @@ export class RemoteGitHubWorkflowConfigurer extends GitHubWorkflowConfigurer {
                     this.assets[asset.id] = azureCreds;
                     break;
                 case "SetGHSecret":
-                    let secretKey = asset.inputs["secretKey"];
-                    let secretValue = asset.inputs["secretValue"];
-                    await this.githubClient.createOrUpdateGithubSecret(secretKey, secretValue);
+                    let secretKey: string = asset.inputs["secretKey"];
+                    let secretValue: string = asset.inputs["secretvalue"];
+                    await vscode.window.withProgress(
+                        {
+                            location: vscode.ProgressLocation.Notification,
+                            title: Messages.settingUpGithubSecrets
+                        },
+                        async () => {
+                            await this.githubClient.createOrUpdateGithubSecret(secretKey, secretValue);
+                        }
+                    );
                     this.secrets[asset.id] = secretKey;
                     break;
                 case "commitFile:Github":
                     let source: string = asset.inputs["source"];
                     let destination: string = asset.inputs["destination"];
-                    destination = await this.getPathToFile(this.localGitHelper, Path.basename(destination), Path.dirname(destination));
+                    await vscode.window.withProgress(
+                        {
+                            location: vscode.ProgressLocation.Notification,
+                            title: Messages.gettingTemplateFileAsset
+                        },
+                        async () => {
+                            destination = await this.getPathToFile(this.localGitHelper, Path.basename(destination), Path.dirname(destination));
 
-                    let fileContent = await new TemplateServiceClient(this.azureSession.credentials).getTemplateFile(this.template.id, source);
-                    this.filesToCommit.push({ path: destination, content: fileContent });
+                            let fileContent = await this.getTemplateFile(source);
+                            this.filesToCommit.push({ path: destination, content: fileContent });
+                        }
+                    );
+
                     this.assets[asset.id] = destination;
+                    break;
+                case "NodeVersion":
+                    let nodeVersion: string = asset.inputs["selectedNodeVersion"];
+                    let armUri = asset.inputs["armUri"];
+                    let resultSelector = asset.inputs["resultSelector"];
+                    if (nodeVersion === 'NODE|lts') {
+                        let versions: string[];
+                        await vscode.window.withProgress(
+                            {
+                                location: vscode.ProgressLocation.Notification,
+                                title: Messages.GettingNodeVersion
+                            },
+                            async () => {
+                                let response = await new ArmRestClient(this.azureSession).fetchArmData(armUri, 'GET');
+                                versions = JSONPath({ path: resultSelector, json: response, wrap: false, flatten: true })
+                            }
+                        );
+                        let maxVersion = 0;
+                        versions.forEach((version: string) => {
+                            let match = version.match(/NODE\|(\d+)-lts/);
+                            if (match && match.length > 1) {
+                                maxVersion = Math.max(maxVersion, +match[1]);
+                            }
+                        });
+                        nodeVersion = maxVersion + '.x';
+                    } else if (nodeVersion.match(/NODE\|\d+-lts/i)) {
+                        nodeVersion = nodeVersion.split('|')[1].replace(/-lts/i, '.x');
+                    }
+                    this.assets[asset.id] = nodeVersion;
                     break;
                 default:
                     throw new Error(utils.format(Messages.assetOfTypeNotSupported, asset.type));
@@ -135,9 +196,16 @@ export class RemoteGitHubWorkflowConfigurer extends GitHubWorkflowConfigurer {
 
     private async getWorkflowFile(inputs: WizardInputs): Promise<File> {
         let pipelineDefinition = MustacheHelper.renderObject(this.template.pipelineDefinition, this.mustacheContext);
-        let result = await new TemplateServiceClient(inputs.azureSession.credentials).getTemplateFile(this.template.id, pipelineDefinition.templateFile);
-        result = templateConverter.convertStringMustachExpression(result);
-        let workflowFileContent = MustacheHelper.render(result, this.mustacheContext);
+        let workflowFileContent: string;
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: Messages.gettingWorkflowFile
+            },
+            async () => {
+                workflowFileContent = await this.getTemplateFile(pipelineDefinition.templateFile);
+            }
+        );
         let workFlowFileName: string = pipelineDefinition.destinationFileName;
         workFlowFileName = await this.getPathToPipelineFile(inputs, this.localGitHelper, workFlowFileName);
         inputs.pipelineConfiguration.filePath = workFlowFileName
@@ -151,5 +219,22 @@ export class RemoteGitHubWorkflowConfigurer extends GitHubWorkflowConfigurer {
         let scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", inputs.pipelineConfiguration.params)
         return this.getAzureSPNSecret(inputs, scope);
 
+    }
+
+    private async getTemplateFile(fileName: string): Promise<string> {
+        try {
+            let result = await this.templateServiceClient.getTemplateFile(this.template.id, fileName);
+            if (result.length > 0) {
+                let templateFile = result.find((value) => value.id.split('\\').join('/') == fileName);
+                if (templateFile) {
+                    let content = templateConverter.convertToLocalMustacheExpression(templateFile.content);
+                    return MustacheHelper.render(content, this.mustacheContext);
+                }
+            }
+            throw new Error(utils.format(Messages.templateFileNotFound, fileName));
+        } catch (error) {
+            telemetryHelper.logError(Layer, TracePoints.GetTemplateFile, error);
+            throw error;
+        }
     }
 }

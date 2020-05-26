@@ -1,10 +1,10 @@
-import { GitHubWorkflowConfigurer } from '../configurers/githubWorkflowConfigurer';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { AzureSession, extensionVariables, GitRepositoryParameters, RepositoryProvider } from '../model/models';
 import { TemplateType } from '../model/templateModels';
 import { Messages } from '../resources/messages';
 import { AzurePipelineConfigurer } from './azurePipelineConfigurer';
 import { Configurer } from './configurerBase';
+import { LocalGitHubWorkflowConfigurer } from './localGithubWorkflowConfigurer';
 import { RemoteGitHubWorkflowConfigurer } from './remoteGitHubWorkflowConfigurer';
 
 export class ConfigurerFactory {
@@ -12,7 +12,7 @@ export class ConfigurerFactory {
         switch (sourceRepositoryDetails.repositoryProvider) {
             case RepositoryProvider.Github:
                 if (extensionVariables.enableGitHubWorkflow) {
-                    return templateType == TemplateType.LOCAL ? new GitHubWorkflowConfigurer(azureSession, subscriptionId) : new RemoteGitHubWorkflowConfigurer(azureSession, subscriptionId, localGitRepoHelper);
+                    return templateType == TemplateType.LOCAL ? new LocalGitHubWorkflowConfigurer(azureSession, subscriptionId) : new RemoteGitHubWorkflowConfigurer(azureSession, subscriptionId, localGitRepoHelper);
                 }
                 return new AzurePipelineConfigurer(azureSession);
             case RepositoryProvider.AzureRepos:

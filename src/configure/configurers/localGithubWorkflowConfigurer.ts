@@ -23,9 +23,9 @@ import { Configurer } from "./configurerBase";
 
 const uuid = require('uuid/v4');
 
-const Layer = 'GitHubWorkflowConfigurer';
+const Layer = 'LocalGitHubWorkflowConfigurer';
 
-export class GitHubWorkflowConfigurer implements Configurer {
+export class LocalGitHubWorkflowConfigurer implements Configurer {
     protected githubClient: GithubClient;
     private queuedPipelineUrl: string;;
 

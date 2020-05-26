@@ -6,45 +6,56 @@ import { RestClient } from "../restClient";
 
 export class TemplateServiceClient {
     private restClient: RestClient;
-    private readonly templateServiceUri: string = "https://pepfcusc.portalext.visualstudio.com/_apis/TemplateService";
+    private readonly templateServiceUri: string = "https://pepfcusc.portalext.visualstudio.com/_apis/TemplateService/";
+    private readonly apiVersion = "6.0-preview.1";
 
     constructor(credentials: ServiceClientCredentials) {
-        this.restClient = new RestClient(credentials);
+        this.restClient = new RestClient();
     }
 
     public async getTemplates(body: RepositoryAnalysisParameters): Promise<TemplateInfo[]> {
         return this.restClient.sendRequest2(
             this.templateServiceUri,
             'POST',
-            '6.0-preview.1',
+            this.apiVersion,
             body);
     }
 
     public async getTemplateParameters(templateId: string): Promise<ExtendedPipelineTemplate> {
-        var requestUri = this.templateServiceUri + "/" + templateId + "/parameters";
+        var requestUri = this.templateServiceUri + templateId + "/parameters";
         return this.restClient.sendRequest2(
             requestUri,
             'GET',
-            '6.0-preview.1'
+            this.apiVersion
         );
     }
 
     public async getTemplateConfiguration(templateId: string, inputs: StringMap<string>): Promise<ExtendedPipelineTemplate> {
-        let requestUri = this.templateServiceUri + "/" + templateId + "/configuration";
+        let requestUri = this.templateServiceUri + templateId + "/configuration";
         return this.restClient.sendRequest2(
             requestUri,
             'POST',
-            '6.0-preview.1',
+            this.apiVersion,
             inputs
         );
     }
 
-    public async getTemplateFile(templateId: string, fileId: string): Promise<string> {
-        let requestUri = this.templateServiceUri + "/" + templateId + "/files" + fileId;
-        return this.restClient.sendRequest2(
-            requestUri,
-            'GET',
-            '6.0-preview.1'
-        );
+    public async getTemplateFile(templateId: string, fileName: string): Promise<{ id: string, content: string }[]> {
+        let requestUri = this.templateServiceUri + templateId + "/files";
+
+        return this.restClient.sendRequest(
+            {
+                url: requestUri,
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8"
+                },
+                queryParameters: {
+                    'fileNames': fileName,
+                    'api-version': this.apiVersion
+                },
+                deserializationMapper: null,
+                serializationMapper: null
+            });
     }
 }

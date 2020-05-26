@@ -95,7 +95,7 @@ class Orchestrator {
         if (this.continueOrchestration) {
             let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.subscriptionId,
                 this.inputs.pipelineConfiguration.template.templateType, this.localGitRepoHelper);
-            let selectedCICDProvider = (pipelineConfigurer.constructor.name === "GitHubWorkflowConfigurer") ? constants.githubWorkflow : constants.azurePipeline;
+            let selectedCICDProvider = (pipelineConfigurer.constructor.name === "AzurePipelineConfigurer") ? constants.azurePipeline : constants.githubWorkflow;
             telemetryHelper.setTelemetry(TelemetryKeys.SelectedCICDProvider, selectedCICDProvider);
             await pipelineConfigurer.getInputs(this.inputs);
 
@@ -191,7 +191,7 @@ class Orchestrator {
     private async getTemplateParameters() {
         if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
             let template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
-            let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, template.id);
+            let extendedPipelineTemplate = await templateHelper.getTemplateParameters(this.inputs.azureSession, template.id);
             template.attributes = extendedPipelineTemplate.attributes;
             template.inputs = extendedPipelineTemplate.inputs;
             template.groups = extendedPipelineTemplate.groups;
@@ -462,7 +462,7 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
-        extensionVariables.templateServiceEnabled = true;
+        extensionVariables.templateServiceEnabled = false;
         var appropriatePipelines: PipelineTemplate[] = [];
 
         if (!extensionVariables.templateServiceEnabled) {
@@ -527,10 +527,10 @@ class Orchestrator {
         }
         let workingDirectories = Array.from(new Set(this.inputs.potentialTemplates
             .filter((template) => template.templateType === TemplateType.REMOTE)
-            .map((template: RemotePipelineTemplate) => template.workingDirectory)));
+            .map((template: RemotePipelineTemplate) => template.workingDirectory.toLowerCase())));
         var applicationSettings = repoAnalysisResult.applicationSettingsList.filter(applicationSetting => {
             if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
-                return workingDirectories.indexOf(applicationSetting.settings.workingDirectory) > 0;
+                return workingDirectories.indexOf(applicationSetting.settings.workingDirectory.toLowerCase()) >= 0;
             }
             return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
 
