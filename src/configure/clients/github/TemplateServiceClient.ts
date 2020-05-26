@@ -11,7 +11,7 @@ export class TemplateServiceClient {
     private readonly apiVersion = "6.0-preview.1";
 
     constructor(credentials: ServiceClientCredentials) {
-        this.restClient = new RestClient();
+        this.restClient = new RestClient(credentials);
     }
 
     public async getTemplates(body: RepositoryAnalysis): Promise<TemplateInfo[]> {
