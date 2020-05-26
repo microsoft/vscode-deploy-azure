@@ -7,6 +7,7 @@ steps:
   inputs:
     toolMajorVersion: V2
     debugMode: false
+    suppressionsFile: .config/CredScanSuppressions.json
 
 - task: TSLint@1
   inputs:

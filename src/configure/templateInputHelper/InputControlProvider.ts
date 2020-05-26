@@ -1,7 +1,8 @@
+import { ApplicationSettings } from "azureintegration-repoanalysis-client-internal";
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { telemetryHelper } from "../helper/telemetryHelper";
-import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation } from "../model/Contracts";
-import { AzureSession, ControlType, IPredicate, RepositoryAnalysisApplicationSettings, StringMap } from '../model/models';
+import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation, InputMode } from "../model/Contracts";
+import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
 import * as constants from '../resources/constants';
 import { TracePoints } from "../resources/tracePoints";
 import { InputControl } from "./InputControl";
@@ -24,7 +25,7 @@ export class InputControlProvider {
         this._pipelineTemplate = pipelineTemplate;
         this._inputControlsMap = new Map<string, InputControl>();
         this.azureSession = azureSession;
-        this.repoAnalysisSettingInputProvider = new RepoAnalysisSettingInputProvider(context['repoAnalysisSettings'] as RepositoryAnalysisApplicationSettings[]);
+        this.repoAnalysisSettingInputProvider = new RepoAnalysisSettingInputProvider(context['repoAnalysisSettings'] as ApplicationSettings[]);
         this._context = context;
         this._createControls();
     }
@@ -61,7 +62,7 @@ export class InputControlProvider {
             let newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
             inputControl.updateInputDescriptorProperty(key, newValue);
             if (key === constants.inputModeProperty) {
-                let updatedControlType = InputControlUtility.getInputControlType(parseInt(newValue));
+                let updatedControlType = InputControlUtility.getInputControlType(InputMode[newValue]);
                 inputControl.updateControlType(updatedControlType);
             }
         });

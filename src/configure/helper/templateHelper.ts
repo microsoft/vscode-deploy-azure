@@ -1,11 +1,12 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
+import { RepositoryAnalysis } from 'azureintegration-repoanalysis-client-internal';
 import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 import { ExtendedPipelineTemplate } from '../model/Contracts';
-import { AzureConnectionType, AzureSession, extensionVariables, MustacheContext, RepositoryAnalysisParameters, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
+import { AzureConnectionType, AzureSession, extensionVariables, MustacheContext, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
 import { LocalPipelineTemplate, PipelineTemplate, PreDefinedDataSourceIds, RemotePipelineTemplate, TemplateAssetType, TemplateInfo, TemplateParameterType, TemplateType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -13,7 +14,7 @@ import { TracePoints } from '../resources/tracePoints';
 import { MustacheHelper } from './mustacheHelper';
 import { telemetryHelper } from './telemetryHelper';
 
-export async function mergingRepoAnalysisResults(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters): Promise<AnalysisResult> {
+export async function mergingRepoAnalysisResults(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis): Promise<AnalysisResult> {
     let localRepoAnalysisResult = await analyzeRepo(repoPath);
     let analysisResult = localRepoAnalysisResult;
 
@@ -21,7 +22,7 @@ export async function mergingRepoAnalysisResults(repoPath: string, repositoryPro
     if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.applicationSettingsList) {
         analysisResult = new AnalysisResult();
         repoAnalysisParameters.applicationSettingsList.forEach((settings) => {
-            analysisResult.languages.push(settings.language);
+            analysisResult.languages.push(settings.language as SupportedLanguage);
 
             //Check if Azure:Functions is value of any deployTargetName property
             analysisResult.isFunctionApp =
@@ -72,7 +73,7 @@ export function uniqueValues(value, index, self) {
     return self.indexOf(value) === index;
 }
 
-export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<LocalPipelineTemplate[]> {
+export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, targetResource?: GenericResource): Promise<LocalPipelineTemplate[]> {
 
     let analysisResult = await mergingRepoAnalysisResults(repoPath, repositoryProvider, repoAnalysisParameters);
 
@@ -148,7 +149,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     return templateResult;
 }
 
-export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysisParameters, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
 
     var pipelineTemplates: PipelineTemplate[] = [];
     var localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);

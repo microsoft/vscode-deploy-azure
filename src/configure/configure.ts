@@ -1,4 +1,5 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
+import { ApplicationSettings, RepositoryAnalysis } from 'azureintegration-repoanalysis-client-internal';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
@@ -19,7 +20,7 @@ import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
 import { ConfigurationStage } from './model/Contracts';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryAnalysisApplicationSettings, RepositoryAnalysisParameters, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
 import { LocalPipelineTemplate, PipelineTemplate, RemotePipelineTemplate, TemplateAssetType, TemplateType } from './model/templateModels';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
@@ -461,7 +462,7 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
-    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
+    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysis): Promise<void> {
         extensionVariables.templateServiceEnabled = false;
         var appropriatePipelines: PipelineTemplate[] = [];
 
@@ -518,9 +519,9 @@ class Orchestrator {
         return pipelineMap;
     }
 
-    private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysisParameters): Promise<void> {
+    private async updateRepositoryAnalysisApplicationSettings(repoAnalysisResult: RepositoryAnalysis): Promise<void> {
         //If RepoAnalysis is disabled or didn't provided response related to language of selected template
-        this.inputs.repositoryAnalysisApplicationSettings = new RepositoryAnalysisApplicationSettings();
+        this.inputs.repositoryAnalysisApplicationSettings = {} as ApplicationSettings;
 
         if (!repoAnalysisResult || !repoAnalysisResult.applicationSettingsList) {
             return;

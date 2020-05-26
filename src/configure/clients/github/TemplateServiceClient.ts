@@ -1,6 +1,7 @@
+import { RepositoryAnalysis } from "azureintegration-repoanalysis-client-internal";
 import { ServiceClientCredentials } from "ms-rest";
 import { ExtendedPipelineTemplate } from "../../model/Contracts";
-import { RepositoryAnalysisParameters, StringMap } from "../../model/models";
+import { StringMap } from "../../model/models";
 import { TemplateInfo } from "../../model/templateModels";
 import { RestClient } from "../restClient";
 
@@ -13,7 +14,7 @@ export class TemplateServiceClient {
         this.restClient = new RestClient();
     }
 
-    public async getTemplates(body: RepositoryAnalysisParameters): Promise<TemplateInfo[]> {
+    public async getTemplates(body: RepositoryAnalysis): Promise<TemplateInfo[]> {
         return this.restClient.sendRequest2(
             this.templateServiceUri,
             'POST',
