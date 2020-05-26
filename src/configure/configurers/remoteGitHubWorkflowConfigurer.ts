@@ -225,7 +225,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         try {
             let result = await this.templateServiceClient.getTemplateFile(this.template.id, fileName);
             if (result.length > 0) {
-                let templateFile = result.find((value) => value.id.split('\\').join('/') == fileName);
+                let templateFile = result.find((value) => value.id === fileName);
                 if (templateFile) {
                     let content = templateConverter.convertToLocalMustacheExpression(templateFile.content);
                     return MustacheHelper.render(content, this.mustacheContext);

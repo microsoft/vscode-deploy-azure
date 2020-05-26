@@ -160,7 +160,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
             var remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);
             remoteTemplates.forEach((templateInfo: TemplateInfo) => {
                 var remoteTemplate: RemotePipelineTemplate = {
-                    label: templateInfo.templateDescription,
+                    label: templateInfo.templateLabel,
                     targetType: getTargetType(templateInfo),
                     targetKind: getTargetKind(templateInfo),
                     templateType: TemplateType.REMOTE,
