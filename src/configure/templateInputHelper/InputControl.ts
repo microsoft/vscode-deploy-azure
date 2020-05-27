@@ -142,14 +142,23 @@ export class InputControl {
     }
 
     public getPropertyValue(propertyName: string, inputs?: StringMap<any>): string {
-        var properties = this.inputDescriptor.properties;
+        return InputControl.getInputDescriptorProperty(this.inputDescriptor, propertyName, inputs);
+    }
+
+    public static getInputDescriptorProperty(input: ExtendedInputDescriptor, propertyName: string, inputs?: StringMap<any>): any {
+        var properties = input.properties;
         var value: string;
 
         if (!!properties) {
             value = properties[propertyName];
-            if (!!value && !!inputs) { return MustacheHelper.render(value, { inputs: inputs }); }
+            if (!!value && !!inputs && typeof value === "string") {
+                return MustacheHelper.render(value, { inputs: inputs })
+            } else if (!!value && !!inputs) {
+                return MustacheHelper.renderObject(value, { inputs: inputs });
+            }
         }
         return value;
+
     }
 
     public setValidationDataSources(dataSourceToInputsMap: Map<DataSource, InputControl[]>) {

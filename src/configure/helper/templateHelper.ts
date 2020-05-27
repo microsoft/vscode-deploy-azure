@@ -7,7 +7,7 @@ import * as Q from 'q';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 import { ExtendedPipelineTemplate } from '../model/Contracts';
 import { AzureConnectionType, AzureSession, extensionVariables, MustacheContext, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
-import { LocalPipelineTemplate, PipelineTemplate, PipelineTemplateMetadata, PreDefinedDataSourceIds, RemotePipelineTemplate, TemplateAssetType, TemplateParameterType, TemplateType } from '../model/templateModels';
+import { LocalPipelineTemplate, PipelineTemplate, PreDefinedDataSourceIds, RemotePipelineTemplate, TemplateAssetType, TemplateInfo, TemplateParameterType, TemplateType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
@@ -43,7 +43,7 @@ export async function mergingRepoAnalysisResults(repoPath: string, repositoryPro
     return analysisResult;
 }
 
-export function getTargetType(template: PipelineTemplateMetadata): TargetResourceType {
+export function getTargetType(template: TemplateInfo): TargetResourceType {
     if (template.attributes.deployTarget.toLowerCase().includes("webapp")) {
         return TargetResourceType.WebApp;
     } else if (template.attributes.deployTarget === "Azure:AKS") {
@@ -52,7 +52,7 @@ export function getTargetType(template: PipelineTemplateMetadata): TargetResourc
     return TargetResourceType.None;
 }
 
-export function getTargetKind(template: PipelineTemplateMetadata): TargetKind {
+export function getTargetKind(template: TemplateInfo): TargetKind {
     var targetKind: TargetKind;
     if (template.attributes.deployTarget.toLowerCase().includes("webapp")) {
         if (template.attributes.deployTarget.toLowerCase().includes("container")) {
@@ -158,14 +158,17 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
         try {
             let serviceClient = new TemplateServiceClient(azureSession.credentials);
             var remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);
-            remoteTemplates.forEach((template: PipelineTemplateMetadata) => {
+            remoteTemplates.forEach((templateInfo: TemplateInfo) => {
                 var remoteTemplate: RemotePipelineTemplate = {
-                    label: template.templateLabel,
-                    targetType: getTargetType(template),
-                    targetKind: getTargetKind(template),
+                    label: templateInfo.templateLabel,
+                    targetType: getTargetType(templateInfo),
+                    targetKind: getTargetKind(templateInfo),
                     templateType: TemplateType.REMOTE,
-                    language: template.attributes.language,
-                    ...template
+                    language: templateInfo.attributes.language,
+                    id: templateInfo.templateId,
+                    templateWeight: templateInfo.templateWeight,
+                    workingDirectory: templateInfo.workingDirectory,
+                    description: templateInfo.templateDescription,
                 };
                 pipelineTemplates.push(remoteTemplate);
             });
@@ -186,10 +189,10 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
     }
 }
 
-export async function getTemplateParameteres(azureSession: AzureSession, template: RemotePipelineTemplate): Promise<ExtendedPipelineTemplate> {
+export async function getTemplateParameters(azureSession: AzureSession, templateId: string): Promise<ExtendedPipelineTemplate> {
     let parameters: ExtendedPipelineTemplate;
     let serviceClient = new TemplateServiceClient(azureSession.credentials);
-    parameters = await serviceClient.getTemplateParameters(template.templateId);
+    parameters = await serviceClient.getTemplateParameters(templateId);
     return parameters;
 }
 
