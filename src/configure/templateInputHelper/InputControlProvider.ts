@@ -2,7 +2,7 @@ import { ApplicationSettings } from "azureintegration-repoanalysis-client-intern
 import { MustacheHelper } from "../helper/mustacheHelper";
 import { telemetryHelper } from "../helper/telemetryHelper";
 import { DataSource, ExtendedInputDescriptor, ExtendedPipelineTemplate, InputDataType, InputDynamicValidation, InputMode } from "../model/Contracts";
-import { AzureSession, ControlType, IPredicate, RepositoryAnalysisApplicationSettings, StringMap } from '../model/models';
+import { AzureSession, ControlType, IPredicate, StringMap } from '../model/models';
 import * as constants from '../resources/constants';
 import { TracePoints } from "../resources/tracePoints";
 import { InputControl } from "./InputControl";

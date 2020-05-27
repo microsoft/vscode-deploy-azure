@@ -7,6 +7,7 @@ import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
+import { RemoteGitHubWorkflowConfigurer } from './configurers/remoteGitHubWorkflowConfigurer';
 import { ResourceSelectorFactory } from './configurers/ResourceSelectorFactory';
 import { AssetHandler } from './helper/AssetHandler';
 import { getSubscriptionSession } from './helper/azureSessionHelper';
@@ -18,6 +19,7 @@ import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
+import { ConfigurationStage } from './model/Contracts';
 import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
 import { LocalPipelineTemplate, PipelineTemplate, RemotePipelineTemplate, TemplateAssetType, TemplateType } from './model/templateModels';
 import * as constants from './resources/constants';
@@ -92,8 +94,9 @@ class Orchestrator {
         await this.getInputs(node);
 
         if (this.continueOrchestration) {
-            let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.subscriptionId);
-            let selectedCICDProvider = (pipelineConfigurer.constructor.name === "GitHubWorkflowConfigurer") ? constants.githubWorkflow : constants.azurePipeline;
+            let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.subscriptionId,
+                this.inputs.pipelineConfiguration.template.templateType, this.localGitRepoHelper);
+            let selectedCICDProvider = (pipelineConfigurer.constructor.name === "AzurePipelineConfigurer") ? constants.azurePipeline : constants.githubWorkflow;
             telemetryHelper.setTelemetry(TelemetryKeys.SelectedCICDProvider, selectedCICDProvider);
             await pipelineConfigurer.getInputs(this.inputs);
 
@@ -101,7 +104,11 @@ class Orchestrator {
             await pipelineConfigurer.createPreRequisites(this.inputs, !!this.azureResourceClient ? this.azureResourceClient : new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId));
 
             telemetryHelper.setCurrentStep('CreateAssets');
-            await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, assetType, data, inputs); });
+            if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
+                await (pipelineConfigurer as RemoteGitHubWorkflowConfigurer).createAssets(ConfigurationStage.Pre);
+            } else {
+                await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, assetType, data, inputs); });
+            }
 
             telemetryHelper.setCurrentStep('CheckInPipeline');
             await this.checkInPipelineFileToRepository(pipelineConfigurer);
@@ -184,9 +191,14 @@ class Orchestrator {
 
     private async getTemplateParameters() {
         if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
-            let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, this.inputs.pipelineConfiguration.template as RemotePipelineTemplate);
+            let template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
+            let extendedPipelineTemplate = await templateHelper.getTemplateParameters(this.inputs.azureSession, template.id);
+            template.attributes = extendedPipelineTemplate.attributes;
+            template.inputs = extendedPipelineTemplate.inputs;
+            template.groups = extendedPipelineTemplate.groups;
+            template.dataSources = extendedPipelineTemplate.dataSources;
             let controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this.context);
-            this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs();
+            this.inputs.pipelineConfiguration.params = await controlProvider.getAllPipelineTemplateInputs();
         }
         else if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
             let templateParameterHelper = new TemplateParameterHelper();
@@ -514,9 +526,12 @@ class Orchestrator {
         if (!repoAnalysisResult || !repoAnalysisResult.applicationSettingsList) {
             return;
         }
+        let workingDirectories = Array.from(new Set(this.inputs.potentialTemplates
+            .filter((template) => template.templateType === TemplateType.REMOTE)
+            .map((template: RemotePipelineTemplate) => template.workingDirectory.toLowerCase())));
         var applicationSettings = repoAnalysisResult.applicationSettingsList.filter(applicationSetting => {
             if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
-                return true;
+                return workingDirectories.indexOf(applicationSetting.settings.workingDirectory.toLowerCase()) >= 0;
             }
             return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
 
@@ -555,37 +570,42 @@ class Orchestrator {
 
     private async checkInPipelineFileToRepository(pipelineConfigurer: Configurer): Promise<void> {
         let filesToCommit: string[] = [];
-        try {
-            let mustacheContext = new MustacheContext(this.inputs);
-            if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
-                try {
-                    await this.localGitRepoHelper.createAndDisplayManifestFile(constants.deploymentManifest, pipelineConfigurer, filesToCommit, this.inputs);
-                    var properties = this.inputs.pipelineConfiguration.params.aksCluster.properties;
-                    if (properties.addonProfiles && properties.addonProfiles.httpApplicationRouting && properties.addonProfiles.httpApplicationRouting.enabled) {
-                        await this.localGitRepoHelper.createAndDisplayManifestFile(constants.serviceIngressManifest, pipelineConfigurer, filesToCommit, this.inputs, constants.serviceManifest);
-                        await this.localGitRepoHelper.createAndDisplayManifestFile(constants.ingressManifest, pipelineConfigurer, filesToCommit, this.inputs);
-                    }
-                    else {
-                        await this.localGitRepoHelper.createAndDisplayManifestFile(constants.serviceManifest, pipelineConfigurer, filesToCommit, this.inputs);
-                    }
-                }
-                catch (error) {
-                    telemetryHelper.logError(Layer, TracePoints.CreatingManifestsFailed, error);
-                    throw error;
-                }
-            }
-
-            this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
-            filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
-            await this.localGitRepoHelper.addContentToFile(
-                await templateHelper.renderContent((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).path, mustacheContext),
-                this.inputs.pipelineConfiguration.filePath);
-            await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineConfiguration.filePath));
-            telemetryHelper.setTelemetry(TelemetryKeys.DisplayWorkflow, 'true');
+        if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
+            filesToCommit = await (pipelineConfigurer as RemoteGitHubWorkflowConfigurer).getPipelineFilesToCommit(this.inputs);
         }
-        catch (error) {
-            telemetryHelper.logError(Layer, TracePoints.AddingContentToPipelineFileFailed, error);
-            throw error;
+        else {
+            try {
+                let mustacheContext = new MustacheContext(this.inputs);
+                if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
+                    try {
+                        await this.localGitRepoHelper.createAndDisplayManifestFile(constants.deploymentManifest, pipelineConfigurer, filesToCommit, this.inputs);
+                        var properties = this.inputs.pipelineConfiguration.params.aksCluster.properties;
+                        if (properties.addonProfiles && properties.addonProfiles.httpApplicationRouting && properties.addonProfiles.httpApplicationRouting.enabled) {
+                            await this.localGitRepoHelper.createAndDisplayManifestFile(constants.serviceIngressManifest, pipelineConfigurer, filesToCommit, this.inputs, constants.serviceManifest);
+                            await this.localGitRepoHelper.createAndDisplayManifestFile(constants.ingressManifest, pipelineConfigurer, filesToCommit, this.inputs);
+                        }
+                        else {
+                            await this.localGitRepoHelper.createAndDisplayManifestFile(constants.serviceManifest, pipelineConfigurer, filesToCommit, this.inputs);
+                        }
+                    }
+                    catch (error) {
+                        telemetryHelper.logError(Layer, TracePoints.CreatingManifestsFailed, error);
+                        throw error;
+                    }
+                }
+
+                this.inputs.pipelineConfiguration.filePath = await pipelineConfigurer.getPathToPipelineFile(this.inputs, this.localGitRepoHelper);
+                filesToCommit.push(this.inputs.pipelineConfiguration.filePath);
+                await this.localGitRepoHelper.addContentToFile(
+                    await templateHelper.renderContent((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).path, mustacheContext),
+                    this.inputs.pipelineConfiguration.filePath);
+                await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineConfiguration.filePath));
+                telemetryHelper.setTelemetry(TelemetryKeys.DisplayWorkflow, 'true');
+            }
+            catch (error) {
+                telemetryHelper.logError(Layer, TracePoints.AddingContentToPipelineFileFailed, error);
+                throw error;
+            }
         }
 
         try {
