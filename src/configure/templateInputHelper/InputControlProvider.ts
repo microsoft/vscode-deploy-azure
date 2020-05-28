@@ -60,9 +60,12 @@ export class InputControlProvider {
             let dependentInputControlArray = this._getInputDependencyArray(inputControl, [properties[element]], false);
             let dependentClientInputMap = this._getClientDependencyMap(inputControl, [properties[element]]);
             let newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
+            if (!Object.keys(newValue).length) {
+                newValue = properties[element];
+            }
             inputControl.updateInputDescriptorProperty(key, newValue);
             if (key === constants.inputModeProperty) {
-                let updatedControlType = InputControlUtility.getInputControlType(InputMode[newValue]);
+                let updatedControlType = InputControlUtility.getInputControlType(parseInt(newValue.toString()));
                 inputControl.updateControlType(updatedControlType);
             }
         });
@@ -148,12 +151,11 @@ export class InputControlProvider {
     }
 
     private _computeMustacheValue(mustacheExpression: string, dependentInputControlArray: InputControl[], dependentClientInputMap: StringMap<any>): string {
-
         var dependentInputValues = this._getInputParameterValueIfAllSet(dependentInputControlArray);
         if (dependentInputControlArray && dependentInputControlArray.length > 0 && !dependentInputValues) {
             return "";
         } else {
-            return MustacheHelper.render(mustacheExpression, { inputs: dependentInputValues, client: dependentClientInputMap });
+            return MustacheHelper.renderObject(mustacheExpression, { inputs: dependentInputValues, client: dependentClientInputMap });
         }
     }
 
