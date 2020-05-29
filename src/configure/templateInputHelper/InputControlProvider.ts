@@ -60,9 +60,8 @@ export class InputControlProvider {
             let dependentInputControlArray = this._getInputDependencyArray(inputControl, [properties[element]], false);
             let dependentClientInputMap = this._getClientDependencyMap(inputControl, [properties[element]]);
             let newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
-            if (!Object.keys(newValue).length) {
-                newValue = properties[element];
-            }
+            newValue = properties[element];
+
             inputControl.updateInputDescriptorProperty(key, newValue);
             if (key === constants.inputModeProperty) {
                 let updatedControlType = InputControlUtility.getInputControlType((typeof newValue === "number") ? newValue : InputMode[newValue]);
