@@ -57,7 +57,7 @@ export class RepoAnalysisHelper {
 
                 if (!!analysis.settings) {
                     if (!!analysis.settings.workingDirectory) {
-                        if(!applicationSettings.settings) {
+                        if (!applicationSettings.settings) {
                             applicationSettings.settings = {};
                         }
                         applicationSettings.settings.workingDirectory = analysis.settings.workingDirectory.split('\\').join('/');
@@ -84,6 +84,7 @@ export class RepoAnalysisHelper {
                             }
                         } else {
                             applicationSettings.settings = analysis.settings;
+                            applicationSettings.settings.workingDirectory = applicationSettings.settings.workingDirectory.split('\\').join('/');
                         }
                     }
                     if (!!analysis.deployTargetName) {

@@ -160,10 +160,10 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                     this.assets[asset.id] = destination;
                     break;
                 case "NodeVersion":
-                    let nodeVersion: string = asset.inputs["selectedNodeVersion"];
+                    let nodeVersion: string = (asset.inputs["selectedNodeVersion"].split('|')[1]).toLowerCase();
                     let armUri = asset.inputs["armUri"];
                     let resultSelector = asset.inputs["resultSelector"];
-                    if (nodeVersion === 'NODE|lts') {
+                    if (nodeVersion === 'lts') {
                         let versions: string[];
                         await vscode.window.withProgress(
                             {
@@ -172,19 +172,19 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                             },
                             async () => {
                                 let response = await new ArmRestClient(this.azureSession).fetchArmData(armUri, 'GET');
-                                versions = JSONPath({ path: resultSelector, json: response, wrap: false, flatten: true })
+                                versions = JSONPath({ path: resultSelector, json: response, wrap: false, flatten: true });
                             }
                         );
                         let maxVersion = 0;
                         versions.forEach((version: string) => {
-                            let match = version.match(/NODE\|(\d+)-lts/);
+                            let match = version.match(/(\d+)-lts/);
                             if (match && match.length > 1) {
                                 maxVersion = Math.max(maxVersion, +match[1]);
                             }
                         });
                         nodeVersion = maxVersion + '.x';
-                    } else if (nodeVersion.match(/NODE\|\d+-lts/i)) {
-                        nodeVersion = nodeVersion.split('|')[1].replace(/-lts/i, '.x');
+                    } else if (nodeVersion.match(/(\d+)-lts/i)) {
+                        nodeVersion = nodeVersion.replace(/-lts/i, '.x');
                     }
                     this.assets[asset.id] = nodeVersion;
                     break;

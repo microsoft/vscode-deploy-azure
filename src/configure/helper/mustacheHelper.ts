@@ -220,12 +220,14 @@ export class MustacheHelper {
         }
 
         var result: Object = {};
-        Object.keys(mustacheObject).forEach(key => {
-            if (!!key && !!mustacheObject[key]) {
-                result[key] = MustacheHelper.renderObject(mustacheObject[key], view);
-            }
-        });
+        if (mustacheObject) {
+            Object.keys(mustacheObject).forEach(key => {
+                if (!!key && !!mustacheObject[key]) {
+                    result[key] = MustacheHelper.renderObject(mustacheObject[key], view);
+                }
+            });
 
+        }
         return result;
     }
 

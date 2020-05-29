@@ -171,6 +171,9 @@ class Orchestrator {
                 else {
                     this.context['rightClickScenario'] = true;
                 }
+                if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
+                    this.context['resourceId'] = this.inputs.targetResource.resource.id;
+                }
                 this.selectTemplate(this.inputs.targetResource.resource);
 
                 await this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
