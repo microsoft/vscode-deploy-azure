@@ -57,14 +57,16 @@ export class InputControlProvider {
 
         arrayofProperties.forEach(element => {
             let key = element.split(".", 2)[1];
-            let dependentInputControlArray = this._getInputDependencyArray(inputControl, [properties[element]], false);
-            let dependentClientInputMap = this._getClientDependencyMap(inputControl, [properties[element]]);
-            let newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
-            newValue = properties[element];
-
+            let newValue: any;
+            if (properties[element] !== null) {
+                let dependentInputControlArray = this._getInputDependencyArray(inputControl, [properties[element]], false);
+                let dependentClientInputMap = this._getClientDependencyMap(inputControl, [properties[element]]);
+                newValue = this._computeMustacheValue(properties[element], dependentInputControlArray, dependentClientInputMap);
+            }
             inputControl.updateInputDescriptorProperty(key, newValue);
             if (key === constants.inputModeProperty) {
-                let updatedControlType = InputControlUtility.getInputControlType((typeof newValue === "number") ? newValue : InputMode[newValue]);
+                let newInputMode: InputMode = (typeof newValue === "string") ? InputMode[newValue] : newValue;
+                let updatedControlType = InputControlUtility.getInputControlType(newInputMode);
                 inputControl.updateControlType(updatedControlType);
             }
         });
@@ -149,7 +151,7 @@ export class InputControlProvider {
         }
     }
 
-    private _computeMustacheValue(mustacheExpression: string, dependentInputControlArray: InputControl[], dependentClientInputMap: StringMap<any>): string {
+    private _computeMustacheValue(mustacheExpression: string, dependentInputControlArray: InputControl[], dependentClientInputMap: StringMap<any>): any {
         var dependentInputValues = this._getInputParameterValueIfAllSet(dependentInputControlArray);
         if (dependentInputControlArray && dependentInputControlArray.length > 0 && !dependentInputValues) {
             return "";
