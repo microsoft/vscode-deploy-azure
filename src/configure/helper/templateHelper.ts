@@ -153,7 +153,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
 export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
 
     var pipelineTemplates: PipelineTemplate[] = [];
-    var remoteTemplates: PipelineTemplateMetadata[] = [];
+    var remoteTemplates: TemplateInfo[] = [];
     var localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
 
     if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
@@ -162,7 +162,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
             await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
                 remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);
             }, TelemetryKeys.TemplateServiceDuration);
-            remoteTemplates.forEach((template: PipelineTemplateMetadata) => {
+            remoteTemplates.forEach((templateInfo: TemplateInfo) => {
                 var remoteTemplate: RemotePipelineTemplate = {
                     label: templateInfo.templateLabel,
                     targetType: getTargetType(templateInfo),
