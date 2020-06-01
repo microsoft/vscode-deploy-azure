@@ -23,14 +23,13 @@ import { Configurer } from "./configurerBase";
 
 const uuid = require('uuid/v4');
 
-const Layer = 'GitHubWorkflowConfigurer';
+const Layer = 'LocalGitHubWorkflowConfigurer';
 
-export class GitHubWorkflowConfigurer implements Configurer {
+export class LocalGitHubWorkflowConfigurer implements Configurer {
+    protected githubClient: GithubClient;
     private queuedPipelineUrl: string;;
-    private githubClient: GithubClient;
 
     constructor(azureSession: AzureSession, subscriptionId: string) {
-
     }
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
@@ -111,40 +110,44 @@ export class GitHubWorkflowConfigurer implements Configurer {
         return name;
     }
 
-    public async getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
+    public async getPathToPipelineFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, pipelineFileName?: string): Promise<string> {
         // Create .github directory
-        let workflowDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), '.github');
-        if (!fs.existsSync(workflowDirectoryPath)) {
-            fs.mkdirSync(workflowDirectoryPath);
+        let workflowDirectoryPath = path.join('.github', 'workflows');
+        if (!pipelineFileName) {
+            pipelineFileName = 'workflow.yml';
         }
-
-        // Create .github/workflows directory
-        workflowDirectoryPath = path.join(workflowDirectoryPath, 'workflows');
-        if (!fs.existsSync(workflowDirectoryPath)) {
-            fs.mkdirSync(workflowDirectoryPath);
-        }
-
-        let pipelineFileName = await LocalGitRepoHelper.GetAvailableFileName('workflow.yml', workflowDirectoryPath);
-        return path.join(workflowDirectoryPath, pipelineFileName);
+        return await this.getPathToFile(localGitRepoHelper, pipelineFileName, workflowDirectoryPath);
     }
 
     public async getPathToManifestFile(inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper, fileName: string): Promise<string> {
         // Create manifests directory
-        let manifestsDirectoryPath: string;
+        let manifestsDirectoryPath: string = path.join(inputs.pipelineConfiguration.workingDirectory, 'manifests');
         try {
-            manifestsDirectoryPath = path.join(await localGitRepoHelper.getGitRootDirectory(), inputs.pipelineConfiguration.workingDirectory, 'manifests');
+            return await this.getPathToFile(localGitRepoHelper, fileName, manifestsDirectoryPath)
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.ManifestsFolderCreationFailed, error);
             throw error;
         }
+    }
 
-        if (!fs.existsSync(manifestsDirectoryPath)) {
-            fs.mkdirSync(manifestsDirectoryPath);
-        }
-
-        let manifestFileName = await LocalGitRepoHelper.GetAvailableFileName(fileName, manifestsDirectoryPath);
-        return path.join(manifestsDirectoryPath, manifestFileName);
+    public async getPathToFile(localGitRepoHelper: LocalGitRepoHelper, fileName: string, directory: string) {
+        let dirList = directory.split(path.sep);
+        let directoryPath: string = "";
+        directoryPath = await localGitRepoHelper.getGitRootDirectory();
+        dirList.forEach((dir) => {
+            try {
+                directoryPath = path.join(directoryPath, dir);
+                if (!fs.existsSync(directoryPath)) {
+                    fs.mkdirSync(directoryPath);
+                }
+            }
+            catch (error) {
+                throw error;
+            }
+        });
+        fileName = await LocalGitRepoHelper.GetAvailableFileName(fileName, directoryPath);
+        return path.join(directoryPath, fileName);
     }
 
     public async checkInPipelineFilesToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
@@ -253,8 +256,8 @@ export class GitHubWorkflowConfigurer implements Configurer {
             });
     }
 
-    private async getAzureSPNSecret(inputs: WizardInputs): Promise<string> {
-        let scope = inputs.targetResource.resource.id;
+    protected async getAzureSPNSecret(inputs: WizardInputs, scope?: string): Promise<string> {
+        scope = !scope ? inputs.targetResource.resource.id : scope;
         let aadAppName = GraphHelper.generateAadApplicationName(inputs.sourceRepository.remoteName, 'github');
         let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
         return JSON.stringify({
