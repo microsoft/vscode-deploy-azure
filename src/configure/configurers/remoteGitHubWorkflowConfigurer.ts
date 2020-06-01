@@ -1,8 +1,6 @@
-import { JSONPath } from 'jsonpath-plus';
 import * as Path from 'path';
 import * as utils from 'util';
 import * as vscode from 'vscode';
-import { ArmRestClient } from '../clients/azure/armRestClient';
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { GithubClient } from '../clients/github/githubClient';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
@@ -16,6 +14,7 @@ import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
 import { InputControl } from '../templateInputHelper/InputControl';
 import * as templateConverter from '../utilities/templateConverter';
+import * as nodeVersionConverter from '../utilities/webAppNodeVersionConverter';
 import { LocalGitHubWorkflowConfigurer } from './localGithubWorkflowConfigurer';
 
 export interface File {
@@ -85,7 +84,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             },
             async () => {
                 for (var input of this.template.inputs) {
-                    if (input.type == InputDataType.Authorization && input.id != "azureDevOpsAuth") {
+                    if (input.type === InputDataType.Authorization && input.id !== "azureDevOpsAuth") {
                         inputs.pipelineConfiguration.params[input.id] = await this.createAzureSPN(input, inputs);
                     }
                 }
@@ -159,34 +158,19 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
 
                     this.assets[asset.id] = destination;
                     break;
-                case "NodeVersion":
-                    let nodeVersion: string = (asset.inputs["selectedNodeVersion"].split('|')[1]).toLowerCase();
-                    let armUri = asset.inputs["armUri"];
-                    let resultSelector = asset.inputs["resultSelector"];
-                    if (nodeVersion === 'lts') {
-                        let versions: string[];
-                        await vscode.window.withProgress(
-                            {
-                                location: vscode.ProgressLocation.Notification,
-                                title: Messages.GettingNodeVersion
-                            },
-                            async () => {
-                                let response = await new ArmRestClient(this.azureSession).fetchArmData(armUri, 'GET');
-                                versions = JSONPath({ path: resultSelector, json: response, wrap: false, flatten: true });
-                            }
-                        );
-                        let maxVersion = 0;
-                        versions.forEach((version: string) => {
-                            let match = version.match(/(\d+)-lts/);
-                            if (match && match.length > 1) {
-                                maxVersion = Math.max(maxVersion, +match[1]);
-                            }
-                        });
-                        nodeVersion = maxVersion + '.x';
-                    } else if (nodeVersion.match(/(\d+)-lts/i)) {
-                        nodeVersion = nodeVersion.replace(/-lts/i, '.x');
+                case "LinuxWebAppNodeVersionConverter":
+                    {
+                        let nodeVersion: string = asset.inputs["webAppRuntimeNodeVersion"];
+                        const armUri = "/providers/Microsoft.Web/availableStacks?osTypeSelected=Linux&api-version=2019-08-01";
+                        this.assets[asset.id] = await nodeVersionConverter.webAppRuntimeNodeVersionConverter(nodeVersion, armUri, this.azureSession);
                     }
-                    this.assets[asset.id] = nodeVersion;
+                    break;
+                case "WindowsWebAppNodeVersionConverter":
+                    {
+                        let nodeVersion: string = asset.inputs["webAppRuntimeNodeVersion"];
+                        const armUri = "/providers/Microsoft.Web/availableStacks?osTypeSelected=Windows&api-version=2019-08-01";
+                        this.assets[asset.id] = await nodeVersionConverter.webAppRuntimeNodeVersionConverter(nodeVersion, armUri, this.azureSession);
+                    }
                     break;
                 default:
                     throw new Error(utils.format(Messages.assetOfTypeNotSupported, asset.type));
