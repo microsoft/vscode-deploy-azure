@@ -225,8 +225,10 @@ class Orchestrator {
     private async getRepositoryAnalysis() {
         if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
             await this.getGithubPatToken();
-            return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
-                this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+            await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+                return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
+                    this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+            }, TelemetryKeys.RepositoryAnalysisDuration);
         }
         return null;
     }
@@ -467,7 +469,7 @@ class Orchestrator {
 
     private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysis): Promise<void> {
         extensionVariables.templateServiceEnabled = false;
-        var appropriatePipelines: PipelineTemplate[] = [];
+        let appropriatePipelines: PipelineTemplate[] = [];
 
         if (!extensionVariables.templateServiceEnabled) {
             var localPipelines = await vscode.window.withProgress(
