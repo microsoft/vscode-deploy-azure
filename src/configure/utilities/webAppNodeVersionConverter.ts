@@ -7,8 +7,10 @@ import { Messages } from '../resources/messages';
 export async function webAppRuntimeNodeVersionConverter(nodeVersion: string, armUri: string, azureSession: AzureSession): Promise<string> {
     if (nodeVersion.indexOf('|') >= 0){
         nodeVersion = nodeVersion.split('|')[1];
+    } else {
+        nodeVersion = 'lts';
     }
-    if (nodeVersion === 'lts') {
+    if (nodeVersion.toLowerCase() === 'lts') {
         let versions: string[];
         await vscode.window.withProgress(
             {
@@ -23,7 +25,7 @@ export async function webAppRuntimeNodeVersionConverter(nodeVersion: string, arm
         );
         let maxVersion = 0;
         versions.forEach((version: string) => {
-            const match = version.match(/(\d+)-lts/);
+            const match = version.match(/(\d+)-lts/i);
             if (match && match.length > 1) {
                 maxVersion = Math.max(maxVersion, +match[1]);
             }
