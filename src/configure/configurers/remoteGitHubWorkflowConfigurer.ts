@@ -138,7 +138,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                             await this.githubClient.createOrUpdateGithubSecret(secretKey, secretValue);
                         }
                     );
-                    this.secrets[asset.id] = secretKey;
+                    this.secrets[asset.id] = "{{ secrets." + secretKey + " }}";
                     break;
                 case "commitFile:Github":
                     let source: string = asset.inputs["source"];
@@ -207,6 +207,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
 
     private async getTemplateFile(fileName: string): Promise<string> {
         try {
+            fileName = fileName.replace(/\//g, "\\");
             let result = await this.templateServiceClient.getTemplateFile(this.template.id, fileName);
             if (result.length > 0) {
                 let templateFile = result.find((value) => value.id === fileName);
