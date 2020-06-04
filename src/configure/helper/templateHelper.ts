@@ -10,6 +10,7 @@ import { AzureConnectionType, AzureSession, extensionVariables, MustacheContext,
 import { LocalPipelineTemplate, PipelineTemplate, PreDefinedDataSourceIds, RemotePipelineTemplate, TemplateAssetType, TemplateInfo, TemplateParameterType, TemplateType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
+import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { MustacheHelper } from './mustacheHelper';
 import { telemetryHelper } from './telemetryHelper';
@@ -152,12 +153,15 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
 export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
 
     var pipelineTemplates: PipelineTemplate[] = [];
+    var remoteTemplates: TemplateInfo[] = [];
     var localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
 
     if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
         try {
             let serviceClient = new TemplateServiceClient(azureSession.credentials);
-            var remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);
+            await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+                remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);
+            }, TelemetryKeys.TemplateServiceDuration);
             remoteTemplates.forEach((templateInfo: TemplateInfo) => {
                 var remoteTemplate: RemotePipelineTemplate = {
                     label: templateInfo.templateLabel,
@@ -175,6 +179,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
         }
         catch (err) {
             pipelineTemplates = [];
+            telemetryHelper.logError('TemplateHelper', TracePoints.TemplateServiceCallFailed, err);
         }
         pipelineTemplates = pipelineTemplates.concat(localPipelineTemplates);
         // sorted by weight
