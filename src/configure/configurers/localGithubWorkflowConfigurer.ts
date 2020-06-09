@@ -9,11 +9,12 @@ import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
 import { ApiVersions, AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { GithubClient } from '../clients/github/githubClient';
+import { ControlProvider } from '../helper/controlProvider';
 import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
-import { AzureConnectionType, AzureSession, extensionVariables, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, AzureSession, extensionVariables, GitHubRepo, TargetResourceType, WizardInputs } from "../model/models";
 import { LocalPipelineTemplate, TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -22,24 +23,103 @@ import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
 
 const uuid = require('uuid/v4');
-
 const Layer = 'LocalGitHubWorkflowConfigurer';
 
 export class LocalGitHubWorkflowConfigurer implements Configurer {
     protected githubClient: GithubClient;
-    private queuedPipelineUrl: string;;
+    private queuedPipelineUrl: string;
+    private controlProvider: ControlProvider;
+    private localGitRepoHelper : LocalGitRepoHelper;
 
-    constructor(azureSession: AzureSession, subscriptionId: string) {
+    constructor(azureSession: AzureSession, subscriptionId: string, localgitRepoHelper: LocalGitRepoHelper) {
+        this.controlProvider = new ControlProvider();
+        this.localGitRepoHelper = localgitRepoHelper;
     }
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
         this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
-        return;
+        try {
+            inputs.isNewOrganization = false;
+            if (!inputs.sourceRepository.remoteUrl) {
+                let githubOrganizations = await this.githubClient.listOrganizations(inputs.githubPATToken);
+               
+                if ( githubOrganizations &&  githubOrganizations.length > 0) {
+                    let selectedOrganization = await this.controlProvider.showQuickPick(
+                        constants.SelectGitHubOrganization,
+                        githubOrganizations.map(x => { return { label: x.login }; }),
+                        { placeHolder: Messages.selectGitHubOrganizationName },
+                        TelemetryKeys.OrganizationListCount);
+                        inputs.organizationName = selectedOrganization.label;
+
+
+                    let newGitHubRepo = await this.githubClient.generateGitHubRepositoryName(inputs.organizationName, inputs.sourceRepository.localPath) as unknown as GitHubRepo | void;
+                    if(newGitHubRepo){
+                        inputs.sourceRepository.repositoryName = newGitHubRepo.name;
+                        console.log(newGitHubRepo.name);
+                        vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated, newGitHubRepo.name));
+                    }
+                    else{
+                        vscode.window.showErrorMessage(Messages.cannotCreateGitHubRepository);
+                        throw Error;
+                    }
+                    /*try {
+                        // get the list of files
+                        let filesToCommit: string[] = [];
+                        let result =  await this.localGitRepoHelper.commitAndPushPipelineFile(filesToCommit, inputs.sourceRepository, extensionVariables.enableGitHubWorkflow ? Messages.addGitHubWorkflowYmlFile : Messages.addAzurePipelinesYmlFile);
+                        console.log("After calling comit & push function: "+result);
+                    }
+                    catch (error) {
+                        telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);
+                        vscode.window.showErrorMessage(utils.format(Messages.commitFailedErrorMessage, error.message));
+                        return null;
+                    }*/
+
+                    
+                    /*
+                    //get the list of existing repos for the selected org
+                    let repoList = await this.githubClient.getRepoList(inputs.organizationName);
+
+                      //take name of repo as input from user
+                    let githubRepoName = await this.controlProvider.showInputBox(
+                        constants.EnterGithubRepositoryName,
+                        {
+                            placeHolder: Messages.enterGitHuRepositoryName,
+                            validateInput: (inputValue) => this.githubClient.validateRepoName(inputValue, repoList)
+                        });
+
+                    //creating a new repo
+                    let githubRepo = await this.githubClient.createGithubRepo(inputs.organizationName, githubRepoName);
+                    if(!githubRepo){
+                        vscode.window.showErrorMessage(Messages.duplicateGitHubRepoNameErrorMessage);
+                        
+                    }
+                    else{
+                        //save repo details
+                        console.log("repo name: "+githubRepoName);
+                        console.log("repo name official: "+githubRepo.name);
+                        githubRepo.orgName = selectedOrganization.label;
+                        vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated));
+                    }
+                    */
+                    
+                }
+                else{
+                    vscode.window.showErrorMessage(Messages.createGitHubOrganization);
+                    throw Error;
+                }
+            }
+        }
+        catch (error) {
+            telemetryHelper.logError(Layer, TracePoints.GetGitHubDetailsFailed, error);
+            throw error;
+        }
+        
     }
 
     public async validatePermissions(): Promise<void> {
         return;
     }
+
 
     public async createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
         if (inputs.targetResource && inputs.targetResource.resource && inputs.targetResource.resource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
@@ -123,7 +203,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
         // Create manifests directory
         let manifestsDirectoryPath: string = path.join(inputs.pipelineConfiguration.workingDirectory, 'manifests');
         try {
-            return await this.getPathToFile(localGitRepoHelper, fileName, manifestsDirectoryPath)
+            return await this.getPathToFile(localGitRepoHelper, fileName, manifestsDirectoryPath);
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.ManifestsFolderCreationFailed, error);

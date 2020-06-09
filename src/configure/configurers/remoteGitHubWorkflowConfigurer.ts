@@ -38,7 +38,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     private templateServiceClient: TemplateServiceClient;
 
     constructor(azureSession: AzureSession, subscriptionId: string, localGitHelper: LocalGitRepoHelper) {
-        super(azureSession, subscriptionId);
+        super(azureSession, subscriptionId, localGitHelper);
         this.azureSession = azureSession;
         this.localGitHelper = localGitHelper;
     }
