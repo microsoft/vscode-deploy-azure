@@ -225,7 +225,7 @@ class Orchestrator {
     private async getRepositoryAnalysis() {
         if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
             await this.getGithubPatToken();
-            await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+            return await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
                 return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
                     this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
             }, TelemetryKeys.RepositoryAnalysisDuration);

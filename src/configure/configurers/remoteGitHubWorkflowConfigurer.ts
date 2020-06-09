@@ -138,7 +138,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                             await this.githubClient.createOrUpdateGithubSecret(secretKey, secretValue);
                         }
                     );
-                    this.secrets[asset.id] = secretKey;
+                    this.secrets[asset.id] = "{{ secrets." + secretKey + " }}";
                     break;
                 case "commitFile:Github":
                     let source: string = asset.inputs["source"];

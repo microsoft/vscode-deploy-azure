@@ -139,13 +139,15 @@ export class InputControlProvider {
 
     private _setupInputControlDefaultValue(inputControl: InputControl): void {
         var inputDes = inputControl.getInputDescriptor();
-        if (!inputDes.defaultValue || !InputControlUtility.doesExpressionContainsDependency(inputDes.defaultValue)) {
+        var defaultValue = inputDes.defaultValue;
+        if (!defaultValue) {
             return;
         }
-        var dependentInputControlArray = this._getInputDependencyArray(inputControl, [inputDes.defaultValue], false);
-        var dependentClientInputMap = this._getClientDependencyMap(inputControl, [inputDes.defaultValue]);
-
-        var defaultValue = this._computeMustacheValue(inputDes.defaultValue, dependentInputControlArray, dependentClientInputMap);
+        if (InputControlUtility.doesExpressionContainsDependency(defaultValue)) {
+            var dependentInputControlArray = this._getInputDependencyArray(inputControl, [defaultValue], false);
+            var dependentClientInputMap = this._getClientDependencyMap(inputControl, [defaultValue]);
+            defaultValue = this._computeMustacheValue(defaultValue, dependentInputControlArray, dependentClientInputMap);
+        }
         if (defaultValue !== inputControl.getValue()) {
             inputControl.setValue(defaultValue);
         }

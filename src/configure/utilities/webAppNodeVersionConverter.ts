@@ -5,7 +5,7 @@ import { AzureSession } from "../model/models";
 import { Messages } from '../resources/messages';
 
 export async function webAppRuntimeNodeVersionConverter(nodeVersion: string, armUri: string, azureSession: AzureSession): Promise<string> {
-    if (nodeVersion.indexOf('|') >= 0){
+    if (nodeVersion.indexOf('|') >= 0) {
         nodeVersion = nodeVersion.split('|')[1];
     } else {
         nodeVersion = 'lts';
@@ -18,8 +18,8 @@ export async function webAppRuntimeNodeVersionConverter(nodeVersion: string, arm
                 title: Messages.GettingNodeVersion
             },
             async () => {
-                const resultSelector = "$.value[?(@.name === 'node')].properties.majorVersions[*].runtimeVersions";
-                const response = await new ArmRestClient(this.azureSession).fetchArmData(armUri, 'GET');
+                const resultSelector = "$.value[?(@.name === 'node')].properties.majorVersions[*].runtimeVersion";
+                const response = await new ArmRestClient(azureSession).fetchArmData(armUri, 'GET');
                 versions = JSONPath({ path: resultSelector, json: response, wrap: false, flatten: true });
             }
         );
