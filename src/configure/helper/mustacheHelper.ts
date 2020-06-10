@@ -234,7 +234,7 @@ export class MustacheHelper {
     public static getParts(text: string): Array<string> {
         var parts: Array<string> = [];
         /* Following regex is to fetch different parts in the text e.g. "test 'hello world' output" => test, 'hello world', output*/
-        var fetchPartsRegex = new RegExp(/[\'](.+?)[\']|[^ ]+/g);
+        var fetchPartsRegex = new RegExp(/[\'](.*?)[\']|[^ ]+/g);
         var resultArray;
         while ((resultArray = fetchPartsRegex.exec(text)) !== null) {
             var part = (resultArray[1] === undefined || resultArray[1] === null) ? resultArray[0] : resultArray[1];
