@@ -73,7 +73,7 @@ export class InputControlProvider {
     }
 
     private _createControls(): void {
-        for (let input of this._pipelineTemplate.inputs) {
+        for (let input of this._pipelineTemplate.parameters.inputs) {
             let inputControl: InputControl = null;
             let inputControlValue = this._getInputControlValue(input);
             if (input.type !== InputDataType.Authorization) {
@@ -90,7 +90,7 @@ export class InputControlProvider {
         let inputDes = inputControl.getInputDescriptor();
         if (!!inputDes.dataSourceId) {
             var inputControl = this._inputControlsMap.get(inputDes.id);
-            inputControl.dataSource = DataSourceExpression.parse(inputDes.dataSourceId, this._pipelineTemplate.dataSources);
+            inputControl.dataSource = DataSourceExpression.parse(inputDes.dataSourceId, this._pipelineTemplate.parameters.dataSources);
 
             if (inputControl.dataSource) {
                 var dependentInputControlArray = this._getInputDependencyArray(inputControl, inputControl.dataSource.getInputDependencyArray());
@@ -109,7 +109,7 @@ export class InputControlProvider {
         if (!!inputControl && !!inputDes.dynamicValidations && inputDes.dynamicValidations.length > 0) {
             var dataSourceToInputsMap = new Map<DataSource, InputControl[]>();
             inputDes.dynamicValidations.forEach((validation: InputDynamicValidation) => {
-                var validationDataSource = DataSourceUtility.getDataSourceById(this._pipelineTemplate.dataSources, validation.dataSourceId);
+                var validationDataSource = DataSourceUtility.getDataSourceById(this._pipelineTemplate.parameters.dataSources, validation.dataSourceId);
                 if (validationDataSource) {
                     dataSourceToInputsMap.set(validationDataSource, []);
 

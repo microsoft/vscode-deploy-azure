@@ -197,9 +197,7 @@ class Orchestrator {
             let template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
             let extendedPipelineTemplate = await templateHelper.getTemplateParameters(this.inputs.azureSession, template.id);
             template.attributes = extendedPipelineTemplate.attributes;
-            template.inputs = extendedPipelineTemplate.inputs;
-            template.groups = extendedPipelineTemplate.groups;
-            template.dataSources = extendedPipelineTemplate.dataSources;
+            template.parameters = extendedPipelineTemplate.parameters;
             let controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this.context);
             this.inputs.pipelineConfiguration.params = await controlProvider.getAllPipelineTemplateInputs();
         }

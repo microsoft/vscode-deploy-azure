@@ -61,11 +61,31 @@ export interface ExtendedPipelineTemplate {
     /**
      * List of the inputs required to create CI/CD pipeline
      */
-    inputs?: ExtendedInputDescriptor[];
-    /**
-     * A dictionary of key-value pairs which defines various key scenarios this template enables. It should mandatorily contain entries with following keys: 1. CodeRepositoryType - its value should either be 'Sample' or 'Custom' 2. RuntimeId - its value should be contribution id of a contribution which describes the runtime supported by template 2. FrameworkId - its value should be contribution id of a contribution which describes the framework supported by template 2. ServiceId - its value should be contribution id of a contribution which describes the service supported by template
-     */
+    
     attributes?: { [key: string]: string; };
+   
+    parameters?: Parameters;
+
+    configuration?: Configuration;
+}
+
+export interface Configuration {
+    pipelineDefinition?: { [key: string]: string; };
+
+    assets?: Asset[];
+    
+    variables?: Variable[];
+
+    imports?: any;
+}
+ 
+export interface Parameters {
+
+    /**
+     * List of the inputs required to create CI/CD pipeline
+     */
+    inputs?: ExtendedInputDescriptor[];
+
     /**
      * List of data sources associated with this template
      */
@@ -75,13 +95,7 @@ export interface ExtendedPipelineTemplate {
      */
     groups?: InputGroup[];
 
-    variables?: Variable[];
-
-    pipelineDefinition?: { [key: string]: string; };
-
-    assets?: Asset[];
-
-}
+ }
 
 export interface DataSource {
     /**

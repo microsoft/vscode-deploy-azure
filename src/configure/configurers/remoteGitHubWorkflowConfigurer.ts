@@ -47,13 +47,10 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         this.templateServiceClient = new TemplateServiceClient(inputs.azureSession.credentials);
         this.template = inputs.pipelineConfiguration.template as RemotePipelineTemplate;
         let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
-        extendedPipelineTemplate = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate);
+        
+        this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
-        this.template.variables = extendedPipelineTemplate.variables;
-        this.template.pipelineDefinition = extendedPipelineTemplate.pipelineDefinition;
-        this.template.assets = extendedPipelineTemplate.assets;
-
-        this.template.assets.forEach((asset: Asset) => {
+        this.template.configuration.assets.forEach((asset: Asset) => {
             if (!asset.stage) {
                 asset.stage = ConfigurationStage.Pre;
             }
@@ -69,7 +66,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             system: this.system
         }
 
-        for (let variable of this.template.variables) {
+        for (let variable of this.template.configuration.variables) {
             let expression = variable.value;
             let value = MustacheHelper.render(expression, this.mustacheContext);
             this.variables[variable.id] = value;
@@ -83,7 +80,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                 title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
             },
             async () => {
-                for (var input of this.template.inputs) {
+                for (var input of this.template.parameters.inputs) {
                     if (input.type === InputDataType.Authorization && input.id !== "azureDevOpsAuth") {
                         inputs.pipelineConfiguration.params[input.id] = await this.createAzureSPN(input, inputs);
                     }
@@ -92,7 +89,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     }
 
     public async createAssets(stage: ConfigurationStage = ConfigurationStage.Pre) {
-        let assets = this.template.assets;
+        let assets = this.template.configuration.assets;
         if (!!assets && assets.length > 0) {
             for (let asset of assets) {
                 if (asset.stage === stage) {
@@ -179,7 +176,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     }
 
     private async getWorkflowFile(inputs: WizardInputs): Promise<File> {
-        let pipelineDefinition = MustacheHelper.renderObject(this.template.pipelineDefinition, this.mustacheContext);
+        let pipelineDefinition = MustacheHelper.renderObject(this.template.configuration.pipelineDefinition, this.mustacheContext);
         let workflowFileContent: string;
         await vscode.window.withProgress(
             {
@@ -192,7 +189,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         );
         let workFlowFileName: string = pipelineDefinition.destinationFileName;
         workFlowFileName = await this.getPathToPipelineFile(inputs, this.localGitHelper, workFlowFileName);
-        inputs.pipelineConfiguration.filePath = workFlowFileName
+        inputs.pipelineConfiguration.filePath = workFlowFileName;
         return {
             path: workFlowFileName,
             content: workflowFileContent
