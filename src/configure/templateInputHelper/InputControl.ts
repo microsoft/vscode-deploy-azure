@@ -92,7 +92,7 @@ export class InputControl {
                 let errorMessage = await this.triggerControlValueValidations(this.value);
                 if (errorMessage) {
                     vscode.window.showErrorMessage(errorMessage);
-                    this.value = this.controlProvider.showInputBox(this.getInputControlId(), {
+                    this.value = await this.controlProvider.showInputBox(this.getInputControlId(), {
                         value: this.value,
                         placeHolder: this.inputDescriptor.name,
                         validateInput: (value) => this.triggerControlValueValidations(value)
