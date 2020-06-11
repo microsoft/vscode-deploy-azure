@@ -25,7 +25,7 @@ export async function webAppRuntimeNodeVersionConverter(nodeVersion: string, arm
         );
         let maxVersion = 0;
         versions.forEach((version: string) => {
-            const match = version.match(/(\d+)-lts/i);
+            const match = version.match(/(\d+)(-lts|\.\d+)/i);
             if (match && match.length > 1) {
                 maxVersion = Math.max(maxVersion, +match[1]);
             }
