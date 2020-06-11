@@ -203,7 +203,7 @@ class Orchestrator {
         }
         else if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
             let templateParameterHelper = new TemplateParameterHelper();
-            let template = this.inputs.potentialTemplates[0] as LocalPipelineTemplate;
+            let template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.LOCAL) as LocalPipelineTemplate;
             await templateParameterHelper.setParameters(template.parameters, this.inputs);
         }
     }
