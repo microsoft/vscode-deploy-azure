@@ -26,7 +26,7 @@ export class TemplateServiceClient {
     }
 
     public async getTemplateParameters(templateId: string): Promise<ExtendedPipelineTemplate> {
-        const requestUri = this.templateServiceUri + this.extendedPipelineTemplateResource;
+        const requestUri = "http://localhost:5000/" + this.extendedPipelineTemplateResource;
         return this.restClient.sendRequest(
             {
                 url: requestUri,
