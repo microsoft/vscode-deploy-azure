@@ -1,8 +1,9 @@
 import { InputBoxOptions, QuickPickItem } from 'vscode';
 import { IAzureQuickPickOptions } from 'vscode-azureextensionui';
+import { MustacheHelper } from '../helper/mustacheHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { ExtendedInputDescriptor, InputMode } from "../model/Contracts";
-import { AzureSession, ControlType, extensionVariables } from '../model/models';
+import { AzureSession, ControlType, extensionVariables, StringMap } from '../model/models';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { DataSourceExpression } from './utilities/DataSourceExpression';
@@ -101,6 +102,21 @@ export class InputControl {
                 });
             }
         }
+    }
+
+    public getPropertyValue(propertyName: string, inputs?: StringMap<any>): string {
+        var properties = this.inputDescriptor.properties;
+        var value: string;
+
+        if (!!properties) {
+            value = properties[propertyName];
+            if (!!value && !!inputs && typeof value === "string") {
+                return MustacheHelper.render(value, { inputs: inputs });
+            } else if (!!value && !!inputs) {
+                return MustacheHelper.renderObject(value, { inputs: inputs });
+            }
+        }
+        return value;
     }
 
     private _getDataSourceInputs(): { [key: string]: any } {

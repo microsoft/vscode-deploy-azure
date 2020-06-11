@@ -13,6 +13,7 @@ import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
 import { LocalGitRepoHelper } from './helper/LocalGitRepoHelper';
 import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
+//import { RepoAnalysisHelper } from './helper/repoAnalysisHelper';
 import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
@@ -22,11 +23,9 @@ import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
-import { InputControlProvider as InputControlProvider } from './templateInputHelper/InputControlProvider';
+import { InputControlProvider as InputControlProvider } from './utilities/InputControlProvider';
 
-const uuid = require('uuid/v4');
 const Layer: string = 'configure';
-
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
 export async function configurePipeline(node: AzureTreeItem) {
@@ -91,8 +90,6 @@ class Orchestrator {
 
         if (this.continueOrchestration) {
             let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.subscriptionId);
-            let selectedCICDProvider = (pipelineConfigurer.constructor.name === "GitHubWorkflowConfigurer") ? constants.githubWorkflow : constants.azurePipeline;
-            telemetryHelper.setTelemetry(TelemetryKeys.SelectedCICDProvider, selectedCICDProvider);
             await pipelineConfigurer.getInputs(this.inputs);
 
             telemetryHelper.setCurrentStep('CreatePreRequisites');
@@ -126,11 +123,12 @@ class Orchestrator {
 
 
             if (this.inputs.pipelineConfiguration.templateInfo) {
-                let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.azureSession, this.inputs.pipelineConfiguration.templateInfo);
-                let context: { [key: string]: any } = {};
-                context['subscriptionId'] = this.inputs.subscriptionId;
-                let controlProvider = new InputControlProvider(extendedPipelineTemplate, context);
-                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllPipelineTemplateInputs(this.inputs.azureSession);
+                //this.inputs.pipelineConfiguration.template.extendedPipelineTemplate = 
+                let extendedPipelineTemplate = await templateHelper.getTemplateParameteres(this.inputs.pipelineConfiguration.templateInfo);
+                let inputs: { [key: string]: any } = {};
+                inputs['subscriptionId'] = this.inputs.subscriptionId;
+                let controlProvider = new InputControlProvider(extendedPipelineTemplate, inputs);
+                this.inputs.pipelineConfiguration.parameters = await controlProvider.getAllInputUxDescriptors(this.inputs.azureSession, resourceNode);
             }
             else {
                 if (this.inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
@@ -274,7 +272,6 @@ class Orchestrator {
         }
         // set telemetry
         telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, this.inputs.sourceRepository.repositoryProvider);
-        telemetryHelper.setTelemetry(TelemetryKeys.RepoId, this.inputs.sourceRepository.repositoryId);
     }
 
     private setDefaultRepositoryDetails(): void {
@@ -391,8 +388,6 @@ class Orchestrator {
         let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
         this.inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
         this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
-
-        telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
     private async getAzureResourceDetails(): Promise<void> {
@@ -431,17 +426,17 @@ class Orchestrator {
         var repoAnalysisResult = await repoAnalysisHelper.getRepositoryAnalysis(this.inputs.sourceRepository,
             this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
 
-        extensionVariables.templateServiceEnabled = true;
+        extensionVariables.templateServiceEnabled = false;
 
         let appropriatePipelines;
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
 
         if (extensionVariables.templateServiceEnabled) {
             repoAnalysisResult = null;
+
             appropriatePipelines = await vscode.window.withProgress(
                 { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
-                    this.inputs.azureSession,
                     this.inputs.sourceRepository.localPath,
                     this.inputs.sourceRepository.repositoryProvider,
                     repoAnalysisResult,
@@ -510,12 +505,12 @@ class Orchestrator {
             return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
         });
 
-        if (!applicationSettings || applicationSettings.length === 0) {
+        if (!applicationSettings || applicationSettings.length == 0) {
             return;
         }
 
         let workspacePaths = Array.from(new Set(applicationSettings.map(a => a.settings.workingDirectory)));
-        if (workspacePaths.length === 1) {
+        if (workspacePaths.length == 1) {
             this.inputs.repositoryAnalysisApplicationSettings = applicationSettings[0];
             this.inputs.pipelineConfiguration.workingDirectory = applicationSettings[0].settings.workingDirectory;
             return;
@@ -565,7 +560,6 @@ class Orchestrator {
                 await templateHelper.renderContent(this.inputs.pipelineConfiguration.template.path, mustacheContext),
                 this.inputs.pipelineConfiguration.filePath);
             await vscode.window.showTextDocument(vscode.Uri.file(this.inputs.pipelineConfiguration.filePath));
-            telemetryHelper.setTelemetry(TelemetryKeys.DisplayWorkflow, 'true');
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.AddingContentToPipelineFileFailed, error);
