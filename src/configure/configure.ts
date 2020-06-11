@@ -466,7 +466,7 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysis): Promise<void> {
-        extensionVariables.templateServiceEnabled = false;
+        extensionVariables.templateServiceEnabled = true;
         let appropriatePipelines: PipelineTemplate[] = [];
 
         if (!extensionVariables.templateServiceEnabled) {
