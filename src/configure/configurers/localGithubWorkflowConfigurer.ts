@@ -10,6 +10,7 @@ import { AppServiceClient, DeploymentMessage } from '../clients/azure/appService
 import { ApiVersions, AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { GithubClient } from '../clients/github/githubClient';
 import { ControlProvider } from '../helper/controlProvider';
+import { GitHubProvider } from '../helper/gitHubHelper';
 import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
@@ -21,6 +22,7 @@ import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
+
 
 const uuid = require('uuid/v4');
 const Layer = 'LocalGitHubWorkflowConfigurer';
@@ -52,55 +54,18 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                         inputs.organizationName = selectedOrganization.label;
 
 
-                    let newGitHubRepo = await this.githubClient.generateGitHubRepositoryName(inputs.organizationName, inputs.sourceRepository.localPath) as unknown as GitHubRepo | void;
+                    let newGitHubRepo = await this.githubClient.generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath) as unknown as GitHubRepo | void;
                     if(newGitHubRepo){
-                        inputs.sourceRepository.repositoryName = newGitHubRepo.name;
-                        console.log(newGitHubRepo.name);
+                        inputs.sourceRepository.remoteName = newGitHubRepo.name;
+                        inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url+".git";
+                        inputs.sourceRepository.repositoryId = GitHubProvider.getRepositoryIdFromUrl(inputs.sourceRepository.remoteUrl);
+                        await this.localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl);
                         vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated, newGitHubRepo.name));
                     }
                     else{
                         vscode.window.showErrorMessage(Messages.cannotCreateGitHubRepository);
                         throw Error;
                     }
-                    /*try {
-                        // get the list of files
-                        let filesToCommit: string[] = [];
-                        let result =  await this.localGitRepoHelper.commitAndPushPipelineFile(filesToCommit, inputs.sourceRepository, extensionVariables.enableGitHubWorkflow ? Messages.addGitHubWorkflowYmlFile : Messages.addAzurePipelinesYmlFile);
-                        console.log("After calling comit & push function: "+result);
-                    }
-                    catch (error) {
-                        telemetryHelper.logError(Layer, TracePoints.CheckInPipelineFailure, error);
-                        vscode.window.showErrorMessage(utils.format(Messages.commitFailedErrorMessage, error.message));
-                        return null;
-                    }*/
-
-                    
-                    /*
-                    //get the list of existing repos for the selected org
-                    let repoList = await this.githubClient.getRepoList(inputs.organizationName);
-
-                      //take name of repo as input from user
-                    let githubRepoName = await this.controlProvider.showInputBox(
-                        constants.EnterGithubRepositoryName,
-                        {
-                            placeHolder: Messages.enterGitHuRepositoryName,
-                            validateInput: (inputValue) => this.githubClient.validateRepoName(inputValue, repoList)
-                        });
-
-                    //creating a new repo
-                    let githubRepo = await this.githubClient.createGithubRepo(inputs.organizationName, githubRepoName);
-                    if(!githubRepo){
-                        vscode.window.showErrorMessage(Messages.duplicateGitHubRepoNameErrorMessage);
-                        
-                    }
-                    else{
-                        //save repo details
-                        console.log("repo name: "+githubRepoName);
-                        console.log("repo name official: "+githubRepo.name);
-                        githubRepo.orgName = selectedOrganization.label;
-                        vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated));
-                    }
-                    */
                     
                 }
                 else{
@@ -231,7 +196,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
     }
 
     public async checkInPipelineFilesToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
-
+    
         while (!inputs.sourceRepository.commitId) {
 
             let displayMessage = Messages.modifyAndCommitFile;

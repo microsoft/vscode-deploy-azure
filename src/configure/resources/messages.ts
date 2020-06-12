@@ -103,11 +103,7 @@ export class Messages {
     public static gettingWorkflowFile = "Getting workflow file";
     public static templateFileNotFound = "Template file %s not found";
     public static selectGitHubOrganizationName = "Select a GitHUb organization";
-    public static createGitHubOrganization = "Create GitHub Organization first to create GitHub repository";
-    public static duplicateGitHubRepoNameErrorMessage = "GitHub repository of this name already exists";
-    public static enterGitHuRepositoryName = "Enter GitHub Repository name";
-    public static githubRepoEmptyNameErrorMessage = "GitHub Repository Name cannot be empty";
-    public static githubRepoNameReservedMessage = 'The repository name is reserved. Please try another repository name.';
+    public static createGitHubOrganization = "Create a GitHub Organization first to create GitHub repository.";
     public static newGitHubRepositoryCreated = "New GitHub repository with the name '%s' has been created.";
-    public static cannotCreateGitHubRepository = "New GitHub repository could not be created";
+    public static cannotCreateGitHubRepository = "New GitHub repository could not be created as the repository with the same already exists";
 }

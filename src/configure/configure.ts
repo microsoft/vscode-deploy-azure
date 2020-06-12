@@ -353,7 +353,7 @@ class Orchestrator {
             remoteUrl: '',
             repositoryId: '',
             repositoryName: '',
-            repositoryProvider: RepositoryProvider.Github
+            repositoryProvider: RepositoryProvider.Github,
         };
     }
 

@@ -1,21 +1,10 @@
 import { UrlBasedRequestPrepareOptions } from 'ms-rest';
-import { SimpleGit } from 'simple-git/promise';
 import { stringCompareFunction } from "../../helper/commonHelper";
 import { GitHubProvider } from "../../helper/gitHubHelper";
 import { SodiumLibHelper } from "../../helper/sodium/SodiumLibHelper";
 import { GitHubOrganization, GitHubRepo } from '../../model/models';
-import { Messages } from '../../resources/messages';
 import { RestClient } from "../restClient";
 const uuid = require('uuid/v4');
-
-// Simple-git without promise 
-//const simpleGit = require('simple-git')();
-
-const simpleGit = require('simple-git');
-// Shelljs package for running shell tasks optional
-const shellJs = require('shelljs');
-// Simple Git with Promise for handling success and failure
-const simpleGitPromise = require('simple-git/promise')();
 
 const UserAgent = "deploy-to-azure-vscode";
 
@@ -58,12 +47,10 @@ export class GithubClient {
                 .then((detail: GitHubRepo) => {
                     return detail;
                 }).catch(error=>{
-                        console.log("inside inner catch");
                         return null;
                 });
         }
         catch(error){
-            //need to check the type of error - not sure
             return null;
         }
     }
@@ -91,106 +78,18 @@ export class GithubClient {
         return this.listOrgPromise; 
     }
 
-    public async getRepoList(orgName: string): Promise<GitHubRepo[]>{
-        let restClient = new RestClient();
-        return restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
-            url: "https://api.github.com/orgs/" + orgName + "/repos",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + this.patToken,
-                "User-Agent": UserAgent
-            },
-            method: 'GET',
-            deserializationMapper: null,
-            serializationMapper: null
-        })
-            .then((repoList: GitHubRepo[]) => {
-                return repoList;
-            });
-    }
-
-    public async generateGitHubRepositoryName(orgName: string, localPath: string): Promise<GitHubRepo | void>{
-        //console.log(localPath);
-        let folderName = localPath.substring(localPath.lastIndexOf("\\")+1);
-        //console.log(folderName);
-        folderName = folderName.replace("*","-");    //need to include all the special characters here
-        //console.log(folderName);
-        let repoName = folderName;
+    public async generateGitHubRepository(orgName: string, localPath: string): Promise<GitHubRepo | void>{
+        let repoName = localPath.substring(localPath.lastIndexOf("\\")+1).replace("*","-"); //need to include all the special characters here
         let repoDetails = await this.createGithubRepo(orgName, repoName) as unknown as GitHubRepo | void;
         if(repoDetails){
-            console.log("repoName : "+repoDetails.name);
             return repoDetails; 
         }
-        repoName = orgName+"-"+folderName;
-        console.log(repoName);
+        repoName = repoName+"_"+orgName;
         repoDetails = await this.createGithubRepo(orgName, repoName) as unknown as GitHubRepo | void;
-        console.log(repoDetails);
         if(repoDetails){
             return repoDetails; 
         }
-        console.log("Addidng unique id");
         return await this.createGithubRepo(orgName, repoName+"-"+uuid().substr(0,5));   //need to add proper Uiid or goid
-    }
-
-    public async pushFilesIntoGHrepo(repoName: string, orgName: string, localPath: string){
-        const git: SimpleGit = simpleGit();
-        try {
-            await simpleGit.init().catch(ignoreError);
-        }
-        catch (e) { 
-            console.log("error occured inside try block");
-        }
-        function ignoreError () {
-            console.log("error occured during initialization");
-        }
-        
-        // change current directory to repo directory in local
-        shellJs.cd(localPath);
-        const repo = 'Vscode-testing';
-        const userName = 'Juhi004';
-        const password = '******';
-        const gitHubUrl = `https://${userName}:${password}@github.com/${userName}/${repo}`;
-        console.log("github URL: "+ gitHubUrl);
-        git.addConfig('user.email','juhiagarwalsy@gmail.com');
-        git.addConfig('user.name','Juhi Agarwal');
-        simpleGitPromise.addRemote('origin',gitHubUrl);
-        simpleGitPromise.add('.')
-            .then(
-                (addSuccess) => {
-                console.log(addSuccess);
-            }, (failedAdd) => {
-                console.log('adding files failed');
-            });
-        simpleGitPromise.commit('Intial commit by simplegit from Vscode')
-        .then(
-            (successCommit) => {
-                console.log(successCommit);
-            }, (failed) => {
-                console.log('failed commmit');
-        });
-        simpleGitPromise.push('origin','master')
-            .then((success) => {
-                console.log('repo successfully pushed');
-            },(failed)=> {
-                console.log('repo push failed');
-        });
-        
-    }
-
-    //no use of this function
-    public async validateRepoName(name: string, repoList: GitHubRepo[]): Promise < string > {
-        let repoName = name.trim();
-        let existingRepos = repoList.filter((repo) => repo.name === name);
-        if(!existingRepos || existingRepos.length > 0){
-            return Promise.resolve(Messages.duplicateGitHubRepoNameErrorMessage);
-        }
-        if(!repoName){
-            return Promise.resolve(Messages.githubRepoEmptyNameErrorMessage);
-        }
-        if(repoName === "."){
-            return Promise.resolve(Messages.githubRepoNameReservedMessage);
-        }
-        return Promise.resolve("");
     }
 
     public async createOrUpdateGithubSecret(secretName: string, body: string): Promise < void> {

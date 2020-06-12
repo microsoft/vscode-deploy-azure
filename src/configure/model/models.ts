@@ -71,8 +71,8 @@ export class GitHubOrganization {
 export class GitHubRepo{
     id: string;
     name: string;
-    url: string;
     orgName: string;
+    html_url: string;
 }
 
 export class AzureSession {
