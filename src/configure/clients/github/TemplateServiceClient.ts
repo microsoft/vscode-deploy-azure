@@ -9,6 +9,9 @@ export class TemplateServiceClient {
     private restClient: RestClient;
     private readonly templateServiceUri: string = "https://pepfcusc.portalext.visualstudio.com/_apis/TemplateService/";
     private readonly apiVersion = "6.0-preview.1";
+    private readonly extendedPipelineTemplateResource = "ExtendedPipelineTemplates";
+    private readonly templatesInfoResource = "TemplatesInfo";
+    private readonly templateAssetFilesResource = "TemplateAssetFiles";
 
     constructor(credentials: ServiceClientCredentials) {
         this.restClient = new RestClient(credentials);
@@ -16,33 +19,53 @@ export class TemplateServiceClient {
 
     public async getTemplates(body: RepositoryAnalysis): Promise<TemplateInfo[]> {
         return this.restClient.sendRequest2(
-            this.templateServiceUri,
+            this.templateServiceUri + this.templatesInfoResource,
             'POST',
             this.apiVersion,
             body);
     }
 
     public async getTemplateParameters(templateId: string): Promise<ExtendedPipelineTemplate> {
-        var requestUri = this.templateServiceUri + templateId + "/parameters";
-        return this.restClient.sendRequest2(
-            requestUri,
-            'GET',
-            this.apiVersion
-        );
+        const requestUri = this.templateServiceUri + this.extendedPipelineTemplateResource;
+        return this.restClient.sendRequest(
+            {
+                url: requestUri,
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8"
+                },
+                queryParameters: {
+                    'templateId': templateId,
+                    'templatePartToGet': 'parameters',
+                    'api-version': this.apiVersion
+                },
+                deserializationMapper: null,
+                serializationMapper: null
+            });
     }
 
     public async getTemplateConfiguration(templateId: string, inputs: StringMap<string>): Promise<ExtendedPipelineTemplate> {
-        let requestUri = this.templateServiceUri + templateId + "/configuration";
-        return this.restClient.sendRequest2(
-            requestUri,
-            'POST',
-            this.apiVersion,
-            inputs
-        );
+        const requestUri = this.templateServiceUri + this.extendedPipelineTemplateResource;
+        return this.restClient.sendRequest(
+            {
+                url: requestUri,
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8"
+                },
+                queryParameters: {
+                    'templateId': templateId,
+                    'templatePartToGet': 'configuration',
+                    'api-version': this.apiVersion
+                },
+                body: inputs,
+                deserializationMapper: null,
+                serializationMapper: null
+            });
     }
 
     public async getTemplateFile(templateId: string, fileName: string): Promise<{ id: string, content: string }[]> {
-        let requestUri = this.templateServiceUri + templateId + "/files";
+        const requestUri = this.templateServiceUri + this.templateAssetFilesResource;
 
         return this.restClient.sendRequest(
             {
@@ -52,6 +75,7 @@ export class TemplateServiceClient {
                     "Content-Type": "application/json; charset=utf-8"
                 },
                 queryParameters: {
+                    'templateId': templateId,
                     'fileNames': fileName,
                     'api-version': this.apiVersion
                 },

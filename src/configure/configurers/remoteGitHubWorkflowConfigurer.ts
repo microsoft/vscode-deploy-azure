@@ -1,8 +1,6 @@
-import { JSONPath } from 'jsonpath-plus';
 import * as Path from 'path';
 import * as utils from 'util';
 import * as vscode from 'vscode';
-import { ArmRestClient } from '../clients/azure/armRestClient';
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { GithubClient } from '../clients/github/githubClient';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
@@ -16,6 +14,7 @@ import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
 import { InputControl } from '../templateInputHelper/InputControl';
 import * as templateConverter from '../utilities/templateConverter';
+import * as nodeVersionConverter from '../utilities/webAppNodeVersionConverter';
 import { LocalGitHubWorkflowConfigurer } from './localGithubWorkflowConfigurer';
 
 export interface File {
@@ -48,13 +47,10 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         this.templateServiceClient = new TemplateServiceClient(inputs.azureSession.credentials);
         this.template = inputs.pipelineConfiguration.template as RemotePipelineTemplate;
         let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
-        extendedPipelineTemplate = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate);
+        
+        this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
-        this.template.variables = extendedPipelineTemplate.variables;
-        this.template.pipelineDefinition = extendedPipelineTemplate.pipelineDefinition;
-        this.template.assets = extendedPipelineTemplate.assets;
-
-        this.template.assets.forEach((asset: Asset) => {
+        this.template.configuration.assets.forEach((asset: Asset) => {
             if (!asset.stage) {
                 asset.stage = ConfigurationStage.Pre;
             }
@@ -70,7 +66,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             system: this.system
         }
 
-        for (let variable of this.template.variables) {
+        for (let variable of this.template.configuration.variables) {
             let expression = variable.value;
             let value = MustacheHelper.render(expression, this.mustacheContext);
             this.variables[variable.id] = value;
@@ -84,8 +80,8 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                 title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
             },
             async () => {
-                for (var input of this.template.inputs) {
-                    if (input.type == InputDataType.Authorization && input.id != "azureDevOpsAuth") {
+                for (var input of this.template.parameters.inputs) {
+                    if (input.type === InputDataType.Authorization && input.id !== "azureDevOpsAuth") {
                         inputs.pipelineConfiguration.params[input.id] = await this.createAzureSPN(input, inputs);
                     }
                 }
@@ -93,7 +89,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     }
 
     public async createAssets(stage: ConfigurationStage = ConfigurationStage.Pre) {
-        let assets = this.template.assets;
+        let assets = this.template.configuration.assets;
         if (!!assets && assets.length > 0) {
             for (let asset of assets) {
                 if (asset.stage === stage) {
@@ -139,7 +135,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                             await this.githubClient.createOrUpdateGithubSecret(secretKey, secretValue);
                         }
                     );
-                    this.secrets[asset.id] = secretKey;
+                    this.secrets[asset.id] = "{{ secrets." + secretKey + " }}";
                     break;
                 case "commitFile:Github":
                     let source: string = asset.inputs["source"];
@@ -159,34 +155,19 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
 
                     this.assets[asset.id] = destination;
                     break;
-                case "NodeVersion":
-                    let nodeVersion: string = asset.inputs["selectedNodeVersion"];
-                    let armUri = asset.inputs["armUri"];
-                    let resultSelector = asset.inputs["resultSelector"];
-                    if (nodeVersion === 'NODE|lts') {
-                        let versions: string[];
-                        await vscode.window.withProgress(
-                            {
-                                location: vscode.ProgressLocation.Notification,
-                                title: Messages.GettingNodeVersion
-                            },
-                            async () => {
-                                let response = await new ArmRestClient(this.azureSession).fetchArmData(armUri, 'GET');
-                                versions = JSONPath({ path: resultSelector, json: response, wrap: false, flatten: true })
-                            }
-                        );
-                        let maxVersion = 0;
-                        versions.forEach((version: string) => {
-                            let match = version.match(/NODE\|(\d+)-lts/);
-                            if (match && match.length > 1) {
-                                maxVersion = Math.max(maxVersion, +match[1]);
-                            }
-                        });
-                        nodeVersion = maxVersion + '.x';
-                    } else if (nodeVersion.match(/NODE\|\d+-lts/i)) {
-                        nodeVersion = nodeVersion.split('|')[1].replace(/-lts/i, '.x');
+                case "LinuxWebAppNodeVersionConverter":
+                    {
+                        let nodeVersion: string = asset.inputs["webAppRuntimeNodeVersion"];
+                        const armUri = "/providers/Microsoft.Web/availableStacks?osTypeSelected=Linux&api-version=2019-08-01";
+                        this.assets[asset.id] = await nodeVersionConverter.webAppRuntimeNodeVersionConverter(nodeVersion, armUri, this.azureSession);
                     }
-                    this.assets[asset.id] = nodeVersion;
+                    break;
+                case "WindowsWebAppNodeVersionConverter":
+                    {
+                        let nodeVersion: string = asset.inputs["webAppRuntimeNodeVersion"];
+                        const armUri = "/providers/Microsoft.Web/availableStacks?osTypeSelected=Windows&api-version=2019-08-01";
+                        this.assets[asset.id] = await nodeVersionConverter.webAppRuntimeNodeVersionConverter(nodeVersion, armUri, this.azureSession);
+                    }
                     break;
                 default:
                     throw new Error(utils.format(Messages.assetOfTypeNotSupported, asset.type));
@@ -195,7 +176,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     }
 
     private async getWorkflowFile(inputs: WizardInputs): Promise<File> {
-        let pipelineDefinition = MustacheHelper.renderObject(this.template.pipelineDefinition, this.mustacheContext);
+        let pipelineDefinition = MustacheHelper.renderObject(this.template.configuration.pipelineDefinition, this.mustacheContext);
         let workflowFileContent: string;
         await vscode.window.withProgress(
             {
@@ -208,7 +189,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         );
         let workFlowFileName: string = pipelineDefinition.destinationFileName;
         workFlowFileName = await this.getPathToPipelineFile(inputs, this.localGitHelper, workFlowFileName);
-        inputs.pipelineConfiguration.filePath = workFlowFileName
+        inputs.pipelineConfiguration.filePath = workFlowFileName;
         return {
             path: workFlowFileName,
             content: workflowFileContent
