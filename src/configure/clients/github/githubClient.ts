@@ -35,7 +35,7 @@ export class GithubClient {
                 method: 'POST',
                 body: {
                     "name": repoName,
-                    "description": "Repo created from VScode",
+                    "description": "Repo created from VScode extension 'Deploy to Azure'",
                     "homepage": "https://github.com",
                     "private": false,
                     "has_issues": true,
