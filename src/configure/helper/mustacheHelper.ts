@@ -127,6 +127,76 @@ export class MustacheHelper {
 
                     return "";
                 };
+            },
+
+            /*
+            * Checks if a string begins with some string
+            * Usage: {{#beginsWith}} StringToCheck BeginningPart true/false(for case-sensitivity) IfTrueValue IfFalseValue(optional){{/beginsWith}}
+            */
+            "beginsWith": function () {
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length < 4) {
+                        return "";
+                    }
+
+                    var ignoreCase = parts[2];
+                    if (ignoreCase) {
+                        if (parts[0].toLowerCase().startsWith(parts[1].toLowerCase())) {
+                            return parts[3];
+                        }
+                    } else {
+                        if (parts[0].startsWith(parts[1])) {
+                            return parts[3];
+                        }
+                    }
+                    if (parts.length >= 5) {
+                        return parts[4];
+                    } else {
+                        return "";
+                    }
+                };
+            },
+
+            /*
+            * If some variable is the environment variable, adding {{ }}
+            * Usage: {{#EnvironmentVariable}} VariableName {{/EnvironmentVariable}}
+            */
+            "environmentVariable": function () {
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length < 1) {
+                        return "";
+                    }
+                    return "{{ " + parts[0] + " }}";
+                };
+            },
+
+            /*
+            * Sort an integer array
+            * Usage: {{#intSorter}} IntegerArrayToBeSorted asc/dsc(order in which it is to be sorted) {{/intSorter}}
+            */
+            "intSorter": function () {
+                return function (text: string, render: any) {
+                    var parts = MustacheHelper.getParts(text);
+                    if (parts.length < 2) {
+                        return "";
+                    }
+
+                    var order = parts[1].toLowerCase();
+                    var arr = render(parts[0]).split(",");
+                    var sorter = 1;
+                    if (order === "dsc") {
+                        sorter = -1;
+                    }
+                    arr = arr.sort((a, b) => {
+                        if (a > b) { return 1 * sorter; }
+                        else { return -1 * sorter; }
+                    });
+                    return arr;
+                };
             }
         };
     }
@@ -150,19 +220,21 @@ export class MustacheHelper {
         }
 
         var result: Object = {};
-        Object.keys(mustacheObject).forEach(key => {
-            if (!!key && !!mustacheObject[key]) {
-                result[key] = MustacheHelper.renderObject(mustacheObject[key], view);
-            }
-        });
+        if (mustacheObject) {
+            Object.keys(mustacheObject).forEach(key => {
+                if (!!key && !!mustacheObject[key]) {
+                    result[key] = MustacheHelper.renderObject(mustacheObject[key], view);
+                }
+            });
 
+        }
         return result;
     }
 
     public static getParts(text: string): Array<string> {
         var parts: Array<string> = [];
         /* Following regex is to fetch different parts in the text e.g. "test 'hello world' output" => test, 'hello world', output*/
-        var fetchPartsRegex = new RegExp(/[\'](.+?)[\']|[^ ]+/g);
+        var fetchPartsRegex = new RegExp(/[\'](.*?)[\']|[^ ]+/g);
         var resultArray;
         while ((resultArray = fetchPartsRegex.exec(text)) !== null) {
             var part = (resultArray[1] === undefined || resultArray[1] === null) ? resultArray[0] : resultArray[1];

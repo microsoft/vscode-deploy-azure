@@ -1,14 +1,20 @@
-import { GitHubWorkflowConfigurer } from '../configurers/githubWorkflowConfigurer';
+import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { AzureSession, extensionVariables, GitRepositoryParameters, RepositoryProvider } from '../model/models';
+import { TemplateType } from '../model/templateModels';
 import { Messages } from '../resources/messages';
 import { AzurePipelineConfigurer } from './azurePipelineConfigurer';
 import { Configurer } from './configurerBase';
+import { LocalGitHubWorkflowConfigurer } from './localGithubWorkflowConfigurer';
+import { RemoteGitHubWorkflowConfigurer } from './remoteGitHubWorkflowConfigurer';
 
 export class ConfigurerFactory {
-    public static GetConfigurer(sourceRepositoryDetails: GitRepositoryParameters, azureSession: AzureSession, subscriptionId: string): Configurer {
-        switch(sourceRepositoryDetails.repositoryProvider) {
+    public static GetConfigurer(sourceRepositoryDetails: GitRepositoryParameters, azureSession: AzureSession, subscriptionId: string, templateType: TemplateType, localGitRepoHelper: LocalGitRepoHelper): Configurer {
+        switch (sourceRepositoryDetails.repositoryProvider) {
             case RepositoryProvider.Github:
-                return extensionVariables.enableGitHubWorkflow ? new GitHubWorkflowConfigurer(azureSession, subscriptionId) : new AzurePipelineConfigurer(azureSession);
+                if (extensionVariables.enableGitHubWorkflow) {
+                    return templateType == TemplateType.LOCAL ? new LocalGitHubWorkflowConfigurer(azureSession, subscriptionId) : new RemoteGitHubWorkflowConfigurer(azureSession, subscriptionId, localGitRepoHelper);
+                }
+                return new AzurePipelineConfigurer(azureSession);
             case RepositoryProvider.AzureRepos:
                 return new AzurePipelineConfigurer(azureSession);
             default:

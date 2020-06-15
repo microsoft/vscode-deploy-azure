@@ -23,4 +23,6 @@ export class TracePoints {
     public static EvaluateDynamicValidation = 'EvalauteDynamicValidation';
     public static InitializeDynamicValidation = 'InitializeDynamicValidation';
     public static SetInputControlValueFromRepoAnalysisResult = 'setInputControlValueFromRepoAnalysisResult';
+    public static TemplateServiceCallFailed = 'TemplateServiceCallFailed';
+    public static GetTemplateFile = 'GetTemplateFile'
 }

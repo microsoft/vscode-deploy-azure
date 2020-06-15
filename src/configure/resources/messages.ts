@@ -98,4 +98,8 @@ export class Messages {
     public static valueShouldBeNumber = "The value %s is not numberic";
     public static regexPatternNotMatchingMessage = "Value should match the following regex pattern: %s";
     public static fetchingInputMessage = "Fetching inputs for %s";
+    public static GettingNodeVersion = "Getting Node version to install";
+    public static gettingTemplateFileAsset = "Getting template file asset to commit";
+    public static gettingWorkflowFile = "Getting workflow file";
+    public static templateFileNotFound = "Template file %s not found";
 }

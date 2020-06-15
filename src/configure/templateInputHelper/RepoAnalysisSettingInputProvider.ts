@@ -1,6 +1,6 @@
+import { ApplicationSettings } from "azureintegration-repoanalysis-client-internal";
 import { ControlProvider } from "../helper/controlProvider";
 import { telemetryHelper } from "../helper/telemetryHelper";
-import { RepositoryAnalysisApplicationSettings } from "../model/models";
 import { TracePoints } from "../resources/tracePoints";
 import { InputControl } from "./InputControl";
 
@@ -8,10 +8,10 @@ const Layer: string = "RepoAnalysisSettingInputProvider";
 
 export class RepoAnalysisSettingInputProvider {
     private readonly repoAnalysisSettingKey: string = "repoAnalysisSettingKey";
-    private _repoAnalysisSettings: RepositoryAnalysisApplicationSettings[];
+    private _repoAnalysisSettings: ApplicationSettings[];
     private _selectedRepoAnalysisSettingIndex: number;
 
-    constructor(repoAnalysisSettings: RepositoryAnalysisApplicationSettings[]) {
+    constructor(repoAnalysisSettings: ApplicationSettings[]) {
         this._repoAnalysisSettings = repoAnalysisSettings || [];
         this._selectedRepoAnalysisSettingIndex = repoAnalysisSettings.length > 1 ? -1 : 0;
     }
