@@ -81,14 +81,17 @@ export class GithubClient {
     public async generateGitHubRepository(orgName: string, localPath: string): Promise<GitHubRepo | void>{
         let repoName = localPath.substring(localPath.lastIndexOf("\\")+1).replace("*","-"); //need to include all the special characters here
         let repoDetails = await this.createGithubRepo(orgName, repoName) as unknown as GitHubRepo | void;
+        // Case : GitHub Repo name is same as the local repo
         if(repoDetails){
             return repoDetails; 
         }
+        //Case: Local repo name is not available, therefore organization name has been appended
         repoName = repoName+"_"+orgName;
         repoDetails = await this.createGithubRepo(orgName, repoName) as unknown as GitHubRepo | void;
         if(repoDetails){
             return repoDetails; 
         }
+        //Case: If the above two names are not available, uuid is also appended
         return await this.createGithubRepo(orgName, repoName+"-"+uuid().substr(0,5));   //need to add proper Uiid or goid
     }
 
