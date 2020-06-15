@@ -23,9 +23,10 @@ export class GithubClient {
 
     public createGithubRepo(orgName: string, repoName: string): Promise<void | GitHubRepo> {
         let restClient =new RestClient();
+        let Url = "https://api.github.com/orgs/" + orgName + "/repos";
         try{
             return restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
-                url: "https://api.github.com/orgs/" + orgName + "/repos",
+                url: Url,
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": "Bearer " + this.patToken,
