@@ -78,13 +78,11 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
             telemetryHelper.logError(Layer, TracePoints.GetGitHubDetailsFailed, error);
             throw error;
         }
-        
     }
 
     public async validatePermissions(): Promise<void> {
         return;
     }
-
 
     public async createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
         if (inputs.targetResource && inputs.targetResource.resource && inputs.targetResource.resource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
