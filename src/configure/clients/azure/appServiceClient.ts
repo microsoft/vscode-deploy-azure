@@ -1,14 +1,16 @@
-const uuid = require('uuid/v4');
 import { GenericResource, ResourceListResult } from 'azure-arm-resource/lib/resource/models';
 import { WebSiteManagementClient } from 'azure-arm-website';
 import { Deployment, SiteConfigResource, StringDictionary } from 'azure-arm-website/lib/models';
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from 'ms-rest';
 import { AzureEnvironment } from 'ms-rest-azure';
+import * as Q from 'q';
 import { telemetryHelper } from '../../helper/telemetryHelper';
 import { ParsedAzureResourceId, TargetKind, WebAppSourceControl } from '../../model/models';
 import { Messages } from '../../resources/messages';
 import { TelemetryKeys } from '../../resources/telemetryKeys';
 import { AzureResourceClient } from './azureResourceClient';
+
+const uuid = require('uuid/v4');
 
 export class AppServiceClient extends AzureResourceClient {
 
@@ -46,24 +48,22 @@ export class AppServiceClient extends AzureResourceClient {
     }
 
     public async getWebAppPublishProfileXml(resourceId: string): Promise<string> {
-        let parsedResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(resourceId);
-        let publishingProfileStream = await this.webSiteManagementClient.webApps.listPublishingProfileXmlWithSecrets(parsedResourceId.resourceGroup, parsedResourceId.resourceName, {});
-        while (!publishingProfileStream.readable) {
-            // wait for stream to be readable.
-        }
+        const deferred: Q.Deferred<string> = Q.defer<string>();
+        const parsedResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(resourceId);
+        const publishingProfileStream = await this.webSiteManagementClient.webApps.listPublishingProfileXmlWithSecrets(parsedResourceId.resourceGroup, parsedResourceId.resourceName, {});
 
         let publishProfile = '';
-        while (true) {
-            let moreData: Buffer = publishingProfileStream.read();
-            if (moreData) {
-                publishProfile += moreData.toString();
+        publishingProfileStream.on("data", (chunk: Buffer) => {
+            if (chunk) {
+                publishProfile += chunk.toString();
             }
-            else {
-                break;
-            }
-        }
+        });
 
-        return publishProfile;
+        publishingProfileStream.on("end", () => {
+            return deferred.resolve(publishProfile);
+        });
+
+        return deferred.promise;
     }
 
     public async getDeploymentCenterUrl(resourceId: string): Promise<string> {
