@@ -50,5 +50,5 @@
 		]
 	},
 	"defaultSeverity": "warning"
-	//"extends": ["tslint-microsoft-contrib/recommended", "tslint:recommended"]
+	"extends": ["tslint-microsoft-contrib/recommended", "tslint:recommended"]
 }
