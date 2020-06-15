@@ -80,7 +80,7 @@ export class GithubClient {
     }
 
     public async generateGitHubRepository(orgName: string, localPath: string): Promise<GitHubRepo | void>{
-        let repoName = localPath.substring(localPath.lastIndexOf("\\")+1).replace("*","-"); //need to include all the special characters here
+        let repoName = localPath.substring(localPath.lastIndexOf("\\")+1);
         let repoDetails = await this.createGithubRepo(orgName, repoName) as unknown as GitHubRepo | void;
         // Case : GitHub Repo name is same as the local repo
         if(repoDetails){
