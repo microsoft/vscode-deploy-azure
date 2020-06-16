@@ -493,6 +493,10 @@ class Orchestrator {
         }
         let pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
         let pipelineLabels = Array.from(pipelineMap.keys());
+        if (pipelineLabels.length === 0) {
+            telemetryHelper.setTelemetry(TelemetryKeys.UnsupportedLanguage, Messages.languageNotSupported);
+            throw new Error(Messages.languageNotSupported);
+        }
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
         if (pipelineLabels.length > 1) {

@@ -102,4 +102,5 @@ export class Messages {
     public static gettingTemplateFileAsset = "Getting template file asset to commit";
     public static gettingWorkflowFile = "Getting workflow file";
     public static templateFileNotFound = "Template file %s not found";
+    public static languageNotSupported = "The language of the repository selected is not supported.";
 }

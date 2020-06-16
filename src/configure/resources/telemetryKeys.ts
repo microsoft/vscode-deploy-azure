@@ -22,6 +22,7 @@ export class TelemetryKeys {
     public static SelectedCICDProvider = 'selectedCICDProvider';
     public static RepoId = 'repoId';
     public static DisplayWorkflow = 'displayWorkflow';
+    public static UnsupportedLanguage = 'unsupportedLanguage';
 
 
     public static resourceType = 'resourceType';
