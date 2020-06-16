@@ -43,7 +43,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
         try {
             inputs.isNewOrganization = false;
             if (!inputs.sourceRepository.remoteUrl) {
-                let githubOrganizations = await this.githubClient.listOrganizations(inputs.githubPATToken);
+                let githubOrganizations = await this.githubClient.listOrganizations();
                
                 if ( githubOrganizations &&  githubOrganizations.length > 0) {
                     let selectedOrganization = await this.controlProvider.showQuickPick(
@@ -70,7 +70,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                 }
                 else{
                     vscode.window.showErrorMessage(Messages.createGitHubOrganization);
-                    throw Error;
+                    throw new Error(Messages.createGitHubOrganization);
                 }
             }
         }

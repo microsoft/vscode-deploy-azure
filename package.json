@@ -108,17 +108,13 @@
         "vscode-azureextensiondev": "^0.3.1"
     },
     "dependencies": {
-        "@octokit/rest": "^17.11.0",
         "azure-arm-resource": "7.3.0",
         "azure-arm-website": "5.7.0",
         "azureintegration-repoanalysis-client-internal": "^1.0.0",
-        "fs-extra": "^9.0.1",
-        "github-reserved-names": "^1.1.8",
-        "globby": "^11.0.1",
         "js-yaml": "^3.13.1",
         "jsonpath-plus": "^3.0.0",
         "mustache": "3.0.1",
-        "octokit": "^1.0.0-hello-world",
+        "npm": "^6.14.5",
         "q": "1.5.1",
         "shelljs": "^0.3.0",
         "simple-git": "^1.110.0",

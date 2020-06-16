@@ -18,14 +18,15 @@ export class GithubClient {
     constructor(patToken: string, remoteUrl: string) {
         this.patToken = patToken;
         this.url = remoteUrl;
-        this.listOrgPromise = this.listOrganizations(this.patToken);
+        this.listOrgPromise = this.listOrganizations();
     }
 
     public createGithubRepo(orgName: string, repoName: string): Promise<void | GitHubRepo> {
         let restClient =new RestClient();
+        let Url = "https://api.github.com/orgs/" + orgName + "/repos";
         try{
             return restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
-                url: "https://api.github.com/orgs/" + orgName + "/repos",
+                url: Url,
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": "Bearer " + this.patToken,
@@ -34,7 +35,7 @@ export class GithubClient {
                 method: 'POST',
                 body: {
                     "name": repoName,
-                    "description": "Repo created from VScode",
+                    "description": "Repo created from VScode extension 'Deploy to Azure'",
                     "homepage": "https://github.com",
                     "private": false,
                     "has_issues": true,
@@ -55,14 +56,14 @@ export class GithubClient {
         }
     }
 
-    public async listOrganizations(PATtoken: string, forceRefresh?: boolean): Promise<void | GitHubOrganization[]> {
+    public async listOrganizations(forceRefresh?: boolean): Promise<void | GitHubOrganization[]> {
         if (!this.listOrgPromise || forceRefresh) {
             let restClient = new RestClient();
             this.listOrgPromise = restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
                 url: "https://api.github.com/user/orgs",
                 method: 'GET',
                 headers: {
-                    "Authorization": "Bearer " + PATtoken,
+                    "Authorization": "Bearer " + this.patToken,
                     "User-Agent": UserAgent,
                     "Content-Type": "application/json",
                     "Accept": "*/*"
@@ -79,7 +80,7 @@ export class GithubClient {
     }
 
     public async generateGitHubRepository(orgName: string, localPath: string): Promise<GitHubRepo | void>{
-        let repoName = localPath.substring(localPath.lastIndexOf("\\")+1).replace("*","-"); //need to include all the special characters here
+        let repoName = localPath.substring(localPath.lastIndexOf("\\")+1);
         let repoDetails = await this.createGithubRepo(orgName, repoName) as unknown as GitHubRepo | void;
         if(repoDetails){
             return repoDetails; 
@@ -89,7 +90,7 @@ export class GithubClient {
         if(repoDetails){
             return repoDetails; 
         }
-        return await this.createGithubRepo(orgName, repoName+"-"+uuid().substr(0,5));   //need to add proper Uiid or goid
+        return await this.createGithubRepo(orgName, repoName + "-" + uuid().substr(0,5));  
     }
 
     public async createOrUpdateGithubSecret(secretName: string, body: string): Promise < void> {
@@ -101,7 +102,7 @@ export class GithubClient {
     await this._setGithubSecret(secretName, secretKeyObject.key_id, encryptedEncodedText);
 }
 
-    private async _getGitHubSecretKey() : Promise < GitHubSecretKey > {
+    public async _getGitHubSecretKey() : Promise < GitHubSecretKey > {
     let request = <UrlBasedRequestPrepareOptions>{
         url: GitHubProvider.getFormattedGitHubApiUrlBase(this.url) + "/actions/secrets/public-key",
         method: 'GET',
@@ -118,7 +119,7 @@ export class GithubClient {
     return(await restClient.sendRequest(request)) as GitHubSecretKey;
 }
 
-    private async _setGithubSecret(secretName: string, key_id: string, encrypted_secret: string): Promise < void> {
+    public async _setGithubSecret(secretName: string, key_id: string, encrypted_secret: string): Promise < void> {
     let restClient = new RestClient();
     let request = <UrlBasedRequestPrepareOptions>{
         url: GitHubProvider.getFormattedGitHubApiUrlBase(this.url) + "/actions/secrets/" + secretName,
