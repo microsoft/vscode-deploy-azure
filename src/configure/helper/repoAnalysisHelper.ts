@@ -5,8 +5,11 @@ import { PortalExtensionRepositoryAnalysisClient } from "../clients/portalExtens
 import { IRepositoryAnalysisClient } from '../clients/repositoryAnalyisClient';
 import { AzureSession, GitRepositoryParameters, RepositoryProvider, SupportedLanguage } from "../model/models";
 import { RepoAnalysisConstants } from "../resources/constants";
+import { TracePoints } from "../resources/tracePoints";
 import { IServiceUrlDefinition, RemoteServiceUrlHelper, ServiceFramework } from './remoteServiceUrlHelper';
+import { telemetryHelper } from "./telemetryHelper";
 
+const Layer: string = 'repoAnalysisHelper';
 export class RepoAnalysisHelper {
     private azureSession: AzureSession;
     private githubPatToken?: string;
@@ -43,6 +46,7 @@ export class RepoAnalysisHelper {
         }
         catch (e) {
             //Return empty if Repo Analysis fails
+            telemetryHelper.logError(Layer, TracePoints.GetRepoAnalysis, e);
             return null;
         }
 

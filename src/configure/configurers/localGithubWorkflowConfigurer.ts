@@ -147,6 +147,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
             }
         });
         fileName = await LocalGitRepoHelper.GetAvailableFileName(fileName, directoryPath);
+        telemetryHelper.setTelemetry(TelemetryKeys.WorkflowFileName, fileName);
         return path.join(directoryPath, fileName);
     }
 

@@ -46,8 +46,12 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
         this.templateServiceClient = new TemplateServiceClient(inputs.azureSession.credentials);
         this.template = inputs.pipelineConfiguration.template as RemotePipelineTemplate;
-        let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
-        
+        try {
+            var extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
+        } catch (error) {
+            telemetryHelper.logError(Layer, TracePoints.GetTemplateConfiguration, error);
+        }
+
         this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
         this.template.configuration.assets.forEach((asset: Asset) => {
