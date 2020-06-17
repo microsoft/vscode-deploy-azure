@@ -25,4 +25,5 @@ export class TracePoints {
     public static SetInputControlValueFromRepoAnalysisResult = 'setInputControlValueFromRepoAnalysisResult';
     public static GetTemplateFile = 'GetTemplateFile';
     public static NoGitHubOrganizationExists = 'NoGitHubOrganizationExists';
+    public static TemplateServiceCallFailed = 'TemplateServiceCallFailed';
 }

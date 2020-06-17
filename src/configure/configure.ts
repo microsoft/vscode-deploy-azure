@@ -171,6 +171,9 @@ class Orchestrator {
                 else {
                     this.context['rightClickScenario'] = true;
                 }
+                if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
+                    this.context['resourceId'] = this.inputs.targetResource.resource.id;
+                }
                 this.selectTemplate(this.inputs.targetResource.resource);
 
                 await this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
@@ -194,15 +197,13 @@ class Orchestrator {
             let template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
             let extendedPipelineTemplate = await templateHelper.getTemplateParameters(this.inputs.azureSession, template.id);
             template.attributes = extendedPipelineTemplate.attributes;
-            template.inputs = extendedPipelineTemplate.inputs;
-            template.groups = extendedPipelineTemplate.groups;
-            template.dataSources = extendedPipelineTemplate.dataSources;
+            template.parameters = extendedPipelineTemplate.parameters;
             let controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this.context);
             this.inputs.pipelineConfiguration.params = await controlProvider.getAllPipelineTemplateInputs();
         }
         else if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS) {
             let templateParameterHelper = new TemplateParameterHelper();
-            let template = this.inputs.potentialTemplates[0] as LocalPipelineTemplate;
+            let template = this.inputs.pipelineConfiguration.template as LocalPipelineTemplate;
             await templateParameterHelper.setParameters(template.parameters, this.inputs);
         }
     }
@@ -222,8 +223,10 @@ class Orchestrator {
     private async getRepositoryAnalysis() {
         if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
             await this.getGithubPatToken();
-            return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
-                this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+            return await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+                return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
+                    this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+            }, TelemetryKeys.RepositoryAnalysisDuration);
         }
         return null;
     }
@@ -463,8 +466,8 @@ class Orchestrator {
     }
 
     private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysis): Promise<void> {
-        extensionVariables.templateServiceEnabled = false;
-        var appropriatePipelines: PipelineTemplate[] = [];
+        extensionVariables.templateServiceEnabled = true;
+        let appropriatePipelines: PipelineTemplate[] = [];
 
         if (!extensionVariables.templateServiceEnabled) {
             var localPipelines = await vscode.window.withProgress(
