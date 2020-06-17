@@ -1,10 +1,8 @@
 import { UrlBasedRequestPrepareOptions } from 'ms-rest';
 import { stringCompareFunction } from "../../helper/commonHelper";
 import { GitHubProvider } from "../../helper/gitHubHelper";
-import { SodiumLibHelper } from "../../helper/sodium/SodiumLibHelper";
 import { GitHubOrganization, GitHubRepo } from '../../model/models';
 import { RestClient } from "../restClient";
-const uuid = require('uuid/v4');
 
 const UserAgent = "deploy-to-azure-vscode";
 
@@ -21,7 +19,7 @@ export class GithubClient {
         this.listOrgPromise = this.listOrganizations();
     }
 
-    public createGithubRepo(orgName: string, repoName: string): Promise<void | GitHubRepo> {
+    public async createGithubRepo(orgName: string, repoName: string): Promise<void | GitHubRepo> {
         let restClient =new RestClient();
         let Url = "https://api.github.com/orgs/" + orgName + "/repos";
         try{
@@ -79,29 +77,6 @@ export class GithubClient {
         return this.listOrgPromise; 
     }
 
-    public async generateGitHubRepository(orgName: string, localPath: string): Promise<GitHubRepo | void>{
-        let repoName = localPath.substring(localPath.lastIndexOf("\\")+1);
-        let repoDetails = await this.createGithubRepo(orgName, repoName) as unknown as GitHubRepo | void;
-        if(repoDetails){
-            return repoDetails; 
-        }
-        repoName = repoName+"_"+orgName;
-        repoDetails = await this.createGithubRepo(orgName, repoName) as unknown as GitHubRepo | void;
-        if(repoDetails){
-            return repoDetails; 
-        }
-        return await this.createGithubRepo(orgName, repoName + "-" + uuid().substr(0,5));  
-    }
-
-    public async createOrUpdateGithubSecret(secretName: string, body: string): Promise < void> {
-    let secretKeyObject: GitHubSecretKey = await this._getGitHubSecretKey();
-    let sodiumObj = new SodiumLibHelper(secretKeyObject.key);
-    let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);
-    let encryptedBytesAsString: string = SodiumLibHelper.convertUint8ArrayToString(encryptedBytes);
-    let encryptedEncodedText = SodiumLibHelper.encodeToBase64(encryptedBytesAsString);
-    await this._setGithubSecret(secretName, secretKeyObject.key_id, encryptedEncodedText);
-}
-
     public async _getGitHubSecretKey() : Promise < GitHubSecretKey > {
     let request = <UrlBasedRequestPrepareOptions>{
         url: GitHubProvider.getFormattedGitHubApiUrlBase(this.url) + "/actions/secrets/public-key",
@@ -141,7 +116,7 @@ export class GithubClient {
 }
 }
 
-interface GitHubSecretKey {
+export interface GitHubSecretKey {
     key_id: string;
     key: string;
 }

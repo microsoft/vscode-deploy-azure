@@ -49,6 +49,6 @@
 			}
 		]
 	},
-	"defaultSeverity": "warning"
-	//"extends": ["tslint-microsoft-contrib/recommended", "tslint:recommended"]
+	"defaultSeverity": "warning",
+	"extends": ["tslint-microsoft-contrib/recommended", "tslint:recommended"]
 }

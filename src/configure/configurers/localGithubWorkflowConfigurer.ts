@@ -9,6 +9,7 @@ import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
 import { ApiVersions, AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { GithubClient } from '../clients/github/githubClient';
+import { createOrUpdateGithubSecret, generateGitHubRepository } from "../helper/commonHelper";
 import { ControlProvider } from '../helper/controlProvider';
 import { GitHubProvider } from '../helper/gitHubHelper';
 import { GraphHelper } from '../helper/graphHelper';
@@ -40,51 +41,44 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
         this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
-        try {
-            inputs.isNewOrganization = false;
-            if (!inputs.sourceRepository.remoteUrl) {
-                let githubOrganizations = await this.githubClient.listOrganizations();
+        inputs.isNewOrganization = false;
+        if (!inputs.sourceRepository.remoteUrl) {
+            let githubOrganizations = await this.githubClient.listOrganizations();
                
-                if ( githubOrganizations &&  githubOrganizations.length > 0) {
-                    let selectedOrganization = await this.controlProvider.showQuickPick(
-                        constants.SelectGitHubOrganization,
-                        githubOrganizations.map(x => { return { label: x.login }; }),
-                        { placeHolder: Messages.selectGitHubOrganizationName },
-                        TelemetryKeys.OrganizationListCount);
-                        inputs.organizationName = selectedOrganization.label;
+            if ( githubOrganizations &&  githubOrganizations.length > 0) {
+                let selectedOrganization = await this.controlProvider.showQuickPick(
+                    constants.SelectGitHubOrganization,
+                    githubOrganizations.map(x => { return { label: x.login }; }),
+                    { placeHolder: Messages.selectGitHubOrganizationName },
+                    TelemetryKeys.OrganizationListCount);
+                inputs.organizationName = selectedOrganization.label;
 
 
-                    let newGitHubRepo = await this.githubClient.generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath) as unknown as GitHubRepo | void;
-                    if(newGitHubRepo){
-                        inputs.sourceRepository.remoteName = newGitHubRepo.name;
-                        inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url+".git";
-                        inputs.sourceRepository.repositoryId = GitHubProvider.getRepositoryIdFromUrl(inputs.sourceRepository.remoteUrl);
-                        await this.localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl);
-                        vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated, newGitHubRepo.name));
-                    }
-                    else{
-                        vscode.window.showErrorMessage(Messages.cannotCreateGitHubRepository);
-                        throw Error;
-                    }
-                    
+                let newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient) as unknown as GitHubRepo | void;
+                if(newGitHubRepo){
+                    inputs.sourceRepository.remoteName = newGitHubRepo.name;
+                    inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url+".git";
+                    inputs.sourceRepository.repositoryId = GitHubProvider.getRepositoryIdFromUrl(inputs.sourceRepository.remoteUrl);
+                    await this.localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl);
+                    vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated, newGitHubRepo.name));
                 }
                 else{
-                    vscode.window.showErrorMessage(Messages.createGitHubOrganization);
-                    throw new Error(Messages.createGitHubOrganization);
-                }
+                    vscode.window.showErrorMessage(Messages.cannotCreateGitHubRepository);
+                    throw Error;
+                }        
+            }
+            else{
+                vscode.window.showErrorMessage(Messages.createGitHubOrganization);
+                let error = new Error(Messages.createGitHubOrganization);
+                telemetryHelper.logError(Layer, TracePoints.NoGitHubOrganizationExists, error);
+                throw error;
             }
         }
-        catch (error) {
-            telemetryHelper.logError(Layer, TracePoints.GetGitHubDetailsFailed, error);
-            throw error;
-        }
-        
     }
 
     public async validatePermissions(): Promise<void> {
         return;
     }
-
 
     public async createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
         if (inputs.targetResource && inputs.targetResource.resource && inputs.targetResource.resource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
@@ -149,7 +143,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
         }
 
         if (secret) {
-            await this.githubClient.createOrUpdateGithubSecret(name, secret);
+            await createOrUpdateGithubSecret(name, secret);
         }
 
         return name;

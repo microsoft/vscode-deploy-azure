@@ -353,7 +353,7 @@ class Orchestrator {
             remoteUrl: '',
             repositoryId: '',
             repositoryName: '',
-            repositoryProvider: RepositoryProvider.Github,
+            repositoryProvider: vscode.workspace.getConfiguration().get('deployToAzure.SetGitHubAsDefaultRepositoryProvider') ? RepositoryProvider.Github : RepositoryProvider.AzureRepos,
         };
     }
 
