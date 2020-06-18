@@ -25,12 +25,12 @@ export class RepoAnalysisSettingInputProvider {
         let repoAnalysisSettingKey = inputControl.getPropertyValue(this.repoAnalysisSettingKey);
         if (this._selectedRepoAnalysisSettingIndex !== -1) {
             if (!this._repoAnalysisSettings[this._selectedRepoAnalysisSettingIndex].settings[repoAnalysisSettingKey]) {
+                let error = new Error(`RepostioryAnalysisSetting doesn't contain ${repoAnalysisSettingKey} for input ${inputControl.getInputControlId()}`);
+                telemetryHelper.logError(Layer, TracePoints.SetInputControlValueFromRepoAnalysisResult, error);
                 if (inputControl.getInputDescriptor().defaultValue) {
                     let value = inputControl.getInputDescriptor().defaultValue;
                     inputControl.setValue(value);
                 } else {
-                    let error = new Error(`RepostioryAnalysisSetting doesn't contain ${repoAnalysisSettingKey} for input ${inputControl.getInputControlId()}`);
-                    telemetryHelper.logError(Layer, TracePoints.SetInputControlValueFromRepoAnalysisResult, error);
                     let value = await new ControlProvider().showInputBox(repoAnalysisSettingKey, {
                         placeHolder: inputControl.getInputDescriptor().name,
                         validateInput: value => inputControl.triggerControlValueValidations(value)
