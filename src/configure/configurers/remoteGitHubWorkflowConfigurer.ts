@@ -1,6 +1,7 @@
 import * as Path from 'path';
 import * as utils from 'util';
 import * as vscode from 'vscode';
+import { AppServiceClient } from '../clients/azure/appServiceClient';
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { GithubClient } from '../clients/github/githubClient';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
@@ -8,7 +9,7 @@ import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { MustacheHelper } from '../helper/mustacheHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { Asset, ConfigurationStage, ExtendedInputDescriptor, InputDataType } from "../model/Contracts";
-import { AzureSession, StringMap, WizardInputs } from "../model/models";
+import { AzureSession, ParsedAzureResourceId, StringMap, WizardInputs } from "../model/models";
 import { RemotePipelineTemplate } from "../model/templateModels";
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
@@ -167,6 +168,30 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                         let nodeVersion: string = asset.inputs["webAppRuntimeNodeVersion"];
                         const armUri = "/providers/Microsoft.Web/availableStacks?osTypeSelected=Windows&api-version=2019-08-01";
                         this.assets[asset.id] = await nodeVersionConverter.webAppRuntimeNodeVersionConverter(nodeVersion, armUri, this.azureSession);
+                    }
+                    break;
+                case "PublishProfile":
+                    {
+                        let resourceId = asset.inputs["resourceId"];
+                        let parsedResourceId = new ParsedAzureResourceId(resourceId);
+                        let subscriptionId = parsedResourceId.subscriptionId;
+                        
+                        this.assets[asset.id] = await vscode.window.withProgress(
+                            {
+                                location: vscode.ProgressLocation.Notification,
+                                title: utils.format(Messages.creatingAzureServiceConnection, subscriptionId)
+                            },
+                            async () => {
+                                try {
+                                    // find LCS of all azure resource params
+                                    let appServiceClient = new AppServiceClient(this.azureSession.credentials, this.azureSession.environment, this.azureSession.tenantId, subscriptionId);
+                                    return await appServiceClient.getWebAppPublishProfileXml(resourceId);         
+                                }
+                                catch (error) {
+                                    telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
+                                    throw error;
+                                }
+                            });
                     }
                     break;
                 default:
