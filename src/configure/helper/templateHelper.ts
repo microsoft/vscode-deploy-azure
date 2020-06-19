@@ -203,7 +203,7 @@ export async function getTemplateParameters(azureSession: AzureSession, template
         return parameters;
     }
     catch (e) {
-        telemetryHelper.logError(Layer, TracePoints.GetTemplateParameters, e);
+        telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateParameters, e);
         throw new Error(Messages.UnableToGetTemplateParameters);
     }
 

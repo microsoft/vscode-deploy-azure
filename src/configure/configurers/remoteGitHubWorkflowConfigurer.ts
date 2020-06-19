@@ -49,7 +49,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         try {
             var extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
         } catch (error) {
-            telemetryHelper.logError(Layer, TracePoints.GetTemplateConfiguration, error);
+            telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateConfiguration, error);
         }
 
         this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
@@ -218,7 +218,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             }
             throw new Error(utils.format(Messages.templateFileNotFound, fileName));
         } catch (error) {
-            telemetryHelper.logError(Layer, TracePoints.GetTemplateFile, error);
+            telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateFile, error);
             throw error;
         }
     }
