@@ -28,6 +28,7 @@ const Layer: string = "RemoteGitHubWorkflowConfigurer";
 export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigurer {
     private azureSession: AzureSession;
     private assets: { [key: string]: any } = {};
+    private inputs: WizardInputs;
     private secrets: { [key: string]: any } = {};
     private variables: { [key: string]: any } = {};
     private system: { [key: string]: any } = {};
@@ -43,12 +44,13 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         this.localGitHelper = localGitHelper;
     }
 
-    public async getInputs(inputs: WizardInputs): Promise<void> {
-        this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
-        this.templateServiceClient = new TemplateServiceClient(inputs.azureSession.credentials);
-        this.template = inputs.pipelineConfiguration.template as RemotePipelineTemplate;
-        let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
-        
+    public async getInputs(wizardInputs: WizardInputs): Promise<void> {
+        this.inputs = wizardInputs;
+        this.githubClient = new GithubClient(wizardInputs.githubPATToken, wizardInputs.sourceRepository.remoteUrl);
+        this.templateServiceClient = new TemplateServiceClient(wizardInputs.azureSession.credentials);
+        this.template = wizardInputs.pipelineConfiguration.template as RemotePipelineTemplate;
+        let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, wizardInputs.pipelineConfiguration.params);
+
         this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
         this.template.configuration.assets.forEach((asset: Asset) => {
@@ -57,10 +59,10 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             }
         });
 
-        this.system["sourceRepository"] = inputs.sourceRepository;
+        this.system["sourceRepository"] = wizardInputs.sourceRepository;
 
         this.mustacheContext = {
-            inputs: inputs.pipelineConfiguration.params,
+            inputs: wizardInputs.pipelineConfiguration.params,
             variables: this.variables,
             assets: this.assets,
             secrets: this.secrets,
@@ -75,18 +77,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     }
 
     public async createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient) {
-        await vscode.window.withProgress(
-            {
-                location: vscode.ProgressLocation.Notification,
-                title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
-            },
-            async () => {
-                for (var input of this.template.parameters.inputs) {
-                    if (input.type === InputDataType.Authorization && input.id !== "azureDevOpsAuth") {
-                        inputs.pipelineConfiguration.params[input.id] = await this.createAzureSPN(input, inputs);
-                    }
-                }
-            });
+        return null;
     }
 
     public async createAssets(stage: ConfigurationStage = ConfigurationStage.Pre) {
@@ -120,9 +111,18 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     private async createAssetInternal(asset: Asset): Promise<void> {
         if (!!asset) {
             switch (asset.type) {
-                case "AzureCredentials":
-                    let azureCreds = asset.inputs["azureAuth"];
-                    this.assets[asset.id] = azureCreds;
+                case "AzureCredentials:SPN":
+                    const subscriptionId = this.inputs.subscriptionId;
+                    this.assets[asset.id] = await vscode.window.withProgress(
+                        {
+                            location: vscode.ProgressLocation.Notification,
+                            title: utils.format(Messages.creatingAzureServiceConnection, subscriptionId)
+                        },
+                        async () => {
+                            const inputDescriptor = this.template.parameters.inputs.find((value) => (value.type === InputDataType.Authorization && value.id === "azureAuth"));
+                            const scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", this.inputs.pipelineConfiguration.params);
+                            return this.getAzureSPNSecret(this.inputs, scope);
+                        });
                     break;
                 case "SetGHSecret":
                     let secretKey: string = asset.inputs["secretKey"];
@@ -170,12 +170,12 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                         this.assets[asset.id] = await nodeVersionConverter.webAppRuntimeNodeVersionConverter(nodeVersion, armUri, this.azureSession);
                     }
                     break;
-                case "PublishProfile":
+                case "AzureCredentials:PublishProfile":
                     {
                         let resourceId = asset.inputs["resourceId"];
                         let parsedResourceId = new ParsedAzureResourceId(resourceId);
                         let subscriptionId = parsedResourceId.subscriptionId;
-                        
+
                         this.assets[asset.id] = await vscode.window.withProgress(
                             {
                                 location: vscode.ProgressLocation.Notification,
@@ -185,7 +185,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                                 try {
                                     // find LCS of all azure resource params
                                     let appServiceClient = new AppServiceClient(this.azureSession.credentials, this.azureSession.environment, this.azureSession.tenantId, subscriptionId);
-                                    return await appServiceClient.getWebAppPublishProfileXml(resourceId);         
+                                    return await appServiceClient.getWebAppPublishProfileXml(resourceId);
                                 }
                                 catch (error) {
                                     telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
