@@ -24,7 +24,6 @@ export class TelemetryKeys {
     public static DisplayWorkflow = 'displayWorkflow';
     public static UnsupportedLanguage = 'unsupportedLanguage';
     public static RepositoryAnalysisFailed = 'repositoryAnalysisFailed';
-    public static TemplateNotFound = 'templateNotFound';
     public static SelectedTemplate = 'selectedTemplate';
     public static SelectedTemplateType = 'selectedTemplateType';
     public static WorkflowFileName = 'workflowFileName';

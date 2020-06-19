@@ -28,4 +28,5 @@ export class TracePoints {
     public static GetRepoAnalysis = 'GetRepoAnalysis';
     public static GetTemplateParameters = 'GetTemplateParameters';
     public static GetTemplateConfiguration = 'getTemplateConfiguration';
+    public static SelectTemplate = 'SelectTemplate';
 }

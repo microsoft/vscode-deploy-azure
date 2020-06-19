@@ -147,7 +147,7 @@ class Orchestrator {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates[0];
                 }
                 else {
-                    telemetryHelper.setTelemetry(TelemetryKeys.TemplateNotFound, Messages.TemplateNotFound);
+                    telemetryHelper.logError(Layer, TracePoints.SelectTemplate, new Error(Messages.TemplateNotFound));
                     throw new Error(Messages.TemplateNotFound);
                 }
                 break;
