@@ -128,6 +128,8 @@ class Orchestrator {
     private async getAzureResource(targetType: TargetResourceType) {
         var azureResourceSelector = ResourceSelectorFactory.getAzureResourceSelector(targetType);
         this.inputs.targetResource.resource = await azureResourceSelector.getAzureResource(this.inputs);
+        telemetryHelper.setTelemetry(TelemetryKeys.resourceType, this.inputs.targetResource.resource.type);
+        telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, this.inputs.targetResource.resource.kind);
     }
 
     private async selectTemplate(resource: GenericResource): Promise<void> {
@@ -145,6 +147,7 @@ class Orchestrator {
                     this.inputs.pipelineConfiguration.template = shortlistedTemplates[0];
                 }
                 else {
+                    telemetryHelper.logError(Layer, TracePoints.TemplateNotFound, new Error(Messages.TemplateNotFound + " RepoId: " + this.inputs.sourceRepository.repositoryId));
                     throw new Error(Messages.TemplateNotFound);
                 }
                 break;
@@ -171,10 +174,13 @@ class Orchestrator {
                 else {
                     this.context['rightClickScenario'] = true;
                 }
+
                 if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
                     this.context['resourceId'] = this.inputs.targetResource.resource.id;
                 }
                 this.selectTemplate(this.inputs.targetResource.resource);
+                telemetryHelper.setTelemetry(TelemetryKeys.SelectedTemplate, this.inputs.pipelineConfiguration.template.label);
+                telemetryHelper.setTelemetry(TelemetryKeys.SelectedTemplateType, (this.inputs.pipelineConfiguration.template.templateType).toString());
 
                 await this.updateRepositoryAnalysisApplicationSettings(repoAnalysisResult);
 
@@ -493,6 +499,10 @@ class Orchestrator {
         }
         let pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
         let pipelineLabels = Array.from(pipelineMap.keys());
+        if (pipelineLabels.length === 0) {
+            telemetryHelper.setTelemetry(TelemetryKeys.UnsupportedLanguage, Messages.languageNotSupported);
+            throw new Error(Messages.languageNotSupported);
+        }
 
         // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
         if (pipelineLabels.length > 1) {

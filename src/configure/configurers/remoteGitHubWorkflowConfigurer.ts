@@ -44,13 +44,15 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         this.localGitHelper = localGitHelper;
     }
 
-    public async getInputs(wizardInputs: WizardInputs): Promise<void> {
-        this.inputs = wizardInputs;
-        this.githubClient = new GithubClient(wizardInputs.githubPATToken, wizardInputs.sourceRepository.remoteUrl);
-        this.templateServiceClient = new TemplateServiceClient(wizardInputs.azureSession.credentials);
-        this.template = wizardInputs.pipelineConfiguration.template as RemotePipelineTemplate;
-        let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, wizardInputs.pipelineConfiguration.params);
-
+    public async getInputs(inputs: WizardInputs): Promise<void> {
+        this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
+        this.templateServiceClient = new TemplateServiceClient(inputs.azureSession.credentials);
+        this.template = inputs.pipelineConfiguration.template as RemotePipelineTemplate;
+        try {
+        let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
+        } catch (error) {
+        telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateConfiguration, error);
+        }
         this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
         this.template.configuration.assets.forEach((asset: Asset) => {
@@ -239,7 +241,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             }
             throw new Error(utils.format(Messages.templateFileNotFound, fileName));
         } catch (error) {
-            telemetryHelper.logError(Layer, TracePoints.GetTemplateFile, error);
+            telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateFile, error);
             throw error;
         }
     }
