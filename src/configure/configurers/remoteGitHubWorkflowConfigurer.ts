@@ -44,14 +44,16 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         this.localGitHelper = localGitHelper;
     }
 
-    public async getInputs(inputs: WizardInputs): Promise<void> {
-        this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
-        this.templateServiceClient = new TemplateServiceClient(inputs.azureSession.credentials);
-        this.template = inputs.pipelineConfiguration.template as RemotePipelineTemplate;
+    public async getInputs(wizardInputs: WizardInputs): Promise<void> {
+        this.inputs = wizardInputs;
+        this.githubClient = new GithubClient(wizardInputs.githubPATToken, wizardInputs.sourceRepository.remoteUrl);
+        this.templateServiceClient = new TemplateServiceClient(wizardInputs.azureSession.credentials);
+        this.template = wizardInputs.pipelineConfiguration.template as RemotePipelineTemplate;
+        let extendedPipelineTemplate;
         try {
-        let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
+            extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, wizardInputs.pipelineConfiguration.params);
         } catch (error) {
-        telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateConfiguration, error);
+            telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateConfiguration, error);
         }
         this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
