@@ -1,6 +1,7 @@
 import * as Path from 'path';
 import * as utils from 'util';
 import * as vscode from 'vscode';
+import { AppServiceClient } from '../clients/azure/appServiceClient';
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { GithubClient } from '../clients/github/githubClient';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
@@ -8,7 +9,7 @@ import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { MustacheHelper } from '../helper/mustacheHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { Asset, ConfigurationStage, ExtendedInputDescriptor, InputDataType } from "../model/Contracts";
-import { AzureSession, StringMap, WizardInputs } from "../model/models";
+import { AzureSession, ParsedAzureResourceId, StringMap, WizardInputs } from "../model/models";
 import { RemotePipelineTemplate } from "../model/templateModels";
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
@@ -27,6 +28,7 @@ const Layer: string = "RemoteGitHubWorkflowConfigurer";
 export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigurer {
     private azureSession: AzureSession;
     private assets: { [key: string]: any } = {};
+    private inputs: WizardInputs;
     private secrets: { [key: string]: any } = {};
     private variables: { [key: string]: any } = {};
     private system: { [key: string]: any } = {};
@@ -46,8 +48,11 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
         this.templateServiceClient = new TemplateServiceClient(inputs.azureSession.credentials);
         this.template = inputs.pipelineConfiguration.template as RemotePipelineTemplate;
+        try {
         let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
-        
+        } catch (error) {
+        telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateConfiguration, error);
+        }
         this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
         this.template.configuration.assets.forEach((asset: Asset) => {
@@ -56,10 +61,10 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             }
         });
 
-        this.system["sourceRepository"] = inputs.sourceRepository;
+        this.system["sourceRepository"] = wizardInputs.sourceRepository;
 
         this.mustacheContext = {
-            inputs: inputs.pipelineConfiguration.params,
+            inputs: wizardInputs.pipelineConfiguration.params,
             variables: this.variables,
             assets: this.assets,
             secrets: this.secrets,
@@ -74,18 +79,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     }
 
     public async createPreRequisites(inputs: WizardInputs, azureResourceClient: AzureResourceClient) {
-        await vscode.window.withProgress(
-            {
-                location: vscode.ProgressLocation.Notification,
-                title: utils.format(Messages.creatingAzureServiceConnection, inputs.subscriptionId)
-            },
-            async () => {
-                for (var input of this.template.parameters.inputs) {
-                    if (input.type === InputDataType.Authorization && input.id !== "azureDevOpsAuth") {
-                        inputs.pipelineConfiguration.params[input.id] = await this.createAzureSPN(input, inputs);
-                    }
-                }
-            });
+        return null;
     }
 
     public async createAssets(stage: ConfigurationStage = ConfigurationStage.Pre) {
@@ -119,9 +113,18 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     private async createAssetInternal(asset: Asset): Promise<void> {
         if (!!asset) {
             switch (asset.type) {
-                case "AzureCredentials":
-                    let azureCreds = asset.inputs["azureAuth"];
-                    this.assets[asset.id] = azureCreds;
+                case "AzureCredentials:SPN":
+                    const subscriptionId = this.inputs.subscriptionId;
+                    this.assets[asset.id] = await vscode.window.withProgress(
+                        {
+                            location: vscode.ProgressLocation.Notification,
+                            title: utils.format(Messages.creatingAzureServiceConnection, subscriptionId)
+                        },
+                        async () => {
+                            const inputDescriptor = this.template.parameters.inputs.find((value) => (value.type === InputDataType.Authorization && value.id === "azureAuth"));
+                            const scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", this.inputs.pipelineConfiguration.params);
+                            return this.getAzureSPNSecret(this.inputs, scope);
+                        });
                     break;
                 case "SetGHSecret":
                     let secretKey: string = asset.inputs["secretKey"];
@@ -169,6 +172,30 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                         this.assets[asset.id] = await nodeVersionConverter.webAppRuntimeNodeVersionConverter(nodeVersion, armUri, this.azureSession);
                     }
                     break;
+                case "AzureCredentials:PublishProfile":
+                    {
+                        let resourceId = asset.inputs["resourceId"];
+                        let parsedResourceId = new ParsedAzureResourceId(resourceId);
+                        let subscriptionId = parsedResourceId.subscriptionId;
+
+                        this.assets[asset.id] = await vscode.window.withProgress(
+                            {
+                                location: vscode.ProgressLocation.Notification,
+                                title: utils.format(Messages.creatingAzureServiceConnection, subscriptionId)
+                            },
+                            async () => {
+                                try {
+                                    // find LCS of all azure resource params
+                                    let appServiceClient = new AppServiceClient(this.azureSession.credentials, this.azureSession.environment, this.azureSession.tenantId, subscriptionId);
+                                    return await appServiceClient.getWebAppPublishProfileXml(resourceId);
+                                }
+                                catch (error) {
+                                    telemetryHelper.logError(Layer, TracePoints.AzurePublishProfileCreationFailure, error);
+                                    throw error;
+                                }
+                            });
+                    }
+                    break;
                 default:
                     throw new Error(utils.format(Messages.assetOfTypeNotSupported, asset.type));
             }
@@ -214,7 +241,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             }
             throw new Error(utils.format(Messages.templateFileNotFound, fileName));
         } catch (error) {
-            telemetryHelper.logError(Layer, TracePoints.GetTemplateFile, error);
+            telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateFile, error);
             throw error;
         }
     }
