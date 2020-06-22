@@ -8,7 +8,7 @@ import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { MustacheHelper } from '../helper/mustacheHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
-import { Asset, ConfigurationStage, ExtendedInputDescriptor, InputDataType } from "../model/Contracts";
+import { Asset, ConfigurationStage, InputDataType } from "../model/Contracts";
 import { AzureSession, ParsedAzureResourceId, StringMap, WizardInputs } from "../model/models";
 import { RemotePipelineTemplate } from "../model/templateModels";
 import { Messages } from '../resources/messages';
@@ -223,12 +223,6 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             path: workFlowFileName,
             content: workflowFileContent
         }
-    }
-
-    private async createAzureSPN(inputDescriptor: ExtendedInputDescriptor, inputs: WizardInputs) {
-        let scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", inputs.pipelineConfiguration.params)
-        return this.getAzureSPNSecret(inputs, scope);
-
     }
 
     private async getTemplateFile(fileName: string): Promise<string> {
