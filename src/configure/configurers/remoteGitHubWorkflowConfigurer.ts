@@ -54,6 +54,8 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, wizardInputs.pipelineConfiguration.params);
         } catch (error) {
             telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateConfiguration, error);
+            throw error;
+            
         }
         this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
@@ -94,7 +96,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                         await this.createAssetInternal(asset);
                     }
                     catch (error) {
-                        telemetryHelper.logError(Layer, TracePoints.AssetCreationFailure, error)
+                        telemetryHelper.logError(Layer, TracePoints.AssetCreationFailure, error);
                         throw error;
                     }
                 }
