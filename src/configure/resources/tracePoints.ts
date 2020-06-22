@@ -24,5 +24,6 @@ export class TracePoints {
     public static InitializeDynamicValidation = 'InitializeDynamicValidation';
     public static SetInputControlValueFromRepoAnalysisResult = 'setInputControlValueFromRepoAnalysisResult';
     public static TemplateServiceCallFailed = 'TemplateServiceCallFailed';
-    public static GetTemplateFile = 'GetTemplateFile'
+    public static GetTemplateFile = 'GetTemplateFile';
+    public static AzurePublishProfileCreationFailure = 'AzurePublishProfileCreationFailure';
 }

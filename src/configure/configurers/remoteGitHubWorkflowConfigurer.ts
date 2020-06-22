@@ -188,7 +188,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                                     return await appServiceClient.getWebAppPublishProfileXml(resourceId);
                                 }
                                 catch (error) {
-                                    telemetryHelper.logError(Layer, TracePoints.AzureServiceConnectionCreateFailure, error);
+                                    telemetryHelper.logError(Layer, TracePoints.AzurePublishProfileCreationFailure, error);
                                     throw error;
                                 }
                             });
