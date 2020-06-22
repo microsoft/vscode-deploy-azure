@@ -29,4 +29,5 @@ export class TracePoints {
     public static UnableToGetTemplateParameters = 'UnableToGetTemplateParameters';
     public static UnableToGetTemplateConfiguration = 'UnableToGetTemplateConfiguration';
     public static TemplateNotFound = 'TemplateNotFound';
+    public static AzurePublishProfileCreationFailure = 'AzurePublishProfileCreationFailure';
 }
