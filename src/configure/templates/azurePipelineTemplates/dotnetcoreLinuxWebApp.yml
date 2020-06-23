@@ -23,10 +23,10 @@ variables:
   buildConfiguration: 'Release'
 
   # Build Projects
-  buildProjects: "$(workingDirectory)/**/*.csproj"
+  buildProjects: "{{#equals}}{{{ workingDirectory }}} '.' true '**/*.csproj' '$(workingDirectory)/**/*.csproj'{{/equals}}"
 
   # Test Projects
-  testProjects: "$(workingDirectory)/**/*[Tt]est*/*.csproj"
+  testProjects: "{{#equals}}{{{ workingDirectory }}} '.' true '**/*[Tt]est*/*.csproj' '$(workingDirectory)/**/*[Tt]est*/*.csproj'{{/equals}}"
 
   # Dotnet Core Version
   dotnetCoreVersion: 2.x

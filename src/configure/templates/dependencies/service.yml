@@ -8,7 +8,7 @@ spec:
     type: LoadBalancer
     ports:
     - port: {{{ inputs.containerPort }}}
-      targetPort: http
+      targetPort: {{{ inputs.containerPort }}}
       protocol: TCP
       name: http
     selector:

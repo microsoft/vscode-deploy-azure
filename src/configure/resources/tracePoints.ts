@@ -26,4 +26,10 @@ export class TracePoints {
     public static GetTemplateFile = 'GetTemplateFile';
     public static NoGitHubOrganizationExists = 'NoGitHubOrganizationExists';
     public static TemplateServiceCallFailed = 'TemplateServiceCallFailed';
+    public static UnableToGetTemplateFile = 'UnableToGetTemplateFile';
+    public static RepoAnalysisFailed = 'RepoAnalysisFailed';
+    public static UnableToGetTemplateParameters = 'UnableToGetTemplateParameters';
+    public static UnableToGetTemplateConfiguration = 'UnableToGetTemplateConfiguration';
+    public static TemplateNotFound = 'TemplateNotFound';
+    public static AzurePublishProfileCreationFailure = 'AzurePublishProfileCreationFailure';
 }
