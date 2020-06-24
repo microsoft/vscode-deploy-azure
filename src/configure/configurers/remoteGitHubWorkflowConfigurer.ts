@@ -8,7 +8,7 @@ import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { MustacheHelper } from '../helper/mustacheHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
-import { Asset, ConfigurationStage, ExtendedInputDescriptor, InputDataType } from "../model/Contracts";
+import { Asset, ConfigurationStage, InputDataType } from "../model/Contracts";
 import { AzureSession, ParsedAzureResourceId, StringMap, WizardInputs } from "../model/models";
 import { RemotePipelineTemplate } from "../model/templateModels";
 import { Messages } from '../resources/messages';
@@ -44,14 +44,18 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         this.localGitHelper = localGitHelper;
     }
 
-    public async getInputs(inputs: WizardInputs): Promise<void> {
-        this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
-        this.templateServiceClient = new TemplateServiceClient(inputs.azureSession.credentials);
-        this.template = inputs.pipelineConfiguration.template as RemotePipelineTemplate;
+    public async getInputs(wizardInputs: WizardInputs): Promise<void> {
+        this.inputs = wizardInputs;
+        this.githubClient = new GithubClient(wizardInputs.githubPATToken, wizardInputs.sourceRepository.remoteUrl);
+        this.templateServiceClient = new TemplateServiceClient(wizardInputs.azureSession.credentials);
+        this.template = wizardInputs.pipelineConfiguration.template as RemotePipelineTemplate;
+        let extendedPipelineTemplate;
         try {
-        let extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, inputs.pipelineConfiguration.params);
+            extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, wizardInputs.pipelineConfiguration.params);
         } catch (error) {
-        telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateConfiguration, error);
+            telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateConfiguration, error);
+            throw error;
+            
         }
         this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
@@ -92,7 +96,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                         await this.createAssetInternal(asset);
                     }
                     catch (error) {
-                        telemetryHelper.logError(Layer, TracePoints.AssetCreationFailure, error)
+                        telemetryHelper.logError(Layer, TracePoints.AssetCreationFailure, error);
                         throw error;
                     }
                 }
@@ -221,12 +225,6 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             path: workFlowFileName,
             content: workflowFileContent
         }
-    }
-
-    private async createAzureSPN(inputDescriptor: ExtendedInputDescriptor, inputs: WizardInputs) {
-        let scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", inputs.pipelineConfiguration.params)
-        return this.getAzureSPNSecret(inputs, scope);
-
     }
 
     private async getTemplateFile(fileName: string): Promise<string> {
