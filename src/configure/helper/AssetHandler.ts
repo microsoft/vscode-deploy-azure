@@ -163,7 +163,7 @@ export class AssetHandler {
      */
     public static getSanitizedUniqueAssetName(assetName: string): string {
         assetName = assetName + "_" + UniqueResourceNameSuffix;
-        assetName = assetName.replace(/\W/, '');
+        assetName = assetName.replace(/\W/g, '');
         return assetName;
     }
 }

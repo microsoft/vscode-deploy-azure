@@ -15,6 +15,7 @@ import { TracePoints } from '../resources/tracePoints';
 import { MustacheHelper } from './mustacheHelper';
 import { telemetryHelper } from './telemetryHelper';
 
+const Layer: string = 'templateHelper';
 export async function mergingRepoAnalysisResults(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis): Promise<AnalysisResult> {
     let localRepoAnalysisResult = await analyzeRepo(repoPath);
     let analysisResult = localRepoAnalysisResult;
@@ -179,7 +180,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
         }
         catch (err) {
             pipelineTemplates = [];
-            telemetryHelper.logError('TemplateHelper', TracePoints.TemplateServiceCallFailed, err);
+            telemetryHelper.logError(Layer, TracePoints.TemplateServiceCallFailed, err);
         }
         pipelineTemplates = pipelineTemplates.concat(localPipelineTemplates);
         // sorted by weight
@@ -196,9 +197,16 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
 
 export async function getTemplateParameters(azureSession: AzureSession, templateId: string): Promise<ExtendedPipelineTemplate> {
     let parameters: ExtendedPipelineTemplate;
-    let serviceClient = new TemplateServiceClient(azureSession.credentials);
-    parameters = await serviceClient.getTemplateParameters(templateId);
-    return parameters;
+    try {
+        let serviceClient = new TemplateServiceClient(azureSession.credentials);
+        parameters = await serviceClient.getTemplateParameters(templateId);
+        return parameters;
+    }
+    catch (e) {
+        telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateParameters, e);
+        throw new Error(Messages.UnableToGetTemplateParameters);
+    }
+
 }
 
 export function getPipelineTemplatesForAllWebAppKind(repositoryProvider: RepositoryProvider, label: string, language: string, targetKind: TargetKind): LocalPipelineTemplate[] {
@@ -262,7 +270,7 @@ export function getDockerPort(repoPath: string, relativeDockerFilePath?: string)
         return null;
     }
     catch (err) {
-        telemetryHelper.logError('TemplateHelper', TracePoints.ReadingDockerFileFailed, err);
+        telemetryHelper.logError(Layer, TracePoints.ReadingDockerFileFailed, err);
     }
 
     return null;
