@@ -3,18 +3,20 @@ import { ServiceClientCredentials } from "ms-rest";
 import { ExtendedPipelineTemplate } from "../../model/Contracts";
 import { StringMap } from "../../model/models";
 import { TemplateInfo } from "../../model/templateModels";
+import { ITemplateServiceClient } from "../ITemplateServiceClient";
 import { RestClient } from "../restClient";
 
-export class TemplateServiceClient {
+export class PortalExtensionTemplateServiceClient implements ITemplateServiceClient {
     private restClient: RestClient;
-    private readonly templateServiceUri: string = "https://pepfcusc.portalext.visualstudio.com/_apis/TemplateService/";
+    private templateServiceUri: string;
     private readonly apiVersion = "6.0-preview.1";
     private readonly extendedPipelineTemplateResource = "ExtendedPipelineTemplates";
     private readonly templatesInfoResource = "TemplatesInfo";
     private readonly templateAssetFilesResource = "TemplateAssetFiles";
 
-    constructor(credentials: ServiceClientCredentials) {
+    constructor(url: string, credentials: ServiceClientCredentials) {
         this.restClient = new RestClient(credentials);
+        this.templateServiceUri = url;
     }
 
     public async getTemplates(body: RepositoryAnalysis): Promise<TemplateInfo[]> {

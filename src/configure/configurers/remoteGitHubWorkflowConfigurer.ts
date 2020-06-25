@@ -4,7 +4,8 @@ import * as vscode from 'vscode';
 import { AppServiceClient } from '../clients/azure/appServiceClient';
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { GithubClient } from '../clients/github/githubClient';
-import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
+import { ITemplateServiceClient } from '../clients/ITemplateServiceClient';
+import { TemplateServiceClientFactory } from '../clients/TemplateServiceClientFactory';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { MustacheHelper } from '../helper/mustacheHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
@@ -36,7 +37,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     private mustacheContext: StringMap<any>;
     private template: RemotePipelineTemplate;
     private localGitHelper: LocalGitRepoHelper;
-    private templateServiceClient: TemplateServiceClient;
+    private templateServiceClient: ITemplateServiceClient;
 
     constructor(azureSession: AzureSession, subscriptionId: string, localGitHelper: LocalGitRepoHelper) {
         super(azureSession, subscriptionId);
@@ -47,15 +48,15 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     public async getInputs(wizardInputs: WizardInputs): Promise<void> {
         this.inputs = wizardInputs;
         this.githubClient = new GithubClient(wizardInputs.githubPATToken, wizardInputs.sourceRepository.remoteUrl);
-        this.templateServiceClient = new TemplateServiceClient(wizardInputs.azureSession.credentials);
+        this.templateServiceClient = await TemplateServiceClientFactory.getClient(wizardInputs.azureSession.credentials);
         this.template = wizardInputs.pipelineConfiguration.template as RemotePipelineTemplate;
         let extendedPipelineTemplate;
         try {
-            extendedPipelineTemplate = await new TemplateServiceClient(this.azureSession.credentials).getTemplateConfiguration(this.template.id, wizardInputs.pipelineConfiguration.params);
+            extendedPipelineTemplate = await this.templateServiceClient.getTemplateConfiguration(this.template.id, wizardInputs.pipelineConfiguration.params);
         } catch (error) {
             telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateConfiguration, error);
             throw error;
-            
+
         }
         this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
