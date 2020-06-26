@@ -165,6 +165,8 @@ export const SetupAlreadyExists = 'SetupAlreadyExists';
 export const Browse = 'Browse';
 export const TargetResource = 'targetResource';
 export const ResourceDynamicValidationFailure = 'ResourceDynamicValidationFailure';
+export const EnterGithubRepositoryName = 'EnterGithubRepositoryName';
+export const SelectGitHubOrganization = 'selectGitHubOrganization';
 
 //RepoAnalysis constants expected in response of Repository Analysis Service
 export const RepoAnalysisConstants = {

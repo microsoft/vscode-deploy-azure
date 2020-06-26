@@ -1,7 +1,12 @@
 import Q = require('q');
 import * as util from 'util';
 import * as logger from '../../logger';
+import { GithubClient, GitHubSecretKey } from '../clients/github/githubClient';
+import { GitHubRepo } from '../model/models';
 import { Messages } from '../resources/messages';
+import { SodiumLibHelper } from './sodium/SodiumLibHelper';
+
+const uuid = require('uuid/v4');
 
 export async function sleepForMilliSeconds(timeInMs: number): Promise<void> {
     return new Promise((resolve) => {
@@ -9,6 +14,32 @@ export async function sleepForMilliSeconds(timeInMs: number): Promise<void> {
             resolve();
         }, timeInMs);
     });
+}
+
+export async function createOrUpdateGithubSecret(secretName: string, body: string): Promise < void> {
+    let secretKeyObject: GitHubSecretKey = await this._getGitHubSecretKey();
+    let sodiumObj = new SodiumLibHelper(secretKeyObject.key);
+    let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);
+    let encryptedBytesAsString: string = SodiumLibHelper.convertUint8ArrayToString(encryptedBytes);
+    let encryptedEncodedText = SodiumLibHelper.encodeToBase64(encryptedBytesAsString);
+    await this._setGithubSecret(secretName, secretKeyObject.key_id, encryptedEncodedText);
+}
+
+export async function generateGitHubRepository(orgName: string, localPath: string, githubClient: GithubClient): Promise<GitHubRepo | void>{
+    let repoName = localPath.substring(localPath.lastIndexOf("\\") + 1);
+    let repoDetails = await githubClient.createGithubRepo(orgName, repoName) as GitHubRepo | void;
+    // Case : GitHub Repository name is same as the local repo
+    if(repoDetails){
+        return repoDetails; 
+    }
+    //Case: Local repository name is not available, therefore organization name has been appended
+    repoName = repoName + "_" + orgName;
+    repoDetails = await githubClient.createGithubRepo(orgName, repoName) as GitHubRepo | void;
+    if(repoDetails){
+        return repoDetails; 
+    }
+    //Case: If the above two repository names are not available, uuid is also appended
+    return await githubClient.createGithubRepo(orgName, repoName + "-" + uuid().substr(0,5));  
 }
 
 export function generateDevOpsOrganizationName(userName: string, repositoryName: string): string {
