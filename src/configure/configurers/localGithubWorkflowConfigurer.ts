@@ -7,6 +7,7 @@ import * as utils from 'util';
 import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
+import { ArmRestClient } from '../clients/azure/armRestClient';
 import { ApiVersions, AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { GithubClient } from '../clients/github/githubClient';
 import { GraphHelper } from '../helper/graphHelper';
@@ -54,7 +55,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                             case AzureConnectionType.None:
                                 return null;
                             case AzureConnectionType.AzureRMPublishProfile:
-                                return await (azureResourceClient as AppServiceClient).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
+                                return await new ArmRestClient(inputs.azureSession).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
                             case AzureConnectionType.AzureRMServicePrincipal:
                             default:
                                 return await this.getAzureSPNSecret(inputs);

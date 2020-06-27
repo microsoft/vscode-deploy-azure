@@ -1,6 +1,5 @@
 import * as utils from 'util';
 import * as vscode from 'vscode';
-import { AppServiceClient } from '../clients/azure/appServiceClient';
 import { ArmRestClient } from '../clients/azure/armRestClient';
 import { UniqueResourceNameSuffix } from '../configure';
 import { TargetResourceType, WizardInputs } from "../model/models";
@@ -62,8 +61,7 @@ export class AssetHandler {
                         async () => {
                             try {
                                 // find LCS of all azure resource params
-                                let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
-                                let publishProfile = await appServiceClient.getWebAppPublishProfileXml(inputs.targetResource.resource.id);
+                                let publishProfile = await new ArmRestClient(inputs.azureSession).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
                                 let serviceConnectionName = `${targetWebAppResource.name}-${UniqueResourceNameSuffix}`;
                                 return await createAsset(serviceConnectionName, asset.type, publishProfile, inputs);
                             }

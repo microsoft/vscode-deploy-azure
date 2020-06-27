@@ -4,6 +4,7 @@ import * as utils from 'util';
 import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, VSTSDeploymentMessage } from '../clients/azure/appServiceClient';
+import { ArmRestClient } from '../clients/azure/armRestClient';
 import { AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { AzureDevOpsClient } from "../clients/devOps/azureDevOpsClient";
 import { UniqueResourceNameSuffix } from '../configure';
@@ -371,7 +372,7 @@ export class AzurePipelineConfigurer implements Configurer {
     }
 
     private async createAzurePublishProfileEndpoint(serviceConnectionHelper: ServiceConnectionHelper, azureResourceClient: AzureResourceClient, serviceConnectionName: string, inputs: WizardInputs): Promise<string> {
-        let publishProfile = await (azureResourceClient as AppServiceClient).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
+        const publishProfile = await new ArmRestClient(inputs.azureSession).getWebAppPublishProfileXml(inputs.targetResource.resource.id);
         return await serviceConnectionHelper.createAzurePublishProfileServiceConnection(serviceConnectionName, inputs.azureSession.tenantId, inputs.targetResource.resource.id, publishProfile);
     }
 

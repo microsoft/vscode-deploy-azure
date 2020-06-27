@@ -1,4 +1,5 @@
 import { AzureSession, ParsedAzureResourceId } from '../../model/models';
+import { XmlResponseFilter } from '../filters/xmlResponseFilter';
 import { RestClient } from '../restClient';
 
 export class ArmRestClient {
@@ -7,7 +8,7 @@ export class ArmRestClient {
 
     public constructor(azureSession: AzureSession) {
         this.resourceManagerEndpointUrl = azureSession.environment.resourceManagerEndpointUrl;
-        this.restClient = new RestClient(azureSession.credentials);
+        this.restClient = new RestClient(azureSession.credentials, { filters: [XmlResponseFilter.CREATE()] });
     }
 
     public fetchArmData(endPointUri: string, httpMethod: string, body?: any) {
@@ -34,6 +35,15 @@ export class ArmRestClient {
             this.resourceManagerEndpointUrl + `/subscriptions/${parsedResourceId.subscriptionId}/resourceGroups/${parsedResourceId.resourceGroup}/providers/Microsoft.ContainerService/managedClusters/${parsedResourceId.resourceName}/listClusterAdminCredential`,
             'POST',
             '2020-01-01',
+            null);
+    }
+
+    public async getWebAppPublishProfileXml(webAppresourceId: string): Promise<any> {
+        const parsedResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(webAppresourceId);
+        return this.restClient.sendRequest2(
+            this.resourceManagerEndpointUrl + `/subscriptions/${parsedResourceId.subscriptionId}/resourceGroups/${parsedResourceId.resourceGroup}/providers/Microsoft.Web/sites/${parsedResourceId.resourceName}/publishxml`,
+            'POST',
+            '2018-11-01',
             null);
     }
 
