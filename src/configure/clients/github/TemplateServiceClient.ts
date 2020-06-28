@@ -1,5 +1,5 @@
 import { RepositoryAnalysis } from "azureintegration-repoanalysis-client-internal";
-import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from "ms-rest";
+import { ServiceClientCredentials } from "ms-rest";
 import { ExtendedPipelineTemplate } from "../../model/Contracts";
 import { StringMap } from "../../model/models";
 import { TemplateInfo } from "../../model/templateModels";
@@ -85,30 +85,6 @@ export class TemplateServiceClient implements ITemplateServiceClient {
                 deserializationMapper: null,
                 serializationMapper: null
             });
-    }
-
-    public async testFunc(): Promise<any> {
-        // const creds = new TokenCredentials("32e8116c97a0d23f12ecab308d3686c169472e5e", "token");
-        //const localclient = new RestClient(new TokenCredentials("32e8116c97a0d23f12ecab308d3686c169472e5e", "token"));
-        let options: UrlBasedRequestPrepareOptions = {
-            //url: GitHubProvider.getFormattedGitHubApiUrlBase("https://api.github.com/user/orgs"),
-            url: "https://api.github.com/user/orgs",
-            method: 'GET',
-            queryParameters: {
-            },
-            deserializationMapper: null,
-            serializationMapper: null
-        };
-        //const localclient = new RestClient();
-        return await this.restClient.sendRequest(options).then(function (value) {
-            console.log(value);
-        }, function (reason) {
-            console.log(reason);
-        }).catch(function (reason) {
-            console.log(reason);
-        });
-
-
     }
 
 }

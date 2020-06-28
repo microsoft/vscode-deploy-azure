@@ -16,6 +16,14 @@ export class RemoteServiceUrlHelper {
     public static repoAnalysisRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2127646";
     public static templateServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2133849";
 
+    public static async getTemplateServiceDefinition(): Promise<IServiceUrlDefinition> {
+        return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com", this.templateServiceRedirectUrl);
+    }
+
+    public static async getRepositoryAnalysisDefinition(): Promise<IServiceUrlDefinition> {
+        return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/RepositoryAnalysis?api-version=5.2-preview.1", this.repoAnalysisRedirectUrl);
+    }
+
     private static async getServiceurlDefinition(serviceUrl: string, redirectUrl: string) {
         const result = <IServiceUrlDefinition>{
             serviceFramework: ServiceFramework.Vssf,
@@ -40,12 +48,5 @@ export class RemoteServiceUrlHelper {
         }
         return result;
 
-    }
-    public static async getTemplateServiceDefinition(): Promise<IServiceUrlDefinition> {
-        return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com", this.templateServiceRedirectUrl);
-    }
-
-    public static async getRepositoryAnalysisDefinition(): Promise<IServiceUrlDefinition> {
-        return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/RepositoryAnalysis?api-version=5.2-preview.1", this.repoAnalysisRedirectUrl);
     }
 }
