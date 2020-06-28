@@ -1,7 +1,7 @@
 import * as Path from 'path';
 import * as utils from 'util';
 import * as vscode from 'vscode';
-import { AppServiceClient } from '../clients/azure/appServiceClient';
+import { ArmRestClient } from '../clients/azure/armRestClient';
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { GithubClient } from '../clients/github/githubClient';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
@@ -56,7 +56,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         } catch (error) {
             telemetryHelper.logError(Layer, TracePoints.UnableToGetTemplateConfiguration, error);
             throw error;
-            
+
         }
         this.template.configuration = templateConverter.convertToLocalMustacheExpression(extendedPipelineTemplate.configuration);
 
@@ -191,8 +191,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                             async () => {
                                 try {
                                     // find LCS of all azure resource params
-                                    let appServiceClient = new AppServiceClient(this.azureSession.credentials, this.azureSession.environment, this.azureSession.tenantId, subscriptionId);
-                                    return await appServiceClient.getWebAppPublishProfileXml(resourceId);
+                                    return await new ArmRestClient(this.azureSession).getWebAppPublishProfileXml(resourceId);
                                 }
                                 catch (error) {
                                     telemetryHelper.logError(Layer, TracePoints.AzurePublishProfileCreationFailure, error);
