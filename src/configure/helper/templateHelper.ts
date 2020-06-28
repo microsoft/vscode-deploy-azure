@@ -151,7 +151,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     return templateResult;
 }
 
-export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, githubPatToken?: string): Promise<PipelineTemplate[]> {
 
     var pipelineTemplates: PipelineTemplate[] = [];
     var remoteTemplates: TemplateInfo[] = [];
@@ -159,7 +159,8 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
 
     if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
         try {
-            let client = await TemplateServiceClientFactory.getClient(azureSession.credentials);
+            let client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
+
             await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
                 remoteTemplates = await client.getTemplates(repoAnalysisParameters);
             }, TelemetryKeys.TemplateServiceDuration);
@@ -195,10 +196,10 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
     }
 }
 
-export async function getTemplateParameters(azureSession: AzureSession, templateId: string): Promise<ExtendedPipelineTemplate> {
+export async function getTemplateParameters(azureSession: AzureSession, templateId: string, githubPatToken?: string): Promise<ExtendedPipelineTemplate> {
     let parameters: ExtendedPipelineTemplate;
     try {
-        let serviceClient = await TemplateServiceClientFactory.getClient(azureSession.credentials);
+        let serviceClient = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
         parameters = await serviceClient.getTemplateParameters(templateId);
         return parameters;
     }

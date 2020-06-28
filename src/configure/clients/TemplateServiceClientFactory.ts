@@ -1,9 +1,8 @@
-import { ServiceClientCredentials } from "ms-rest";
+import { ServiceClientCredentials, TokenCredentials } from "ms-rest";
 import { RemoteServiceUrlHelper, ServiceFramework } from "../helper/remoteServiceUrlHelper";
-import { PortalExtensionTemplateServiceClient } from "./github/PortalExtensionTemplateServiceClient";
+import { TemplateServiceClient } from "./github/TemplateServiceClient";
 import { ITemplateServiceClient } from "./ITemplateServiceClient";
-import { ModaTemplateServiceClient } from "./modaTemplateServiceClient";
-
+const UserAgent = "deploy-to-azure-vscode";
 
 export class TemplateServiceClientFactory {
 
@@ -14,9 +13,12 @@ export class TemplateServiceClientFactory {
         }
         const serviceDefinition = await RemoteServiceUrlHelper.getTemplateServiceDefinition();
         if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
-            this.client = new PortalExtensionTemplateServiceClient(serviceDefinition.serviceUrl, credentials);
+            this.client = new TemplateServiceClient(serviceDefinition.serviceUrl, credentials);
         } else {
-            this.client = new ModaTemplateServiceClient(serviceDefinition.serviceUrl, githubPatToken);
+            this.client = new TemplateServiceClient(serviceDefinition.serviceUrl, new TokenCredentials(githubPatToken, "token"), {
+                "User-Agent": UserAgent,
+                "Content-Type": "application/json; charset=utf-8"
+            });
         }
         return this.client;
     }

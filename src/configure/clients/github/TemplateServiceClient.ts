@@ -1,22 +1,23 @@
 import { RepositoryAnalysis } from "azureintegration-repoanalysis-client-internal";
-import { ServiceClientCredentials } from "ms-rest";
+import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from "ms-rest";
 import { ExtendedPipelineTemplate } from "../../model/Contracts";
 import { StringMap } from "../../model/models";
 import { TemplateInfo } from "../../model/templateModels";
 import { ITemplateServiceClient } from "../ITemplateServiceClient";
 import { RestClient } from "../restClient";
 
-export class PortalExtensionTemplateServiceClient implements ITemplateServiceClient {
-    private restClient: RestClient;
+export class TemplateServiceClient implements ITemplateServiceClient {
+    private restClient;
     private templateServiceUri: string;
     private readonly apiVersion = "6.0-preview.1";
     private readonly extendedPipelineTemplateResource = "ExtendedPipelineTemplates";
     private readonly templatesInfoResource = "TemplatesInfo";
     private readonly templateAssetFilesResource = "TemplateAssetFiles";
 
-    constructor(url: string, credentials: ServiceClientCredentials) {
-        this.restClient = new RestClient(credentials);
+    constructor(url: string, creds?: ServiceClientCredentials, headers?) {
+        this.restClient = new RestClient(creds);
         this.templateServiceUri = url;
+        this.restClient.headers = headers;
     }
 
     public async getTemplates(body: RepositoryAnalysis): Promise<TemplateInfo[]> {
@@ -85,4 +86,29 @@ export class PortalExtensionTemplateServiceClient implements ITemplateServiceCli
                 serializationMapper: null
             });
     }
+
+    public async testFunc(): Promise<any> {
+        // const creds = new TokenCredentials("32e8116c97a0d23f12ecab308d3686c169472e5e", "token");
+        //const localclient = new RestClient(new TokenCredentials("32e8116c97a0d23f12ecab308d3686c169472e5e", "token"));
+        let options: UrlBasedRequestPrepareOptions = {
+            //url: GitHubProvider.getFormattedGitHubApiUrlBase("https://api.github.com/user/orgs"),
+            url: "https://api.github.com/user/orgs",
+            method: 'GET',
+            queryParameters: {
+            },
+            deserializationMapper: null,
+            serializationMapper: null
+        };
+        //const localclient = new RestClient();
+        return await this.restClient.sendRequest(options).then(function (value) {
+            console.log(value);
+        }, function (reason) {
+            console.log(reason);
+        }).catch(function (reason) {
+            console.log(reason);
+        });
+
+
+    }
+
 }

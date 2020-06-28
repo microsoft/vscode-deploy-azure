@@ -42,7 +42,7 @@ export class RemoteServiceUrlHelper {
 
     }
     public static async getTemplateServiceDefinition(): Promise<IServiceUrlDefinition> {
-        return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/TemplateService/", this.templateServiceRedirectUrl);
+        return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com", this.templateServiceRedirectUrl);
     }
 
     public static async getRepositoryAnalysisDefinition(): Promise<IServiceUrlDefinition> {

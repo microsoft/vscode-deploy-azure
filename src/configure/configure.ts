@@ -201,7 +201,7 @@ class Orchestrator {
     private async getTemplateParameters() {
         if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
             let template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
-            let extendedPipelineTemplate = await templateHelper.getTemplateParameters(this.inputs.azureSession, template.id);
+            let extendedPipelineTemplate = await templateHelper.getTemplateParameters(this.inputs.azureSession, template.id, this.inputs.githubPATToken);
             template.attributes = extendedPipelineTemplate.attributes;
             template.parameters = extendedPipelineTemplate.parameters;
             let controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this.context);
@@ -493,7 +493,7 @@ class Orchestrator {
                     this.inputs.sourceRepository.localPath,
                     this.inputs.sourceRepository.repositoryProvider,
                     repoAnalysisResult,
-                    this.inputs.pipelineConfiguration.params[constants.TargetResource])
+                    this.inputs.githubPATToken)
             );
             appropriatePipelines = remotePipelines;
         }
