@@ -46,24 +46,21 @@ export class AppServiceClient extends AzureResourceClient {
     }
 
     public async getWebAppPublishProfileXml(resourceId: string): Promise<string> {
-        let parsedResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(resourceId);
-        let publishingProfileStream = await this.webSiteManagementClient.webApps.listPublishingProfileXmlWithSecrets(parsedResourceId.resourceGroup, parsedResourceId.resourceName, {});
-        while (!publishingProfileStream.readable) {
-            // wait for stream to be readable.
-        }
-
+        const deferred: Q.Deferred<string> = Q.defer<string>();
+        const parsedResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(resourceId);
         let publishProfile = '';
-        while (true) {
-            let moreData: Buffer = publishingProfileStream.read();
-            if (moreData) {
-                publishProfile += moreData.toString();
+        this.webSiteManagementClient.webApps.listPublishingProfileXmlWithSecrets(parsedResourceId.resourceGroup, parsedResourceId.resourceName, { format: 'ftp'}, (err, result, request, response) => {
+            if (err) {
+                throw err;
             }
-            else {
-                break;
-            }
-        }
-
-        return publishProfile;
+            response.on("data", (chunk: Buffer) => {
+                publishProfile += chunk;
+            });
+            response.on('end', () => {
+                deferred.resolve(publishProfile);
+            });
+        });
+        return deferred.promise;
     }
 
     public async getDeploymentCenterUrl(resourceId: string): Promise<string> {
