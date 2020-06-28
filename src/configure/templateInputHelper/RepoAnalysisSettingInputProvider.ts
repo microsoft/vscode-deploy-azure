@@ -27,11 +27,16 @@ export class RepoAnalysisSettingInputProvider {
             if (!this._repoAnalysisSettings[this._selectedRepoAnalysisSettingIndex].settings[repoAnalysisSettingKey]) {
                 let error = new Error(`RepostioryAnalysisSetting doesn't contain ${repoAnalysisSettingKey} for input ${inputControl.getInputControlId()}`);
                 telemetryHelper.logError(Layer, TracePoints.SetInputControlValueFromRepoAnalysisResult, error);
-                let value = await new ControlProvider().showInputBox(repoAnalysisSettingKey, {
-                    placeHolder: inputControl.getInputDescriptor().name,
-                    validateInput: value => inputControl.triggerControlValueValidations(value)
-                });
-                inputControl.setValue(value);
+                if (inputControl.getInputDescriptor().defaultValue) {
+                    let value = inputControl.getInputDescriptor().defaultValue;
+                    inputControl.setValue(value);
+                } else {
+                    let value = await new ControlProvider().showInputBox(repoAnalysisSettingKey, {
+                        placeHolder: inputControl.getInputDescriptor().name,
+                        validateInput: value => inputControl.triggerControlValueValidations(value)
+                    });
+                    inputControl.setValue(value);
+                }
             } else {
                 inputControl.setValue(this._repoAnalysisSettings[this._selectedRepoAnalysisSettingIndex].settings[repoAnalysisSettingKey]);
             }

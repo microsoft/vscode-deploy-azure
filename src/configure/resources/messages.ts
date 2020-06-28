@@ -102,4 +102,10 @@ export class Messages {
     public static gettingTemplateFileAsset = "Getting template file asset to commit";
     public static gettingWorkflowFile = "Getting workflow file";
     public static templateFileNotFound = "Template file %s not found";
+    public static selectGitHubOrganizationName = "Select a GitHub organization";
+    public static createGitHubOrganization = "Create a GitHub Organization first to create GitHub repository.";
+    public static newGitHubRepositoryCreated = "New GitHub repository with the name '%s' has been created.";
+    public static cannotCreateGitHubRepository = "New GitHub repository could not be created as the repository with the same name already exists";
+    public static languageNotSupported = "The language of the repository selected is not supported.";
+    public static UnableToGetTemplateParameters = "Unable to get parameters for the selected template.";
 }

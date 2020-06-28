@@ -1,13 +1,13 @@
-import { Build, BuildDefinition, Repository } from '../../model/azureDevOps';
-import { Messages } from '../../resources/messages';
-import { DevOpsProject, Organization } from '../../model/models';
-import { AzureDevOpsBaseUrl, ReservedHostNames } from '../../resources/constants';
-import { RestClient } from '../restClient';
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from 'ms-rest';
-import { sleepForMilliSeconds, stringCompareFunction } from "../../helper/commonHelper";
-import { telemetryHelper } from '../../helper/telemetryHelper';
 import * as Q from 'q';
 import * as util from 'util';
+import { sleepForMilliSeconds, stringCompareFunction } from "../../helper/commonHelper";
+import { telemetryHelper } from '../../helper/telemetryHelper';
+import { Build, BuildDefinition, Repository } from '../../model/azureDevOps';
+import { DevOpsProject, Organization } from '../../model/models';
+import { AzureDevOpsBaseUrl, ReservedHostNames } from '../../resources/constants';
+import { Messages } from '../../resources/messages';
+import { RestClient } from '../restClient';
 
 export class AzureDevOpsClient {
     private restClient: RestClient;

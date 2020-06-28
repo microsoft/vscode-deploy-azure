@@ -52,6 +52,20 @@ export class Organization {
     isMSAOrg: boolean;
 }
 
+export class GitHubOrganization {
+    login: string;
+    id : number;
+    url: string;
+    repos_url: string;
+}
+
+export class GitHubRepo{
+    id: string;
+    name: string;
+    orgName: string;
+    html_url: string;
+}
+
 export class AzureSession {
     environment: AzureEnvironment;
     userId: string;
