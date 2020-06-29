@@ -101,10 +101,10 @@
                     "default": false,
                     "description": "Setup CI/CD in Azure Pipelines for Github Repository"
                 },
-                "deployToAzure.SetGitHubAsDefaultRepositoryProvider": {
+                "deployToAzure.UseGithubForCreatingNewRepository": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Use GitHub as default repository provider"
+                    "description": "Use GitHub for creating new repository"
                 }
             }
         }

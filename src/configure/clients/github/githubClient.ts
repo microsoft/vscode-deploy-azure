@@ -1,10 +1,13 @@
 import { UrlBasedRequestPrepareOptions } from 'ms-rest';
 import { stringCompareFunction } from "../../helper/commonHelper";
 import { GitHubProvider } from "../../helper/gitHubHelper";
+import { telemetryHelper } from '../../helper/telemetryHelper';
 import { GitHubOrganization, GitHubRepo } from '../../model/models';
+import { TracePoints } from '../../resources/tracePoints';
 import { RestClient } from "../restClient";
 
 const UserAgent = "deploy-to-azure-vscode";
+const Layer = 'GithubClient';
 
 export class GithubClient {
 
@@ -46,10 +49,12 @@ export class GithubClient {
                 .then((detail: GitHubRepo) => {
                     return detail;
                 }).catch(error=>{
+                        telemetryHelper.logError(Layer, TracePoints.GitHubRepositoryCreationFailed, error);
                         return null;
                 });
         }
         catch(error){
+            telemetryHelper.logError(Layer, TracePoints.GitHubRepositoryCreationFailed, error);
             return null;
         }
     }
