@@ -55,8 +55,7 @@
                     ".eyml",
                     ".yaml"
                 ],
-                "firstLine": "^#cloud-config",
-                "configuration": "./language-configuration.json"
+                "firstLine": "^#cloud-config"
             }
         ],
         "grammars": [
