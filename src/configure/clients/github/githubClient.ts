@@ -1,6 +1,7 @@
 import { UrlBasedRequestPrepareOptions } from 'ms-rest';
 import { stringCompareFunction } from "../../helper/commonHelper";
 import { GitHubProvider } from "../../helper/gitHubHelper";
+import { SodiumLibHelper } from '../../helper/sodium/SodiumLibHelper';
 import { telemetryHelper } from '../../helper/telemetryHelper';
 import { GitHubOrganization, GitHubRepo } from '../../model/models';
 import { TracePoints } from '../../resources/tracePoints';
@@ -20,6 +21,15 @@ export class GithubClient {
         this.patToken = patToken;
         this.url = remoteUrl;
         this.listOrgPromise = this.listOrganizations();
+    }
+
+    public async createOrUpdateGithubSecret(secretName: string, body: string): Promise<void> {	   
+        let secretKeyObject: GitHubSecretKey = await this._getGitHubSecretKey();	        
+        let sodiumObj = new SodiumLibHelper(secretKeyObject.key);	        
+        let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);	       
+        let encryptedBytesAsString: string = SodiumLibHelper.convertUint8ArrayToString(encryptedBytes);	         
+        let encryptedEncodedText = SodiumLibHelper.encodeToBase64(encryptedBytesAsString);	                
+        await this._setGithubSecret(secretName, secretKeyObject.key_id, encryptedEncodedText);
     }
 
     public async createGithubRepo(orgName: string, repoName: string): Promise<void | GitHubRepo> {
