@@ -4,6 +4,7 @@ import { WebSiteManagementClient } from 'azure-arm-website';
 import { Deployment, SiteConfigResource, StringDictionary } from 'azure-arm-website/lib/models';
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from 'ms-rest';
 import { AzureEnvironment } from 'ms-rest-azure';
+import * as Q from 'q';
 import { telemetryHelper } from '../../helper/telemetryHelper';
 import { ParsedAzureResourceId, TargetKind, WebAppSourceControl } from '../../model/models';
 import { Messages } from '../../resources/messages';
