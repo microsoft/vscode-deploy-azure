@@ -61,9 +61,9 @@ export interface ExtendedPipelineTemplate {
     /**
      * List of the inputs required to create CI/CD pipeline
      */
-    
+
     attributes?: { [key: string]: string; };
-   
+
     parameters?: Parameters;
 
     configuration?: Configuration;
@@ -73,12 +73,12 @@ export interface Configuration {
     pipelineDefinition?: { [key: string]: string; };
 
     assets?: Asset[];
-    
+
     variables?: Variable[];
 
     imports?: any;
 }
- 
+
 export interface Parameters {
 
     /**
@@ -95,7 +95,7 @@ export interface Parameters {
      */
     groups?: InputGroup[];
 
- }
+}
 
 export interface DataSource {
     /**
@@ -282,6 +282,7 @@ export interface Variable {
 
 export interface Asset {
     id: string;
+    // tslint:disable-next-line:no-reserved-keywords
     type: string;
     stage: ConfigurationStage;
     inputs: { [key: string]: any };
