@@ -9,11 +9,14 @@ import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
 import { ApiVersions, AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { GithubClient } from '../clients/github/githubClient';
+import { createOrUpdateGithubSecret, generateGitHubRepository } from "../helper/commonHelper";
+import { ControlProvider } from '../helper/controlProvider';
+import { GitHubProvider } from '../helper/gitHubHelper';
 import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
-import { AzureConnectionType, AzureSession, extensionVariables, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, AzureSession, extensionVariables, GitHubRepo, TargetResourceType, WizardInputs } from "../model/models";
 import { LocalPipelineTemplate, TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -21,20 +24,56 @@ import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
 import { Configurer } from "./configurerBase";
 
-const uuid = require('uuid/v4');
 
+const uuid = require('uuid/v4');
 const Layer = 'LocalGitHubWorkflowConfigurer';
 
 export class LocalGitHubWorkflowConfigurer implements Configurer {
     protected githubClient: GithubClient;
-    private queuedPipelineUrl: string;;
+    private queuedPipelineUrl: string;
+    private controlProvider: ControlProvider;
+    private localGitRepoHelper : LocalGitRepoHelper;
 
-    constructor(azureSession: AzureSession, subscriptionId: string) {
+    constructor(azureSession: AzureSession, subscriptionId: string, localgitRepoHelper: LocalGitRepoHelper) {
+        this.controlProvider = new ControlProvider();
+        this.localGitRepoHelper = localgitRepoHelper;
     }
 
     public async getInputs(inputs: WizardInputs): Promise<void> {
         this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
-        return;
+        inputs.isNewOrganization = false;
+        if (!inputs.sourceRepository.remoteUrl) {
+            let githubOrganizations = await this.githubClient.listOrganizations();
+               
+            if ( githubOrganizations &&  githubOrganizations.length > 0) {
+                let selectedOrganization = await this.controlProvider.showQuickPick(
+                    constants.SelectGitHubOrganization,
+                    githubOrganizations.map(x => { return { label: x.login }; }),
+                    { placeHolder: Messages.selectGitHubOrganizationName },
+                    TelemetryKeys.OrganizationListCount);
+                inputs.organizationName = selectedOrganization.label;
+
+
+                let newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient) as unknown as GitHubRepo | void;
+                if(newGitHubRepo){
+                    inputs.sourceRepository.remoteName = newGitHubRepo.name;
+                    inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url+".git";
+                    inputs.sourceRepository.repositoryId = GitHubProvider.getRepositoryIdFromUrl(inputs.sourceRepository.remoteUrl);
+                    await this.localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl);
+                    vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated, newGitHubRepo.name));
+                }
+                else{
+                    vscode.window.showErrorMessage(Messages.cannotCreateGitHubRepository);
+                    throw Error;
+                }        
+            }
+            else{
+                vscode.window.showErrorMessage(Messages.createGitHubOrganization);
+                let error = new Error(Messages.createGitHubOrganization);
+                telemetryHelper.logError(Layer, TracePoints.NoGitHubOrganizationExists, error);
+                throw error;
+            }
+        }
     }
 
     public async validatePermissions(): Promise<void> {
@@ -104,7 +143,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
         }
 
         if (secret) {
-            await this.githubClient.createOrUpdateGithubSecret(name, secret);
+            await createOrUpdateGithubSecret(name, secret);
         }
 
         return name;
@@ -123,7 +162,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
         // Create manifests directory
         let manifestsDirectoryPath: string = path.join(inputs.pipelineConfiguration.workingDirectory, 'manifests');
         try {
-            return await this.getPathToFile(localGitRepoHelper, fileName, manifestsDirectoryPath)
+            return await this.getPathToFile(localGitRepoHelper, fileName, manifestsDirectoryPath);
         }
         catch (error) {
             telemetryHelper.logError(Layer, TracePoints.ManifestsFolderCreationFailed, error);
@@ -152,7 +191,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
     }
 
     public async checkInPipelineFilesToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
-
+    
         while (!inputs.sourceRepository.commitId) {
 
             let displayMessage = Messages.modifyAndCommitFile;

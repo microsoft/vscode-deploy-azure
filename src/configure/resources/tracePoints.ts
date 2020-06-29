@@ -23,6 +23,8 @@ export class TracePoints {
     public static EvaluateDynamicValidation = 'EvalauteDynamicValidation';
     public static InitializeDynamicValidation = 'InitializeDynamicValidation';
     public static SetInputControlValueFromRepoAnalysisResult = 'setInputControlValueFromRepoAnalysisResult';
+    public static GetTemplateFile = 'GetTemplateFile';
+    public static NoGitHubOrganizationExists = 'NoGitHubOrganizationExists';
     public static TemplateServiceCallFailed = 'TemplateServiceCallFailed';
     public static UnableToGetTemplateFile = 'UnableToGetTemplateFile';
     public static RepoAnalysisFailed = 'RepoAnalysisFailed';
@@ -30,4 +32,5 @@ export class TracePoints {
     public static UnableToGetTemplateConfiguration = 'UnableToGetTemplateConfiguration';
     public static TemplateNotFound = 'TemplateNotFound';
     public static AzurePublishProfileCreationFailure = 'AzurePublishProfileCreationFailure';
+    public static GitHubRepositoryCreationFailed = 'GitHubRepositoryCreationFailed';
 }
