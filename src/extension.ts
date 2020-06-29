@@ -43,8 +43,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Options to control the scope of language client
 	let clientOptions: LanguageClientOptions = {
 		documentSelector: [
-			{language: "yaml", pattern: "**/.github/workflows/**", scheme: "file"},
-			{language: "yaml", pattern: "**/azure-pipelines.yml", scheme: "file"}
+			{language: "yaml", pattern: "**/.github/workflows/**", scheme: "file"}
 		],
 		synchronize: {
 			// Synchronize these setting sections with the server
