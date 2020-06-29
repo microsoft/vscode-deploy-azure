@@ -7,8 +7,9 @@ import { ITemplateServiceClient } from "../ITemplateServiceClient";
 import { RestClient } from "../restClient";
 
 export class TemplateServiceClient implements ITemplateServiceClient {
-    private restClient;
+    private restClient: RestClient;
     private templateServiceUri: string;
+    private headers;
     private readonly apiVersion = "6.0-preview.1";
     private readonly extendedPipelineTemplateResource = "ExtendedPipelineTemplates";
     private readonly templatesInfoResource = "TemplatesInfo";
@@ -17,15 +18,22 @@ export class TemplateServiceClient implements ITemplateServiceClient {
     constructor(url: string, creds?: ServiceClientCredentials, headers?) {
         this.restClient = new RestClient(creds);
         this.templateServiceUri = url;
-        this.restClient.headers = headers;
+        this.headers = headers;
     }
 
     public async getTemplates(body: RepositoryAnalysis): Promise<TemplateInfo[]> {
-        return this.restClient.sendRequest2(
-            this.templateServiceUri + this.templatesInfoResource,
-            'POST',
-            this.apiVersion,
-            body);
+        return this.restClient.sendRequest(
+            {
+                url: this.templateServiceUri + this.templatesInfoResource,
+                method: 'POST',
+                headers: this.headers,
+                queryParameters: {
+                    'api-version': this.apiVersion
+                },
+                body: body,
+                deserializationMapper: null,
+                serializationMapper: null
+            });
     }
 
     public async getTemplateParameters(templateId: string): Promise<ExtendedPipelineTemplate> {
@@ -34,9 +42,7 @@ export class TemplateServiceClient implements ITemplateServiceClient {
             {
                 url: requestUri,
                 method: 'GET',
-                headers: {
-                    "Content-Type": "application/json; charset=utf-8"
-                },
+                headers: this.headers,
                 queryParameters: {
                     'templateId': templateId,
                     'templatePartToGet': 'parameters',
@@ -53,9 +59,7 @@ export class TemplateServiceClient implements ITemplateServiceClient {
             {
                 url: requestUri,
                 method: 'POST',
-                headers: {
-                    "Content-Type": "application/json; charset=utf-8"
-                },
+                headers: this.headers,
                 queryParameters: {
                     'templateId': templateId,
                     'templatePartToGet': 'configuration',
@@ -74,9 +78,7 @@ export class TemplateServiceClient implements ITemplateServiceClient {
             {
                 url: requestUri,
                 method: 'GET',
-                headers: {
-                    "Content-Type": "application/json; charset=utf-8"
-                },
+                headers: this.headers,
                 queryParameters: {
                     'templateId': templateId,
                     'fileNames': fileName,

@@ -13,7 +13,9 @@ export class TemplateServiceClientFactory {
         }
         const serviceDefinition = await RemoteServiceUrlHelper.getTemplateServiceDefinition();
         if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
-            this.client = new TemplateServiceClient(serviceDefinition.serviceUrl, credentials);
+            this.client = new TemplateServiceClient(serviceDefinition.serviceUrl, credentials, {
+                "Content-Type": "application/json; charset=utf-8"
+            });
         } else {
             this.client = new TemplateServiceClient(serviceDefinition.serviceUrl, new TokenCredentials(githubPatToken, "token"), {
                 "User-Agent": UserAgent,
