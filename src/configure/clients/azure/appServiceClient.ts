@@ -50,7 +50,7 @@ export class AppServiceClient extends AzureResourceClient {
         const deferred: Q.Deferred<string> = Q.defer<string>();
         const parsedResourceId: ParsedAzureResourceId = new ParsedAzureResourceId(resourceId);
         let publishProfile = '';
-        this.webSiteManagementClient.webApps.listPublishingProfileXmlWithSecrets(parsedResourceId.resourceGroup, parsedResourceId.resourceName, { format: 'ftp'}, (err, result, request, response) => {
+        this.webSiteManagementClient.webApps.listPublishingProfileXmlWithSecrets(parsedResourceId.resourceGroup, parsedResourceId.resourceName, { format: 'ftp' }, (err, result, request, response) => {
             if (err) {
                 throw err;
             }
