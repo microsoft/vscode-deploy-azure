@@ -27,6 +27,7 @@ export class TelemetryKeys {
     public static SelectedTemplate = 'selectedTemplate';
     public static SelectedTemplateType = 'selectedTemplateType';
     public static WorkflowFileName = 'workflowFileName';
+    public static GitHubRepoCreated = 'GitHubRepoCreated';
 
 
     public static resourceType = 'resourceType';

@@ -141,7 +141,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                             title: Messages.settingUpGithubSecrets
                         },
                         async () => {
-                            await createOrUpdateGithubSecret(secretKey, secretValue);
+                            await this.githubClient.createOrUpdateGithubSecret(secretKey, secretValue);
                         }
                     );
                     this.secrets[asset.id] = "{{ secrets." + secretKey + " }}";
