@@ -5,7 +5,6 @@ import { AppServiceClient } from '../clients/azure/appServiceClient';
 import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { GithubClient } from '../clients/github/githubClient';
 import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
-import { createOrUpdateGithubSecret } from "../helper/commonHelper";
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { MustacheHelper } from '../helper/mustacheHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
@@ -140,7 +139,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                             title: Messages.settingUpGithubSecrets
                         },
                         async () => {
-                            await createOrUpdateGithubSecret(secretKey, secretValue);
+                            await this.githubClient.createOrUpdateGithubSecret(secretKey, secretValue);
                         }
                     );
                     this.secrets[asset.id] = "{{ secrets." + secretKey + " }}";
