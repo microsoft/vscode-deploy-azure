@@ -9,7 +9,7 @@ import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, DeploymentMessage } from '../clients/azure/appServiceClient';
 import { ApiVersions, AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { GithubClient } from '../clients/github/githubClient';
-import { createOrUpdateGithubSecret, generateGitHubRepository } from "../helper/commonHelper";
+import { generateGitHubRepository } from "../helper/commonHelper";
 import { ControlProvider } from '../helper/controlProvider';
 import { GitHubProvider } from '../helper/gitHubHelper';
 import { GraphHelper } from '../helper/graphHelper';
@@ -60,6 +60,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                     inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url+".git";
                     inputs.sourceRepository.repositoryId = GitHubProvider.getRepositoryIdFromUrl(inputs.sourceRepository.remoteUrl);
                     await this.localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl);
+                    telemetryHelper.setTelemetry(TelemetryKeys.GitHubRepoCreated, 'true');
                     vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated, newGitHubRepo.name));
                 }
                 else{
@@ -143,7 +144,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
         }
 
         if (secret) {
-            await createOrUpdateGithubSecret(name, secret);
+            await this.githubClient.createOrUpdateGithubSecret(name, secret);
         }
 
         return name;
