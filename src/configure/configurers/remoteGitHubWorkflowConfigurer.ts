@@ -6,7 +6,6 @@ import { AzureResourceClient } from "../clients/azure/azureResourceClient";
 import { GithubClient } from '../clients/github/githubClient';
 import { ITemplateServiceClient } from '../clients/ITemplateServiceClient';
 import { TemplateServiceClientFactory } from '../clients/TemplateServiceClientFactory';
-import { createOrUpdateGithubSecret } from "../helper/commonHelper";
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { MustacheHelper } from '../helper/mustacheHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
