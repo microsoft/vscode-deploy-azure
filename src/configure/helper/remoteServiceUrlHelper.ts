@@ -21,7 +21,7 @@ export class RemoteServiceUrlHelper {
     }
 
     public static async getRepositoryAnalysisDefinition(): Promise<IServiceUrlDefinition> {
-        return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/RepositoryAnalysis?api-version=5.2-preview.1", this.repoAnalysisRedirectUrl);
+        return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/RepositoryAnalysis?api-version=5.2-preview.1", this.repoAnalysisRedirectUrl);
     }
 
     private static async getServiceurlDefinition(serviceUrl: string, redirectUrl: string) {
