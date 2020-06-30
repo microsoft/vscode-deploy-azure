@@ -3,26 +3,37 @@ import { ServiceClientCredentials } from "ms-rest";
 import { ExtendedPipelineTemplate } from "../../model/Contracts";
 import { StringMap } from "../../model/models";
 import { TemplateInfo } from "../../model/templateModels";
+import { ITemplateServiceClient } from "../ITemplateServiceClient";
 import { RestClient } from "../restClient";
 
-export class TemplateServiceClient {
+export class TemplateServiceClient implements ITemplateServiceClient {
     private restClient: RestClient;
-    private readonly templateServiceUri: string = "https://pepfcusc.portalext.visualstudio.com/_apis/TemplateService/";
+    private templateServiceUri: string;
+    private headers;
     private readonly apiVersion = "6.0-preview.1";
     private readonly extendedPipelineTemplateResource = "ExtendedPipelineTemplates";
     private readonly templatesInfoResource = "TemplatesInfo";
     private readonly templateAssetFilesResource = "TemplateAssetFiles";
 
-    constructor(credentials: ServiceClientCredentials) {
-        this.restClient = new RestClient(credentials);
+    constructor(url: string, creds?: ServiceClientCredentials, headers?) {
+        this.restClient = new RestClient(creds);
+        this.templateServiceUri = url;
+        this.headers = headers;
     }
 
     public async getTemplates(body: RepositoryAnalysis): Promise<TemplateInfo[]> {
-        return this.restClient.sendRequest2(
-            this.templateServiceUri + this.templatesInfoResource,
-            'POST',
-            this.apiVersion,
-            body);
+        return this.restClient.sendRequest(
+            {
+                url: this.templateServiceUri + this.templatesInfoResource,
+                method: 'POST',
+                headers: this.headers,
+                queryParameters: {
+                    'api-version': this.apiVersion
+                },
+                body: body,
+                deserializationMapper: null,
+                serializationMapper: null
+            });
     }
 
     public async getTemplateParameters(templateId: string): Promise<ExtendedPipelineTemplate> {
@@ -31,9 +42,7 @@ export class TemplateServiceClient {
             {
                 url: requestUri,
                 method: 'GET',
-                headers: {
-                    "Content-Type": "application/json; charset=utf-8"
-                },
+                headers: this.headers,
                 queryParameters: {
                     'templateId': templateId,
                     'templatePartToGet': 'parameters',
@@ -50,9 +59,7 @@ export class TemplateServiceClient {
             {
                 url: requestUri,
                 method: 'POST',
-                headers: {
-                    "Content-Type": "application/json; charset=utf-8"
-                },
+                headers: this.headers,
                 queryParameters: {
                     'templateId': templateId,
                     'templatePartToGet': 'configuration',
@@ -71,9 +78,7 @@ export class TemplateServiceClient {
             {
                 url: requestUri,
                 method: 'GET',
-                headers: {
-                    "Content-Type": "application/json; charset=utf-8"
-                },
+                headers: this.headers,
                 queryParameters: {
                     'templateId': templateId,
                     'fileNames': fileName,
@@ -83,4 +88,5 @@ export class TemplateServiceClient {
                 serializationMapper: null
             });
     }
+
 }

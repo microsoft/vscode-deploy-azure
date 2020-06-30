@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as Mustache from 'mustache';
 import * as path from 'path';
 import * as Q from 'q';
-import { TemplateServiceClient } from '../clients/github/TemplateServiceClient';
+import { TemplateServiceClientFactory } from '../clients/TemplateServiceClientFactory';
 import { ExtendedPipelineTemplate } from '../model/Contracts';
 import { AzureConnectionType, AzureSession, extensionVariables, MustacheContext, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
 import { LocalPipelineTemplate, PipelineTemplate, PreDefinedDataSourceIds, RemotePipelineTemplate, TemplateAssetType, TemplateInfo, TemplateParameterType, TemplateType } from '../model/templateModels';
@@ -151,7 +151,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     return templateResult;
 }
 
-export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, targetResource?: GenericResource): Promise<PipelineTemplate[]> {
+export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, githubPatToken?: string): Promise<PipelineTemplate[]> {
 
     var pipelineTemplates: PipelineTemplate[] = [];
     var remoteTemplates: TemplateInfo[] = [];
@@ -159,9 +159,10 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
 
     if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
         try {
-            let serviceClient = new TemplateServiceClient(azureSession.credentials);
+            let client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
+
             await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
-                remoteTemplates = await serviceClient.getTemplates(repoAnalysisParameters);
+                remoteTemplates = await client.getTemplates(repoAnalysisParameters);
             }, TelemetryKeys.TemplateServiceDuration);
             remoteTemplates.forEach((templateInfo: TemplateInfo) => {
                 var remoteTemplate: RemotePipelineTemplate = {
@@ -195,10 +196,10 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
     }
 }
 
-export async function getTemplateParameters(azureSession: AzureSession, templateId: string): Promise<ExtendedPipelineTemplate> {
+export async function getTemplateParameters(azureSession: AzureSession, templateId: string, githubPatToken?: string): Promise<ExtendedPipelineTemplate> {
     let parameters: ExtendedPipelineTemplate;
     try {
-        let serviceClient = new TemplateServiceClient(azureSession.credentials);
+        let serviceClient = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
         parameters = await serviceClient.getTemplateParameters(templateId);
         return parameters;
     }
