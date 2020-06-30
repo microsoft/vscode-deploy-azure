@@ -1,10 +1,9 @@
 import Q = require('q');
 import * as util from 'util';
 import * as logger from '../../logger';
-import { GithubClient, GitHubSecretKey } from '../clients/github/githubClient';
+import { GithubClient } from '../clients/github/githubClient';
 import { GitHubRepo } from '../model/models';
 import { Messages } from '../resources/messages';
-import { SodiumLibHelper } from './sodium/SodiumLibHelper';
 
 const uuid = require('uuid/v4');
 
@@ -14,15 +13,6 @@ export async function sleepForMilliSeconds(timeInMs: number): Promise<void> {
             resolve();
         }, timeInMs);
     });
-}
-
-export async function createOrUpdateGithubSecret(secretName: string, body: string): Promise < void> {
-    let secretKeyObject: GitHubSecretKey = await this._getGitHubSecretKey();
-    let sodiumObj = new SodiumLibHelper(secretKeyObject.key);
-    let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);
-    let encryptedBytesAsString: string = SodiumLibHelper.convertUint8ArrayToString(encryptedBytes);
-    let encryptedEncodedText = SodiumLibHelper.encodeToBase64(encryptedBytesAsString);
-    await this._setGithubSecret(secretName, secretKeyObject.key_id, encryptedEncodedText);
 }
 
 export async function generateGitHubRepository(orgName: string, localPath: string, githubClient: GithubClient): Promise<GitHubRepo | void>{
