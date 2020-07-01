@@ -23,19 +23,23 @@ export class GithubClient {
         this.listOrgPromise = this.listOrganizations();
     }
 
-    public async createOrUpdateGithubSecret(secretName: string, body: string): Promise<void> {	   
-        let secretKeyObject: GitHubSecretKey = await this._getGitHubSecretKey();	        
-        let sodiumObj = new SodiumLibHelper(secretKeyObject.key);	        
-        let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);	       
-        let encryptedBytesAsString: string = SodiumLibHelper.convertUint8ArrayToString(encryptedBytes);	         
-        let encryptedEncodedText = SodiumLibHelper.encodeToBase64(encryptedBytesAsString);	                
+    public async setRepoUrl(repoUrl: string) {
+        this.url = repoUrl;
+    }
+
+    public async createOrUpdateGithubSecret(secretName: string, body: string): Promise<void> {
+        let secretKeyObject: GitHubSecretKey = await this._getGitHubSecretKey();
+        let sodiumObj = new SodiumLibHelper(secretKeyObject.key);
+        let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);
+        let encryptedBytesAsString: string = SodiumLibHelper.convertUint8ArrayToString(encryptedBytes);
+        let encryptedEncodedText = SodiumLibHelper.encodeToBase64(encryptedBytesAsString);
         await this._setGithubSecret(secretName, secretKeyObject.key_id, encryptedEncodedText);
     }
 
     public async createGithubRepo(orgName: string, repoName: string): Promise<void | GitHubRepo> {
-        let restClient =new RestClient();
+        let restClient = new RestClient();
         let Url = "https://api.github.com/orgs/" + orgName + "/repos";
-        try{
+        try {
             return restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
                 url: Url,
                 headers: {
@@ -58,12 +62,12 @@ export class GithubClient {
             })
                 .then((detail: GitHubRepo) => {
                     return detail;
-                }).catch(error=>{
-                        telemetryHelper.logError(Layer, TracePoints.GitHubRepositoryCreationFailed, error);
-                        return null;
+                }).catch(error => {
+                    telemetryHelper.logError(Layer, TracePoints.GitHubRepositoryCreationFailed, error);
+                    return null;
                 });
         }
-        catch(error){
+        catch (error) {
             telemetryHelper.logError(Layer, TracePoints.GitHubRepositoryCreationFailed, error);
             return null;
         }
@@ -89,46 +93,46 @@ export class GithubClient {
                     return organizations;
                 });
         }
-        return this.listOrgPromise; 
+        return this.listOrgPromise;
     }
 
-    public async _getGitHubSecretKey() : Promise < GitHubSecretKey > {
-    let request = <UrlBasedRequestPrepareOptions>{
-        url: GitHubProvider.getFormattedGitHubApiUrlBase(this.url) + "/actions/secrets/public-key",
-        method: 'GET',
-        headers: {
-            "User-Agent": UserAgent,
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + this.patToken,
-            "Accept": "*/*"
-        },
-        serializationMapper: null,
-        deserializationMapper: null
-    };
+    public async _getGitHubSecretKey(): Promise<GitHubSecretKey> {
+        let request = <UrlBasedRequestPrepareOptions>{
+            url: GitHubProvider.getFormattedGitHubApiUrlBase(this.url) + "/actions/secrets/public-key",
+            method: 'GET',
+            headers: {
+                "User-Agent": UserAgent,
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + this.patToken,
+                "Accept": "*/*"
+            },
+            serializationMapper: null,
+            deserializationMapper: null
+        };
         let restClient = new RestClient();
-    return(await restClient.sendRequest(request)) as GitHubSecretKey;
-}
+        return (await restClient.sendRequest(request)) as GitHubSecretKey;
+    }
 
-    public async _setGithubSecret(secretName: string, key_id: string, encrypted_secret: string): Promise < void> {
-    let restClient = new RestClient();
-    let request = <UrlBasedRequestPrepareOptions>{
-        url: GitHubProvider.getFormattedGitHubApiUrlBase(this.url) + "/actions/secrets/" + secretName,
-        headers: {
-            "User-Agent": UserAgent,
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + this.patToken,
-            "Accept": "*/*"
-        },
-        method: "PUT",
-        deserializationMapper: null,
-        serializationMapper: null,
-        body: {
-            "encrypted_value": encrypted_secret,
-            "key_id": key_id
-        }
-    };
+    public async _setGithubSecret(secretName: string, key_id: string, encrypted_secret: string): Promise<void> {
+        let restClient = new RestClient();
+        let request = <UrlBasedRequestPrepareOptions>{
+            url: GitHubProvider.getFormattedGitHubApiUrlBase(this.url) + "/actions/secrets/" + secretName,
+            headers: {
+                "User-Agent": UserAgent,
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + this.patToken,
+                "Accept": "*/*"
+            },
+            method: "PUT",
+            deserializationMapper: null,
+            serializationMapper: null,
+            body: {
+                "encrypted_value": encrypted_secret,
+                "key_id": key_id
+            }
+        };
         await restClient.sendRequest(request);
-}
+    }
 }
 
 export interface GitHubSecretKey {

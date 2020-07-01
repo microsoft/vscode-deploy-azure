@@ -32,7 +32,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
     protected githubClient: GithubClient;
     private queuedPipelineUrl: string;
     private controlProvider: ControlProvider;
-    private localGitRepoHelper : LocalGitRepoHelper;
+    private localGitRepoHelper: LocalGitRepoHelper;
 
     constructor(azureSession: AzureSession, subscriptionId: string, localgitRepoHelper: LocalGitRepoHelper) {
         this.controlProvider = new ControlProvider();
@@ -44,8 +44,8 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
         inputs.isNewOrganization = false;
         if (!inputs.sourceRepository.remoteUrl) {
             let githubOrganizations = await this.githubClient.listOrganizations();
-               
-            if ( githubOrganizations &&  githubOrganizations.length > 0) {
+
+            if (githubOrganizations && githubOrganizations.length > 0) {
                 let selectedOrganization = await this.controlProvider.showQuickPick(
                     constants.SelectGitHubOrganization,
                     githubOrganizations.map(x => { return { label: x.login }; }),
@@ -55,20 +55,21 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
 
 
                 let newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient) as unknown as GitHubRepo | void;
-                if(newGitHubRepo){
+                if (newGitHubRepo) {
+                    this.githubClient.setRepoUrl(newGitHubRepo.html_url);
                     inputs.sourceRepository.remoteName = newGitHubRepo.name;
-                    inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url+".git";
+                    inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url + ".git";
                     inputs.sourceRepository.repositoryId = GitHubProvider.getRepositoryIdFromUrl(inputs.sourceRepository.remoteUrl);
                     await this.localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl);
                     telemetryHelper.setTelemetry(TelemetryKeys.GitHubRepoCreated, 'true');
                     vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated, newGitHubRepo.name));
                 }
-                else{
+                else {
                     vscode.window.showErrorMessage(Messages.cannotCreateGitHubRepository);
                     throw Error;
-                }        
+                }
             }
-            else{
+            else {
                 vscode.window.showErrorMessage(Messages.createGitHubOrganization);
                 let error = new Error(Messages.createGitHubOrganization);
                 telemetryHelper.logError(Layer, TracePoints.NoGitHubOrganizationExists, error);
@@ -192,7 +193,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
     }
 
     public async checkInPipelineFilesToRepository(filesToCommit: string[], inputs: WizardInputs, localGitRepoHelper: LocalGitRepoHelper): Promise<string> {
-    
+
         while (!inputs.sourceRepository.commitId) {
 
             let displayMessage = Messages.modifyAndCommitFile;
