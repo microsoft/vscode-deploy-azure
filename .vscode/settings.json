@@ -9,11 +9,10 @@
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
     "typescript.tsc.autoDetect": "off",
     "typescript.tsdk": "node_modules/typescript/lib",
-
     "editor.codeActionsOnSave": {
         "source.organizeImports": true // Sort and remove unused imports
     },
-
     // Turn it on if you want to see errors from all the files
-    "typescript.tsserver.experimental.enableProjectDiagnostics": false
+    "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+    "editor.formatOnSave": true
 }
