@@ -1,5 +1,5 @@
-import { extensionVariables, AzureSession } from "../model/models";
 import { SubscriptionModels } from "azure-arm-resource";
+import { AzureSession, extensionVariables } from "../model/models";
 
 export function getSubscriptionSession(subscriptionId: string): AzureSession {
     let currentSubscription: { session: AzureSession, subscription: SubscriptionModels.Subscription } = extensionVariables.azureAccountExtensionApi.subscriptions
@@ -11,5 +11,10 @@ export function getSubscriptionSession(subscriptionId: string): AzureSession {
         currentSubscription = extensionVariables.azureAccountExtensionApi.subscriptions[0];
     }
 
+    return currentSubscription.session;
+}
+
+export function getAzureSession(): AzureSession {
+    let currentSubscription = extensionVariables.azureAccountExtensionApi.subscriptions[0];
     return currentSubscription.session;
 }

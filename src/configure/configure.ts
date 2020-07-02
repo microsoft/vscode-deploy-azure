@@ -10,7 +10,7 @@ import { ConfigurerFactory } from './configurers/configurerFactory';
 import { RemoteGitHubWorkflowConfigurer } from './configurers/remoteGitHubWorkflowConfigurer';
 import { ResourceSelectorFactory } from './configurers/ResourceSelectorFactory';
 import { AssetHandler } from './helper/AssetHandler';
-import { getSubscriptionSession } from './helper/azureSessionHelper';
+import { getAzureSession, getSubscriptionSession } from './helper/azureSessionHelper';
 import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
@@ -94,7 +94,7 @@ class Orchestrator {
         await this.getInputs(node);
 
         if (this.continueOrchestration) {
-            let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession, this.inputs.subscriptionId,
+            let pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession,
                 this.inputs.pipelineConfiguration.template.templateType, this.localGitRepoHelper);
             let selectedCICDProvider = (pipelineConfigurer.constructor.name === "AzurePipelineConfigurer") ? constants.azurePipeline : constants.githubWorkflow;
             telemetryHelper.setTelemetry(TelemetryKeys.SelectedCICDProvider, selectedCICDProvider);
@@ -162,13 +162,14 @@ class Orchestrator {
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
-            await this.getAzureSession();
+            this.inputs.azureSession = getAzureSession();
             let repoAnalysisResult = await this.getRepositoryAnalysis();
             await this.getSelectedPipeline(repoAnalysisResult);
 
             try {
                 if (!resourceNode) {
                     this.context['rightClickScenario'] = false;
+                    await this.getAzureSubscription();
                     await this.getAzureResource(this.getSelectedPipelineTargetType());
                 }
                 else {
@@ -454,7 +455,7 @@ class Orchestrator {
         return resource;
     }
 
-    private async getAzureSession(): Promise<void> {
+    private async getAzureSubscription(): Promise<void> {
         // show available subscriptions and get the chosen one
         let subscriptionList = extensionVariables.azureAccountExtensionApi.filters.map((subscriptionObject) => {
             return <QuickPickItemWithData>{
@@ -465,7 +466,6 @@ class Orchestrator {
         });
         let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
         this.inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
-        this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
         this.context['subscriptionId'] = this.inputs.subscriptionId;
 
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);

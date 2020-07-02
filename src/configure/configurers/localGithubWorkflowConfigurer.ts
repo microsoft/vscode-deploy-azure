@@ -16,7 +16,7 @@ import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
-import { AzureConnectionType, AzureSession, extensionVariables, GitHubRepo, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, extensionVariables, GitHubRepo, TargetResourceType, WizardInputs } from "../model/models";
 import { LocalPipelineTemplate, TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -34,7 +34,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
     private controlProvider: ControlProvider;
     private localGitRepoHelper: LocalGitRepoHelper;
 
-    constructor(azureSession: AzureSession, subscriptionId: string, localgitRepoHelper: LocalGitRepoHelper) {
+    constructor(localgitRepoHelper: LocalGitRepoHelper) {
         this.controlProvider = new ControlProvider();
         this.localGitRepoHelper = localgitRepoHelper;
     }

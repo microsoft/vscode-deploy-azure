@@ -5,8 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). Versionin
 
 ## 1.0.7
 ### Added
-- Integrated with repo analysis and template service
 - If not a remote repo, have a provision of creating github repo
+- Added support for selecting the working directory if multiple applications are there to deploy
 
 ## 1.0.6
 ### Added
