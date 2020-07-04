@@ -15,21 +15,21 @@ export async function sleepForMilliSeconds(timeInMs: number): Promise<void> {
     });
 }
 
-export async function generateGitHubRepository(orgName: string, localPath: string, githubClient: GithubClient): Promise<GitHubRepo | void>{
-    let repoName = localPath.substring(localPath.lastIndexOf("\\") + 1);
-    let repoDetails = await githubClient.createGithubRepo(orgName, repoName) as GitHubRepo | void;
+export async function generateGitHubRepository(orgName: string, localPath: string, githubClient: GithubClient): Promise<GitHubRepo> {
+    let repoName = localPath.substring(localPath.lastIndexOf("\\") + 1).substring(localPath.lastIndexOf("/") + 1);
+    let repoDetails = await githubClient.createGithubRepo(orgName, repoName) as GitHubRepo;
     // Case : GitHub Repository name is same as the local repo
-    if(repoDetails){
-        return repoDetails; 
+    if (repoDetails) {
+        return repoDetails;
     }
     //Case: Local repository name is not available, therefore organization name has been appended
     repoName = repoName + "_" + orgName;
-    repoDetails = await githubClient.createGithubRepo(orgName, repoName) as GitHubRepo | void;
-    if(repoDetails){
-        return repoDetails; 
+    repoDetails = await githubClient.createGithubRepo(orgName, repoName) as GitHubRepo;
+    if (repoDetails) {
+        return repoDetails;
     }
     //Case: If the above two repository names are not available, uuid is also appended
-    return await githubClient.createGithubRepo(orgName, repoName + "-" + uuid().substr(0,5));  
+    return await githubClient.createGithubRepo(orgName, repoName + "_" + uuid().substr(0, 5));
 }
 
 export function generateDevOpsOrganizationName(userName: string, repositoryName: string): string {
@@ -38,7 +38,7 @@ export function generateDevOpsOrganizationName(userName: string, repositoryName:
 
     // Name cannot start or end with whitespaces, cannot start with '-', cannot contain characters other than a-z|A-Z|0-9
     organizationName = organizationName.trim().replace(/^[-]+/, '').replace(/[^a-zA-Z0-9-]/g, '');
-    if(organizationName.length > 50) {
+    if (organizationName.length > 50) {
         organizationName = organizationName.substr(0, 50);
     }
 
@@ -46,18 +46,18 @@ export function generateDevOpsOrganizationName(userName: string, repositoryName:
 }
 
 export function generateDevOpsProjectName(repositoryName?: string): string {
-    if(!repositoryName) {
+    if (!repositoryName) {
         return "AzurePipelines";
     }
 
     let repoParts = repositoryName.split("/");
-    let suffix = repoParts[repoParts.length-1];
+    let suffix = repoParts[repoParts.length - 1];
     suffix = suffix.trim();
     // project name cannot end with . or _
     suffix = suffix.replace(/\.[\.]*$/, '').replace(/^_[_]*$/, '');
 
     let projectName = `AzurePipelines-${suffix}`;
-    if(projectName.length > 64) {
+    if (projectName.length > 64) {
         projectName = projectName.substr(0, 64);
     }
 
@@ -79,10 +79,10 @@ export function generateRandomPassword(length: number = 20): string {
 export function stringCompareFunction(a: string, b: string): number {
     a = a && a.toLowerCase();
     b = b && b.toLowerCase();
-    if(a < b) {
+    if (a < b) {
         return -1;
     }
-    else if(a > b) {
+    else if (a > b) {
         return 1;
     }
     return 0;
@@ -93,18 +93,18 @@ export async function executeFunctionWithRetry(
     retryCount: number = 20,
     retryIntervalTimeInSec: number = 2,
     errorMessage?: string): Promise<any> {
-        let internalError = null;
-        for (;retryCount > 0; retryCount--) {
-            try {
-                let result = await func();
-                return result;
-            }
-            catch (error) {
-                internalError = error;
-                logger.log(JSON.stringify(error));
-                await Q.delay((resolve) => {resolve();}, retryIntervalTimeInSec * 1000);
-            }
+    let internalError = null;
+    for (; retryCount > 0; retryCount--) {
+        try {
+            let result = await func();
+            return result;
         }
+        catch (error) {
+            internalError = error;
+            logger.log(JSON.stringify(error));
+            await Q.delay((resolve) => { resolve(); }, retryIntervalTimeInSec * 1000);
+        }
+    }
 
-        throw errorMessage ? errorMessage.concat(util.format(Messages.retryFailedMessage, retryCount, JSON.stringify(internalError))): util.format  (Messages.retryFailedMessage, retryCount, JSON.stringify(internalError));
+    throw errorMessage ? errorMessage.concat(util.format(Messages.retryFailedMessage, retryCount, JSON.stringify(internalError))) : util.format(Messages.retryFailedMessage, retryCount, JSON.stringify(internalError));
 }

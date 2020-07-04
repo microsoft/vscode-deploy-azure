@@ -20,6 +20,21 @@ export class RestClient extends ServiceClient {
         });
     }
 
+    public sendRequest3<TResult>(options: PathTemplateBasedRequestPrepareOptions | UrlBasedRequestPrepareOptions): Promise<TResult> {
+        return new Promise<TResult>((resolve, reject) => {
+            super.sendRequestWithHttpOperationResponse<TResult>(options)
+                .then((response) => {
+                    if (response.response.statusCode >= 300) {
+                        reject(response);
+                    }
+                    resolve(response.body);
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
+    }
+
     public sendRequest2(url: string, httpMethod: string, apiVersion: string, body?: any): Promise<any> {
         return this.sendRequest(
             {
