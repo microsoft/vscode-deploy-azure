@@ -33,4 +33,5 @@ export class TracePoints {
     public static TemplateNotFound = 'TemplateNotFound';
     public static AzurePublishProfileCreationFailure = 'AzurePublishProfileCreationFailure';
     public static GitHubRepositoryCreationFailed = 'GitHubRepositoryCreationFailed';
+    public static LanguageClientActivationFailed = 'LanguageClientActivationFailed';
 }
