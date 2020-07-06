@@ -39,7 +39,7 @@ export class GithubClient {
     public async createGithubRepo(orgName: string, repoName: string): Promise<GitHubRepo> {
         let restClient = new RestClient();
         let Url = "https://api.github.com/orgs/" + orgName + "/repos";
-        return restClient.sendRequest3(<UrlBasedRequestPrepareOptions>{
+        return restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
             url: Url,
             headers: {
                 "Content-Type": "application/json",
@@ -57,7 +57,8 @@ export class GithubClient {
                 "has_wiki": true
             },
             deserializationMapper: null,
-            serializationMapper: null
+            serializationMapper: null,
+            sendCompletetResponse: true
         })
             .then((detail: GitHubRepo) => {
                 return detail;
