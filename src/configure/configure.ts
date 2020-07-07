@@ -162,7 +162,9 @@ class Orchestrator {
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
-            this.inputs.azureSession = getAzureSession();
+            if (!this.inputs.azureSession) {
+                this.inputs.azureSession = getAzureSession();
+            }
             let repoAnalysisResult = await this.getRepositoryAnalysis();
             await this.getSelectedPipeline(repoAnalysisResult);
 
@@ -467,7 +469,7 @@ class Orchestrator {
         let selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
         this.inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
         this.context['subscriptionId'] = this.inputs.subscriptionId;
-
+        this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
