@@ -53,9 +53,8 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                     TelemetryKeys.OrganizationListCount);
                 inputs.organizationName = selectedOrganization.label;
 
-
-                let newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient) as unknown as GitHubRepo | void;
-                if (newGitHubRepo) {
+                try {
+                    let newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient) as GitHubRepo;
                     this.githubClient.setRepoUrl(newGitHubRepo.html_url);
                     inputs.sourceRepository.remoteName = newGitHubRepo.name;
                     inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url + ".git";
@@ -64,8 +63,8 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                     telemetryHelper.setTelemetry(TelemetryKeys.GitHubRepoCreated, 'true');
                     vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated, newGitHubRepo.name));
                 }
-                else {
-                    vscode.window.showErrorMessage(Messages.cannotCreateGitHubRepository);
+                catch (error) {
+                    vscode.window.showErrorMessage(error.message);
                     throw Error;
                 }
             }

@@ -8,10 +8,13 @@ import { Configurer } from '../configurers/configurerBase';
 import { GitBranchDetails, GitRepositoryParameters, MustacheContext, WizardInputs } from '../model/models';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from "../resources/telemetryKeys";
+import { TracePoints } from '../resources/tracePoints';
 import { AzureDevOpsHelper } from './devOps/azureDevOpsHelper';
 import { GitHubProvider } from './gitHubHelper';
 import { telemetryHelper } from "./telemetryHelper";
 import * as templateHelper from './templateHelper';
+
+const Layer = 'LocalGitRepoHelper';
 
 export class LocalGitRepoHelper {
     private gitReference: git.SimpleGit;
@@ -118,20 +121,27 @@ export class LocalGitRepoHelper {
      * @returns: thenable string which resolves to commitId once commit is pushed to remote branch, and failure message if unsuccessful
      */
     public async commitAndPushPipelineFile(files: string[], repositoryDetails: GitRepositoryParameters, commitMessage: string): Promise<string> {
-        await this.gitReference.add(files);
-        await this.gitReference.commit(commitMessage, files);
-        let gitLog = await this.gitReference.log();
+        try {
+            await this.gitReference.add(files);
+            await this.gitReference.commit(commitMessage, files);
+            let gitLog = await this.gitReference.log();
 
-        if (repositoryDetails.remoteName && repositoryDetails.branch) {
-            await this.gitReference.push(repositoryDetails.remoteName, repositoryDetails.branch, {
-                "--set-upstream": null
-            });
-        }
-        else {
-            throw new Error(Messages.cannotAddFileRemoteMissing);
-        }
+            if (repositoryDetails.remoteName && repositoryDetails.branch) {
+                await this.gitReference.push(repositoryDetails.remoteName, repositoryDetails.branch, {
+                    "--set-upstream": null
+                });
+            }
+            else {
+                throw new Error(Messages.cannotAddFileRemoteMissing);
+            }
 
-        return gitLog.latest.hash;
+            return gitLog.latest.hash;
+
+        }
+        catch (error) {
+            telemetryHelper.logError(Layer, TracePoints.CommitAndPushPipelineFileFailed, error);
+            throw error;
+        }
     }
 
     public async getGitRootDirectory(): Promise<string> {
@@ -140,23 +150,29 @@ export class LocalGitRepoHelper {
     }
 
     public async initializeGitRepository(remoteName: string, remoteUrl: string, filesToExcludeRegex?: string): Promise<void> {
-        let isGitRepository = await this.isGitRepository();
-
-        if (!isGitRepository) {
-            await this.gitReference.init();
-        }
-
         try {
-            // Try to see if there are any commits
-            await this.gitReference.log();
+            let isGitRepository = await this.isGitRepository();
+
+            if (!isGitRepository) {
+                await this.gitReference.init();
+            }
+
+            try {
+                // Try to see if there are any commits
+                await this.gitReference.log();
+            }
+            catch (error) {
+                // Commit all files if there are not commits on this branch
+                await this.gitReference.add(`:!${filesToExcludeRegex}`);
+                await this.gitReference.commit("Initialized git repository");
+            }
+
+            await this.gitReference.addRemote(remoteName, remoteUrl);
         }
         catch (error) {
-            // Commit all files if there are not commits on this branch
-            await this.gitReference.add(`:!${filesToExcludeRegex}`);
-            await this.gitReference.commit("Initialized git repository");
+            telemetryHelper.logError(Layer, TracePoints.InitializeGitRepositoryFailed, error);
+            throw error;
         }
-
-        await this.gitReference.addRemote(remoteName, remoteUrl);
     }
 
     private static getIncreamentalFileName(fileName: string, count: number): string {
