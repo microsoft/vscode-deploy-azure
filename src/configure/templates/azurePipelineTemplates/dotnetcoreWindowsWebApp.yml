@@ -26,7 +26,7 @@ variables:
   buildProjects: "{{#equals}}{{{ workingDirectory }}} '.' true '**/*.csproj' '$(workingDirectory)/**/*.csproj'{{/equals}}"
 
   # Test Projects
- testProjects: "{{#equals}}{{{ workingDirectory }}} '.' true '**/*[Tt]est*/*.csproj' '$(workingDirectory)/**/*[Tt]est*/*.csproj'{{/equals}}"
+  testProjects: "{{#equals}}{{{ workingDirectory }}} '.' true '**/*[Tt]est*/*.csproj' '$(workingDirectory)/**/*[Tt]est*/*.csproj'{{/equals}}"
 
   # Dotnet Core Version
   dotnetCoreVersion: 2.x
