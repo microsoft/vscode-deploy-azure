@@ -58,7 +58,7 @@ export class GithubClient {
             },
             deserializationMapper: null,
             serializationMapper: null,
-            sendCompletetResponse: true
+            returnFullResponseForFailure: true
         })
             .then((detail: GitHubRepo) => {
                 return detail;

@@ -10,7 +10,7 @@ export class RestClient extends ServiceClient {
             super.sendRequestWithHttpOperationResponse<TResult>(options)
                 .then((response) => {
                     if (response.response.statusCode >= 300) {
-                        if (options.sendCompletetResponse === true) {
+                        if (options.returnFullResponseForFailure === true) {
                             reject(response);
                         }
                         else {
