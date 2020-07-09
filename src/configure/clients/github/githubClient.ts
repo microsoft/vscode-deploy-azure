@@ -14,7 +14,7 @@ export class GithubClient {
 
     private patToken: string;
     private url: string;
-    private listOrgPromise: Promise<void | GitHubOrganization[]>;
+    private listOrgPromise: Promise<GitHubOrganization[]>;
 
 
     constructor(patToken: string, remoteUrl: string) {
@@ -36,7 +36,7 @@ export class GithubClient {
         await this._setGithubSecret(secretName, secretKeyObject.key_id, encryptedEncodedText);
     }
 
-    public async createGithubRepo(orgName: string, repoName: string): Promise<void | GitHubRepo> {
+    public async createGithubRepo(orgName: string, repoName: string): Promise<GitHubRepo> {
         let restClient = new RestClient();
         let Url = "https://api.github.com/orgs/" + orgName + "/repos";
         try {
@@ -73,7 +73,7 @@ export class GithubClient {
         }
     }
 
-    public async listOrganizations(forceRefresh?: boolean): Promise<void | GitHubOrganization[]> {
+    public async listOrganizations(forceRefresh?: boolean): Promise<GitHubOrganization[]> {
         if (!this.listOrgPromise || forceRefresh) {
             let restClient = new RestClient();
             this.listOrgPromise = restClient.sendRequest(<UrlBasedRequestPrepareOptions>{

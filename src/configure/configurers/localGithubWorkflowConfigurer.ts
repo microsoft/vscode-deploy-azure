@@ -54,7 +54,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                 inputs.organizationName = selectedOrganization.label;
 
 
-                let newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient) as unknown as GitHubRepo | void;
+                let newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient) as unknown as GitHubRepo;
                 if (newGitHubRepo) {
                     this.githubClient.setRepoUrl(newGitHubRepo.html_url);
                     inputs.sourceRepository.remoteName = newGitHubRepo.name;
