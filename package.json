@@ -2,7 +2,7 @@
     "name": "azure-deploy",
     "displayName": "Deploy to Azure",
     "description": "Generating CI/CD pipelines to Azure from GitHub and Azure Repo",
-    "version": "1.0.5",
+    "version": "1.0.7",
     "publisher": "ms-vscode-deploy-azure",
     "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
     "repository": {
@@ -42,6 +42,28 @@
     ],
     "main": "./out/extension",
     "contributes": {
+        "languages": [
+            {
+                "id": "yaml",
+                "aliases": [
+                    "YAML",
+                    "yaml"
+                ],
+                "extensions": [
+                    ".yml",
+                    ".eyaml",
+                    ".eyml",
+                    ".yaml"
+                ]
+            }
+        ],
+        "grammars": [
+            {
+                "language": "yaml",
+                "scopeName": "source.yaml",
+                "path": "./syntaxes/yaml.tmLanguage.json"
+            }
+        ],
         "commands": [
             {
                 "command": "configure-cicd-pipeline",
@@ -133,8 +155,10 @@
         "uuid": "^3.3.2",
         "vscode-azureextensionui": "0.26.3",
         "vscode-extension-telemetry": "0.0.18",
+        "vscode-languageclient": "^5.2.1",
         "vscode-nls": "3.2.4",
-        "vscode-uri": "1.0.6"
+        "vscode-uri": "1.0.6",
+        "yaml-language-server": "^0.8.0"
     },
     "extensionDependencies": [
         "ms-vscode.azure-account"

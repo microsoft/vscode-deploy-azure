@@ -16,7 +16,7 @@ export async function sleepForMilliSeconds(timeInMs: number): Promise<void> {
 }
 
 export async function generateGitHubRepository(orgName: string, localPath: string, githubClient: GithubClient): Promise<GitHubRepo> {
-    let repoName = localPath.substring(localPath.lastIndexOf("\\") + 1);
+    let repoName = localPath.substring(localPath.lastIndexOf("\\") + 1).substring(localPath.lastIndexOf("/") + 1);
     let repoDetails = await githubClient.createGithubRepo(orgName, repoName) as GitHubRepo;
     // Case : GitHub Repository name is same as the local repo
     if (repoDetails) {
@@ -29,7 +29,7 @@ export async function generateGitHubRepository(orgName: string, localPath: strin
         return repoDetails;
     }
     //Case: If the above two repository names are not available, uuid is also appended
-    return await githubClient.createGithubRepo(orgName, repoName + "-" + uuid().substr(0, 5));
+    return await githubClient.createGithubRepo(orgName, repoName + "_" + uuid().substr(0, 5));
 }
 
 export function generateDevOpsOrganizationName(userName: string, repositoryName: string): string {

@@ -74,7 +74,7 @@ describe('Testing listOrganizations() -- using Nock', function () {
 });
 
 describe('Testing createGitHubRepo', function () {
-    this.timeout(500000);
+    this.timeout(10000);
     before(function () {
         var response = {
             "id": 278008782,
@@ -108,14 +108,25 @@ describe('Testing createGitHubRepo', function () {
     });
 
     before(function () {
-        var response = null;
+        var response = {
+            "message": "Repository creation failed.",
+            "errors": [
+                {
+                    "resource": "Repository",
+                    "code": "custom",
+                    "field": "name",
+                    "message": "name already exists on this account"
+                }
+            ],
+            "documentation_url": "https://developer.github.com/v3/repos/#create"
+        };
 
         nock('https://api.github.com')
             .post('/orgs/JadedJune/repos')
-            .reply(200, response);
+            .reply(422, response);
     });
 
-    it('Returns null when repo of same already exists in the org', function (done) {
+    it('Returns null when repository creation fails due to existence of repository of same name within the organization', function (done) {
 
         githubClient.createGithubRepo(org, repoName).then((repo) => {
             expect(repo).to.equal(null);

@@ -39,38 +39,36 @@ export class GithubClient {
     public async createGithubRepo(orgName: string, repoName: string): Promise<GitHubRepo> {
         let restClient = new RestClient();
         let Url = "https://api.github.com/orgs/" + orgName + "/repos";
-        try {
-            return restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
-                url: Url,
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + this.patToken,
-                    "User-Agent": UserAgent
-                },
-                method: 'POST',
-                body: {
-                    "name": repoName,
-                    "description": "Repo created from VScode extension 'Deploy to Azure'",
-                    "homepage": "https://github.com",
-                    "private": false,
-                    "has_issues": true,
-                    "has_projects": true,
-                    "has_wiki": true
-                },
-                deserializationMapper: null,
-                serializationMapper: null
-            })
-                .then((detail: GitHubRepo) => {
-                    return detail;
-                }).catch(error => {
-                    telemetryHelper.logError(Layer, TracePoints.GitHubRepositoryCreationFailed, error);
+        return restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
+            url: Url,
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + this.patToken,
+                "User-Agent": UserAgent
+            },
+            method: 'POST',
+            body: {
+                "name": repoName,
+                "description": "Repo created from VScode extension 'Deploy to Azure'",
+                "homepage": "https://github.com",
+                "private": true,
+                "has_issues": true,
+                "has_projects": true,
+                "has_wiki": true
+            },
+            deserializationMapper: null,
+            serializationMapper: null,
+            returnFullResponseForFailure: true
+        })
+            .then((detail: GitHubRepo) => {
+                return detail;
+            }).catch(error => {
+                if (error.response.statusCode === 422) {
                     return null;
-                });
-        }
-        catch (error) {
-            telemetryHelper.logError(Layer, TracePoints.GitHubRepositoryCreationFailed, error);
-            return null;
-        }
+                }
+                telemetryHelper.logError(Layer, TracePoints.GitHubRepositoryCreationFailed, error);
+                throw new Error(JSON.parse(error.response.body).message);
+            });
     }
 
     public async listOrganizations(forceRefresh?: boolean): Promise<GitHubOrganization[]> {

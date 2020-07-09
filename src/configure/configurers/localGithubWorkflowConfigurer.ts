@@ -16,7 +16,7 @@ import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
-import { AzureConnectionType, AzureSession, extensionVariables, GitHubRepo, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, extensionVariables, GitHubRepo, TargetResourceType, WizardInputs } from "../model/models";
 import { LocalPipelineTemplate, TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -34,7 +34,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
     private controlProvider: ControlProvider;
     private localGitRepoHelper: LocalGitRepoHelper;
 
-    constructor(azureSession: AzureSession, subscriptionId: string, localgitRepoHelper: LocalGitRepoHelper) {
+    constructor(localgitRepoHelper: LocalGitRepoHelper) {
         this.controlProvider = new ControlProvider();
         this.localGitRepoHelper = localgitRepoHelper;
     }
@@ -53,9 +53,8 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                     TelemetryKeys.OrganizationListCount);
                 inputs.organizationName = selectedOrganization.label;
 
-
-                let newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient) as unknown as GitHubRepo;
-                if (newGitHubRepo) {
+                try {
+                    let newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient) as GitHubRepo;
                     this.githubClient.setRepoUrl(newGitHubRepo.html_url);
                     inputs.sourceRepository.remoteName = newGitHubRepo.name;
                     inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url + ".git";
@@ -64,8 +63,8 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                     telemetryHelper.setTelemetry(TelemetryKeys.GitHubRepoCreated, 'true');
                     vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated, newGitHubRepo.name));
                 }
-                else {
-                    vscode.window.showErrorMessage(Messages.cannotCreateGitHubRepository);
+                catch (error) {
+                    vscode.window.showErrorMessage(error.message);
                     throw Error;
                 }
             }
