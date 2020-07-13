@@ -3,7 +3,7 @@ All notable changes to the Deploy to Azure extension will be documented in this 
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/). Versioning follows an internal Azure DevOps format that is not compatible with SemVer.
 
-## 1.0.7
+## 1.1.0
 ### Added
 - If not a remote repo, have a provision of creating github repo
 - Added support for selecting the working directory if multiple applications are there to deploy
