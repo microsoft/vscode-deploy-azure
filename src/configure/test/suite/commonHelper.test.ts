@@ -6,10 +6,9 @@ const uuid = require('uuid/v4');
 var expect = require('chai').expect;
 var nock = require('nock');
 
-let PAT = "cc42068020540d4b31cdf89982fae9b2d536987f";
 let org = "Organization";
 let localPath = "some local path";
-let githubClient = new GithubClient(PAT, localPath);
+let githubClient = new GithubClient("PAT", localPath);
 let uniqueId = uuid().substr(0, 5);
 let repoName = "Repository";
 
@@ -25,7 +24,7 @@ var responseOnFailure = {
     ],
 };
 
-describe('Testing generateGithubRepository()', function () {
+describe('# Testing generateGithubRepository()', function () {
     this.timeout(500000);
     before(function () {
         var responseOnSuccess = {
@@ -44,15 +43,17 @@ describe('Testing generateGithubRepository()', function () {
             .reply(200, responseOnSuccess);
     });
 
-    it('Creates new repository with the same name as local name', function (done) {
-        generateGitHubRepository(org, localPath, githubClient).then((repo) => {
-            expect(repo).to.have.property('name');
-            expect(repo).to.have.property('id');
-            expect(repo).to.have.property('html_url');
-            expect(repo).to.have.property('owner');
-            expect(repo.name).to.deep.equal(repoName);
-            expect(repo.description).to.deep.equal("Repo created from VScode extension 'Deploy to Azure'");
-            done();
+    context('Local repository name is unique inside selected organization', function () {
+        it('Should create a new repository with the same name as local repository name', function (done) {
+            generateGitHubRepository(org, localPath, githubClient).then((repo) => {
+                expect(repo).to.have.property('name');
+                expect(repo).to.have.property('id');
+                expect(repo).to.have.property('html_url');
+                expect(repo).to.have.property('owner');
+                expect(repo.name).to.deep.equal(repoName);
+                expect(repo.description).to.deep.equal("Repo created from VScode extension 'Deploy to Azure'");
+                done();
+            });
         });
     });
 
@@ -75,15 +76,17 @@ describe('Testing generateGithubRepository()', function () {
             .reply(200, responseOnSuccess);
     });
 
-    it('Creates new repository with the name = "local name + org name"', function (done) {
-        generateGitHubRepository(org, localPath, githubClient).then((repo) => {
-            expect(repo).to.have.property('name');
-            expect(repo).to.have.property('id');
-            expect(repo).to.have.property('html_url');
-            expect(repo).to.have.property('owner');
-            expect(repo.name).to.deep.equal(repoName + "_" + org);
-            expect(repo.description).to.deep.equal("Repo created from VScode extension 'Deploy to Azure'");
-            done();
+    context('Selected organization contains a repository with same name as local repository', function () {
+        it('Should create a new repository with the name = "local name + org name"', function (done) {
+            generateGitHubRepository(org, localPath, githubClient).then((repo) => {
+                expect(repo).to.have.property('name');
+                expect(repo).to.have.property('id');
+                expect(repo).to.have.property('html_url');
+                expect(repo).to.have.property('owner');
+                expect(repo.name).to.deep.equal(repoName + "_" + org);
+                expect(repo.description).to.deep.equal("Repo created from VScode extension 'Deploy to Azure'");
+                done();
+            });
         });
     });
 
@@ -108,16 +111,17 @@ describe('Testing generateGithubRepository()', function () {
             .reply(200, responseOnSuccess);
     });
 
-    it('Creates new repository with the name = "local name + org name + uuid"', function (done) {
-        generateGitHubRepository(org, localPath, githubClient).then((repo) => {
-            expect(repo).to.have.property('name');
-            expect(repo).to.have.property('id');
-            expect(repo).to.have.property('html_url');
-            expect(repo).to.have.property('owner');
-            expect(repo.name).to.deep.equal(repoName + "_" + org + "_" + uniqueId);
-            expect(repo.description).to.deep.equal("Repo created from VScode extension 'Deploy to Azure'");
-            done();
+    context('Selected organization contains a repository with same name as local repository and another repository with the name - "Local repository name + Organization Name"', function () {
+        it('Should create a new repository with the name = "local name + org name + uuid"', function (done) {
+            generateGitHubRepository(org, localPath, githubClient).then((repo) => {
+                expect(repo).to.have.property('name');
+                expect(repo).to.have.property('id');
+                expect(repo).to.have.property('html_url');
+                expect(repo).to.have.property('owner');
+                expect(repo.name).to.deep.equal(repoName + "_" + org + "_" + uniqueId);
+                expect(repo.description).to.deep.equal("Repo created from VScode extension 'Deploy to Azure'");
+                done();
+            });
         });
     });
-
 });

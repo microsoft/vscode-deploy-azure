@@ -1,16 +1,14 @@
-//using Nock
 import { GithubClient } from "../../clients/github/githubClient";
 
 var expect = require('chai').expect;
 var nock = require('nock');
 
-let PAT = "cc42068020540d4b31cdf89982fae9b2d536987f";
 let org = "Organization";
 let repoName = "Repository";
+let githubClient = new GithubClient("PAT", "repoUrl");
 
-let githubClient = new GithubClient(PAT, "repoUrl");
 
-describe('Testing listOrganizations() ', function () {
+describe('# Testing listOrganizations() ', function () {
     this.timeout(500000);
 
     before(function () {
@@ -22,17 +20,16 @@ describe('Testing listOrganizations() ', function () {
                 "repos_url": "https://api.github.com/orgs/SampleOrganizationA/repos"
             },
             {
-                "login": "JadedJune",
+                "login": "SampleOrganizationB",
                 "id": 67440137,
-                "url": "https://api.github.com/orgs/JadedJune",
-                "repos_url": "https://api.github.com/orgs/JadedJune/repos",
-                "avatar_url": "https://avatars3.githubusercontent.com/u/67440137?v=4"
+                "url": "https://api.github.com/orgs/SampleOrganizationB",
+                "repos_url": "https://api.github.com/orgs/SampleOrganizationB/repos",
             },
             {
-                "login": "SampleOrganizationB",
+                "login": "SampleOrganizationC",
                 "id": 67453753,
-                "url": "https://api.github.com/orgs/SampleOrganizationB",
-                "repos_url": "https://api.github.com/orgs/SampleOrganizationB/repos"
+                "url": "https://api.github.com/orgs/SampleOrganizationC",
+                "repos_url": "https://api.github.com/orgs/SampleOrganizationC/repos"
             }];
 
         nock('https://api.github.com')
@@ -40,35 +37,39 @@ describe('Testing listOrganizations() ', function () {
             .reply(200, orgList);
     });
 
-    it('returns list of organizations', function (done) {
-        githubClient.listOrganizations().then((orgs) => {
-            expect(Array.isArray(orgs)).to.equal(true);
-            expect(orgs).to.have.length.above(1);
-            orgs.forEach((org) => {
-                expect(org).to.have.property('login');
-                expect(org).to.have.property('id');
-                expect(org).to.have.property('url');
+    context('User is a member of organizations(s)', function () {
+        it('should return a list of organizations', function (done) {
+            githubClient.listOrganizations(true).then((orgs) => {
+                expect(Array.isArray(orgs)).to.equal(true);
+                expect(orgs.length).to.equal(3);
+                orgs.forEach((org) => {
+                    expect(org).to.have.property('login');
+                    expect(org).to.have.property('id');
+                    expect(org).to.have.property('url');
+                });
+                done();
             });
-            done();
         });
     });
     before(function () {
-        var orgList = [];
+        var response = [];
         nock('https://api.github.com')
             .get('/user/orgs')
-            .reply(200, orgList);
+            .reply(200, response);
     });
 
-    it('returns empty list of organizations', function (done) {
-        githubClient.listOrganizations().then((orgs) => {
-            expect(Array.isArray(orgs)).to.equal(true);
-            expect(orgs).to.have.length.above(1);
-            done();
+    context('User is not a member of any organization', function () {
+        it('Should return an empty list of organization', function (done) {
+            githubClient.listOrganizations(true).then((orgs) => {
+                expect(Array.isArray(orgs)).to.equal(true);
+                expect(orgs.length).to.equal(0);
+                done();
+            });
         });
     });
 });
 
-describe('Testing createGitHubRepo', function () {
+describe('# Testing createGitHubRepo()', function () {
     this.timeout(500000);
 
     before(function () {
@@ -89,15 +90,18 @@ describe('Testing createGitHubRepo', function () {
             .reply(200, response);
     });
 
-    it('creates a new repo', function (done) {
-        githubClient.createGithubRepo(org, repoName).then((repo) => {
-            expect(repo).to.have.property('name');
-            expect(repo).to.have.property('id');
-            expect(repo).to.have.property('html_url');
-            expect(repo).to.have.property('owner');
-            expect(repo.name).to.deep.equal(repoName);
-            expect(repo.description).to.deep.equal("Repo created from VScode extension 'Deploy to Azure'");
-            done();
+    context('Given repository name is unique', function () {
+        it('Should create a new repository', function (done) {
+            let githubClient = new GithubClient("PAT", "repoUrl");
+            githubClient.createGithubRepo(org, repoName).then((repo) => {
+                expect(repo).to.have.property('name');
+                expect(repo).to.have.property('id');
+                expect(repo).to.have.property('html_url');
+                expect(repo).to.have.property('owner');
+                expect(repo.name).to.deep.equal(repoName);
+                expect(repo.description).to.deep.equal("Repo created from VScode extension 'Deploy to Azure'");
+                done();
+            });
         });
     });
 
@@ -119,10 +123,13 @@ describe('Testing createGitHubRepo', function () {
             .reply(422, response);
     });
 
-    it('Returns null when repository creation fails due to existence of repository of same name within the organization', function (done) {
-        githubClient.createGithubRepo(org, repoName).then((repo) => {
-            expect(repo).to.equal(null);
-            done();
+    context('Repository creation fails due to existence of repository of same name within the organization', function () {
+        it('Should return null', function (done) {
+            githubClient.createGithubRepo(org, repoName).then((repo) => {
+                expect(repo).to.equal(null);
+                done();
+            });
         });
     });
+
 });

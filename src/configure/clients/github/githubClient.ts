@@ -20,7 +20,6 @@ export class GithubClient {
     constructor(patToken: string, remoteUrl: string) {
         this.patToken = patToken;
         this.url = remoteUrl;
-        this.listOrgPromise = this.listOrganizations();
     }
 
     public async setRepoUrl(repoUrl: string) {
