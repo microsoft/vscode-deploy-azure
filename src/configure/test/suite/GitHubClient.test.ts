@@ -9,7 +9,6 @@ let githubClient = new GithubClient("PAT", "repoUrl");
 
 
 describe('# Testing listOrganizations() ', function () {
-    this.timeout(500000);
 
     before(function () {
         var orgList = [
@@ -70,7 +69,6 @@ describe('# Testing listOrganizations() ', function () {
 });
 
 describe('# Testing createGitHubRepo()', function () {
-    this.timeout(500000);
 
     before(function () {
         var response = {
@@ -84,22 +82,25 @@ describe('# Testing createGitHubRepo()', function () {
             "html_url": "https://github.com/" + org + "/" + repoName,
             "description": "Repo created from VScode extension 'Deploy to Azure'"
         };
+        var body = {
+            "name": repoName,
+            "description": "Repo created from VScode extension 'Deploy to Azure'",
+            "homepage": "https://github.com",
+            "private": true,
+            "has_issues": true,
+            "has_projects": true,
+            "has_wiki": true
+        };
 
         nock('https://api.github.com')
-            .post('/orgs/' + org + '/repos')
+            .post('/orgs/' + org + '/repos', body)
             .reply(200, response);
     });
 
     context('Given repository name is unique', function () {
         it('Should create a new repository', function (done) {
-            let githubClient = new GithubClient("PAT", "repoUrl");
             githubClient.createGithubRepo(org, repoName).then((repo) => {
-                expect(repo).to.have.property('name');
-                expect(repo).to.have.property('id');
-                expect(repo).to.have.property('html_url');
-                expect(repo).to.have.property('owner');
-                expect(repo.name).to.deep.equal(repoName);
-                expect(repo.description).to.deep.equal("Repo created from VScode extension 'Deploy to Azure'");
+                expect(repo).to.not.deep.equal(null);
                 done();
             });
         });
@@ -130,6 +131,28 @@ describe('# Testing createGitHubRepo()', function () {
                 done();
             });
         });
+    });
+
+    before(function () {
+        var response = {
+            "message": "Resource protected by organization SAML enforcement. You must grant your PAT access to this organization",
+            "documentation_url": "some url"
+        };
+        nock('https://api.github.com')
+            .post('/orgs/' + org + '/repos')
+            .reply(400, response);
+    });
+
+
+    context('Repository creation fails due to some other reason', function () {
+        it('Should throw error', function (done) {
+            githubClient.createGithubRepo(org, repoName).then(function () {
+                done();
+            }).catch(err => {
+                expect(err).to.equal(err);
+                done();
+            });
+        })
     });
 
 });

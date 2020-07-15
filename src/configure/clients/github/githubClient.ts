@@ -2,13 +2,10 @@ import { UrlBasedRequestPrepareOptions } from 'ms-rest';
 import { stringCompareFunction } from "../../helper/commonHelper";
 import { GitHubProvider } from "../../helper/gitHubHelper";
 import { SodiumLibHelper } from '../../helper/sodium/SodiumLibHelper';
-import { telemetryHelper } from '../../helper/telemetryHelper';
 import { GitHubOrganization, GitHubRepo } from '../../model/models';
-import { TracePoints } from '../../resources/tracePoints';
 import { RestClient } from "../restClient";
 
 const UserAgent = "deploy-to-azure-vscode";
-const Layer = 'GithubClient';
 
 export class GithubClient {
 
@@ -65,7 +62,6 @@ export class GithubClient {
                 if (error.response.statusCode === 422) {
                     return null;
                 }
-                telemetryHelper.logError(Layer, TracePoints.GitHubRepositoryCreationFailed, error);
                 throw new Error(JSON.parse(error.response.body).message);
             });
     }

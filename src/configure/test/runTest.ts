@@ -1,8 +1,8 @@
 import * as path from 'path';
-
 import { runTests } from 'vscode-test';
 
-async function main() {
+
+async function testHost() {
 	try {
 		// The folder containing the Extension Manifest package.json
 		// Passed to `--extensionDevelopmentPath`
@@ -15,9 +15,9 @@ async function main() {
 		// Download VS Code, unzip it and run the integration test
 		await runTests({ extensionDevelopmentPath, extensionTestsPath });
 	} catch (err) {
-		console.error('Failed to run tests');
+		console.error('Failed to run tests. Error : ' + err);
 		process.exit(1);
 	}
 }
 
-main();
+testHost();
