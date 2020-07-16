@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { GithubClient } from "../../clients/github/githubClient";
 import { generateGitHubRepository } from "../../helper/commonHelper";
 
@@ -33,42 +34,12 @@ var responseOnSuccess = {
     "description": "Repo created from VScode extension 'Deploy to Azure'"
 };
 
-var body1 = {
-    "name": "Repository",
-    "description": "Repo created from VScode extension 'Deploy to Azure'",
-    "homepage": "https://github.com",
-    "private": true,
-    "has_issues": true,
-    "has_projects": true,
-    "has_wiki": true
-};
-
-var body2 = {
-    "name": "Repository_Organization",
-    "description": "Repo created from VScode extension 'Deploy to Azure'",
-    "homepage": "https://github.com",
-    "private": true,
-    "has_issues": true,
-    "has_projects": true,
-    "has_wiki": true
-};
-
-var body3 = {
-    "name": /Repository_Organization_[a-zA-Z0-9]*/,
-    "description": "Repo created from VScode extension 'Deploy to Azure'",
-    "homepage": "https://github.com",
-    "private": true,
-    "has_issues": true,
-    "has_projects": true,
-    "has_wiki": true
-};
-
 describe('# Testing generateGithubRepository()', function () {
 
     context('Local repository name is unique inside selected organization', function () {
         it('Should create a new repository with the same name as local repository name', function (done) {
             nock('https://api.github.com')
-                .post('/orgs/' + org + '/repos', body1)
+                .post('/orgs/' + org + '/repos', _.matches({ name: repoName }))
                 .reply(200, responseOnSuccess);
             generateGitHubRepository(org, localPath, githubClient).then((repo) => {
                 expect(repo).to.not.deep.equal(null);
@@ -80,9 +51,9 @@ describe('# Testing generateGithubRepository()', function () {
     context('Selected organization contains a repository with same name as local repository', function () {
         it('Should create a new repository with the name = "local name + org name"', function (done) {
             nock('https://api.github.com')
-                .post('/orgs/' + org + '/repos', body1)
+                .post('/orgs/' + org + '/repos', _.matches({ name: repoName }))
                 .reply(422, responseOnFailure)
-                .post('/orgs/' + org + '/repos', body2)
+                .post('/orgs/' + org + '/repos', _.matches({ name: repoName + "_" + org }))
                 .reply(200, responseOnSuccess);
             generateGitHubRepository(org, localPath, githubClient).then((repo) => {
                 expect(repo).to.not.deep.equal(null);
@@ -94,11 +65,11 @@ describe('# Testing generateGithubRepository()', function () {
     context('Selected organization contains a repository with same name as local repository and another repository with the name - "Local repository name + Organization Name"', function () {
         it('Should create a new repository with the name = "local name + org name + uuid"', function (done) {
             nock('https://api.github.com')
-                .post('/orgs/' + org + '/repos', body1)
+                .post('/orgs/' + org + '/repos', _.matches({ name: repoName }))
                 .reply(422, responseOnFailure)
-                .post('/orgs/' + org + '/repos', body2)
+                .post('/orgs/' + org + '/repos', _.matches({ name: repoName + "_" + org }))
                 .reply(422, responseOnFailure)
-                .post('/orgs/' + org + '/repos', body3)
+                .post('/orgs/' + org + '/repos', body => /Repository_Organization_[a-zA-Z0-9]*/.test(body.name))
                 .reply(200, responseOnSuccess);
             generateGitHubRepository(org, localPath, githubClient).then((repo) => {
                 expect(repo).to.not.deep.equal(null);

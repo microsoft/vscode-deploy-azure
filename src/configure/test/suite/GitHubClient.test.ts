@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { GithubClient } from "../../clients/github/githubClient";
 
 var expect = require('chai').expect;
@@ -44,17 +45,6 @@ var repoCreationResponseOnFailure = {
     "documentation_url": "some url"
 };
 
-var repoCreationBody = {
-    "name": repoName,
-    "description": "Repo created from VScode extension 'Deploy to Azure'",
-    "homepage": "https://github.com",
-    "private": true,
-    "has_issues": true,
-    "has_projects": true,
-    "has_wiki": true
-};
-
-
 describe('# Testing listOrganizations() ', function () {
 
     context('User is a member of organizations(s)', function () {
@@ -94,7 +84,7 @@ describe('# Testing createGitHubRepo()', function () {
     context('Given repository name is unique', function () {
         it('Should create a new repository', function (done) {
             nock('https://api.github.com')
-                .post('/orgs/' + org + '/repos', repoCreationBody)
+                .post('/orgs/' + org + '/repos', _.matches({ name: repoName }))
                 .reply(200, repoCreationResponseOnSuccess);
             githubClient.createGithubRepo(org, repoName).then((repo) => {
                 expect(repo).to.not.deep.equal(null);
