@@ -54,16 +54,17 @@ export class Organization {
 
 export class GitHubOrganization {
     login: string;
-    id : number;
+    id: number;
     url: string;
     repos_url: string;
 }
 
-export class GitHubRepo{
+export class GitHubRepo {
     id: string;
     name: string;
     orgName: string;
     html_url: string;
+    description: string;
 }
 
 export class AzureSession {
