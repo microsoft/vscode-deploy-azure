@@ -2,25 +2,21 @@ import { UrlBasedRequestPrepareOptions } from 'ms-rest';
 import { stringCompareFunction } from "../../helper/commonHelper";
 import { GitHubProvider } from "../../helper/gitHubHelper";
 import { SodiumLibHelper } from '../../helper/sodium/SodiumLibHelper';
-import { telemetryHelper } from '../../helper/telemetryHelper';
 import { GitHubOrganization, GitHubRepo } from '../../model/models';
-import { TracePoints } from '../../resources/tracePoints';
 import { RestClient } from "../restClient";
 
 const UserAgent = "deploy-to-azure-vscode";
-const Layer = 'GithubClient';
 
 export class GithubClient {
 
     private patToken: string;
     private url: string;
-    private listOrgPromise: Promise<void | GitHubOrganization[]>;
+    private listOrgPromise: Promise<GitHubOrganization[]>;
 
 
     constructor(patToken: string, remoteUrl: string) {
         this.patToken = patToken;
         this.url = remoteUrl;
-        this.listOrgPromise = this.listOrganizations();
     }
 
     public async setRepoUrl(repoUrl: string) {
@@ -63,7 +59,6 @@ export class GithubClient {
             .then((detail: GitHubRepo) => {
                 return detail;
             }).catch(error => {
-                telemetryHelper.logError(Layer, TracePoints.GitHubRepositoryCreationFailed, error);
                 if (error.response.statusCode === 422) {
                     return null;
                 }
@@ -71,7 +66,7 @@ export class GithubClient {
             });
     }
 
-    public async listOrganizations(forceRefresh?: boolean): Promise<void | GitHubOrganization[]> {
+    public async listOrganizations(forceRefresh?: boolean): Promise<GitHubOrganization[]> {
         if (!this.listOrgPromise || forceRefresh) {
             let restClient = new RestClient();
             this.listOrgPromise = restClient.sendRequest(<UrlBasedRequestPrepareOptions>{

@@ -31,3 +31,9 @@ Visual Studio Code collects usage data and sends it to Microsoft to help improve
 See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to jump in!
 
 For TSLint to work in VSCode, run `npm install` and restart VSCode.
+
+# Testing framework
+
+For adding test, create test files with extension `.test.ts` inside src/configure/test/suite.
+
+For running all the tests, use the command `npm test`.
