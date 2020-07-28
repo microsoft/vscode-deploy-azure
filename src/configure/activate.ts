@@ -7,7 +7,6 @@ import { telemetryHelper } from './helper/telemetryHelper';
 import { AzureAccountExtensionExports, extensionVariables } from './model/models';
 import { Messages } from './resources/messages';
 
-
 export async function activateConfigurePipeline(): Promise<AzureExtensionApiProvider> {
     let azureAccountExtension = vscode.extensions.getExtension("ms-vscode.azure-account");
     if (!azureAccountExtension) {
