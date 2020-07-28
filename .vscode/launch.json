@@ -16,7 +16,6 @@
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"
             ],
-            "preLaunchTask": "npm: compile",
             "env": {
                 // Uncomment below line to show telemetry on Debug console
                 //                "DEBUGTELEMETRY": "v",
