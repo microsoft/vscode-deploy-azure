@@ -32,6 +32,7 @@ export class TelemetryKeys {
 
     public static resourceType = 'resourceType';
     public static resourceKind = 'resourceKind';
+    public static resourceIdHash = 'resourceIdHash';
 
     // Durations
     public static ExtensionActivationDuration = 'extensionActivationDuration';

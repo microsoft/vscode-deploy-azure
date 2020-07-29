@@ -1,4 +1,5 @@
 import { GenericResource } from "azure-arm-resource/lib/resource/models";
+import * as crypto from 'crypto';
 import * as utils from 'util';
 import { AppServiceClient } from "../clients/azure/appServiceClient";
 import { ArmRestClient } from "../clients/azure/armRestClient";
@@ -13,6 +14,7 @@ import { TelemetryKeys } from "../resources/telemetryKeys";
 import { getSubscriptionSession } from "./azureSessionHelper";
 import { ControlProvider } from "./controlProvider";
 import { MustacheHelper } from "./mustacheHelper";
+import { telemetryHelper } from "./telemetryHelper";
 
 export class TemplateParameterHelper {
     public static getParameterForTargetResourceType(parameters: TemplateParameter[], targetResourceType: TargetResourceType, targetResourceKind?: TargetKind): TemplateParameter {
@@ -129,6 +131,9 @@ export class TemplateParameterHelper {
                         }
                         else {
 
+                            telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash,
+                                crypto.createHash('sha256').update(selectedResource.data.id).digest('hex'));
+
                             //handling case senstivity issue of httpApplicationRouting
                             if (detailedResource.properties.addonProfiles) {
                                 let addonProfiles = JSON.parse(JSON.stringify(detailedResource.properties.addonProfiles).toLowerCase());
@@ -172,6 +177,8 @@ export class TemplateParameterHelper {
                         { placeHolder: Messages.selectTargetResource },
                         TelemetryKeys.AzureResourceListCount);
 
+                    telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash,
+                        crypto.createHash('sha256').update((<GenericResource>selectedResource.data).id).digest('hex'));
                     if (await appServiceClient.isScmTypeSet((<GenericResource>selectedResource.data).id)) {
                         await openBrowseExperience((<GenericResource>selectedResource.data).id);
                         throw Error(Messages.setupAlreadyConfigured);
