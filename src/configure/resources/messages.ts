@@ -108,4 +108,5 @@ export class Messages {
     public static cannotCreateGitHubRepository = "New GitHub repository could not be created as the repository with the same name already exists";
     public static languageNotSupported = "The language of the repository selected is not supported.";
     public static UnableToGetTemplateParameters = "Unable to get parameters for the selected template.";
+    public static FetchingRepoDetails = "Fetching repository details";
 }
