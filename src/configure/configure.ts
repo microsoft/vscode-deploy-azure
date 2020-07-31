@@ -482,7 +482,7 @@ class Orchestrator {
 
         if (!extensionVariables.templateServiceEnabled) {
             var localPipelines = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline(
                     this.inputs.sourceRepository.localPath,
                     this.inputs.sourceRepository.repositoryProvider,
@@ -492,7 +492,7 @@ class Orchestrator {
             appropriatePipelines = localPipelines;
         } else {
             var remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
                     this.inputs.azureSession,
                     this.inputs.sourceRepository.localPath,
