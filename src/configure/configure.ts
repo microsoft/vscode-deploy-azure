@@ -235,10 +235,13 @@ class Orchestrator {
     private async getRepositoryAnalysis() {
         if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
             await this.getGithubPatToken();
-            return await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
-                return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
-                    this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
-            }, TelemetryKeys.RepositoryAnalysisDuration);
+            return await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.AnalyzingRepo },
+                () => telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+                    return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
+                        this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+                }, TelemetryKeys.RepositoryAnalysisDuration)
+            );
         }
         return null;
     }
@@ -482,7 +485,7 @@ class Orchestrator {
 
         if (!extensionVariables.templateServiceEnabled) {
             var localPipelines = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline(
                     this.inputs.sourceRepository.localPath,
                     this.inputs.sourceRepository.repositoryProvider,
@@ -492,7 +495,7 @@ class Orchestrator {
             appropriatePipelines = localPipelines;
         } else {
             var remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
                     this.inputs.azureSession,
                     this.inputs.sourceRepository.localPath,
