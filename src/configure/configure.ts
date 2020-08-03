@@ -29,6 +29,7 @@ import { TracePoints } from './resources/tracePoints';
 import { InputControlProvider } from './templateInputHelper/InputControlProvider';
 
 const uuid = require('uuid/v4');
+
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
@@ -126,8 +127,10 @@ class Orchestrator {
     }
 
     private async getAzureResource(targetType: TargetResourceType) {
-        var azureResourceSelector = ResourceSelectorFactory.getAzureResourceSelector(targetType);
+        const azureResourceSelector = ResourceSelectorFactory.getAzureResourceSelector(targetType);
         this.inputs.targetResource.resource = await azureResourceSelector.getAzureResource(this.inputs);
+        this.azureResourceClient = ResourceSelectorFactory.getAzureResourceClient(targetType, this.inputs.azureSession.credentials,
+            this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceType, this.inputs.targetResource.resource.type);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, this.inputs.targetResource.resource.kind);
     }

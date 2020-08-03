@@ -96,6 +96,7 @@ export class AzurePipelineConfigurer implements Configurer {
                             id: repository.project.id,
                             name: repository.project.name
                         };
+                        telemetryHelper.setTelemetry(TelemetryKeys.RepoId, inputs.sourceRepository.repositoryId);
                     });
             }
 

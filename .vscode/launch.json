@@ -15,7 +15,11 @@
             ],
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"
-            ]
+            ],
+            "env": {
+                // Uncomment below line to show telemetry on Debug console
+                //                "DEBUGTELEMETRY": "v",
+            }
         },
         {
             "name": "Extension Tests",

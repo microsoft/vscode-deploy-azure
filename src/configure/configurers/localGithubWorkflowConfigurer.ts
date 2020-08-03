@@ -60,6 +60,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                     inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url + ".git";
                     inputs.sourceRepository.repositoryId = GitHubProvider.getRepositoryIdFromUrl(inputs.sourceRepository.remoteUrl);
                     await this.localGitRepoHelper.initializeGitRepository(inputs.sourceRepository.remoteName, inputs.sourceRepository.remoteUrl);
+                    telemetryHelper.setTelemetry(TelemetryKeys.RepoId, inputs.sourceRepository.repositoryId);
                     telemetryHelper.setTelemetry(TelemetryKeys.GitHubRepoCreated, 'true');
                     vscode.window.showInformationMessage(utils.format(Messages.newGitHubRepositoryCreated, newGitHubRepo.name));
                 }
