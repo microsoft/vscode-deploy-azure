@@ -233,7 +233,7 @@ class Orchestrator {
         if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
             await this.getGithubPatToken();
             return await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.FetchingRepoDetails },
+                { location: vscode.ProgressLocation.Notification, title: Messages.AnalyzingRepo },
                 () => telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
                     return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
                         this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
