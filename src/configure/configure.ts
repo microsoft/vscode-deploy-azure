@@ -166,7 +166,7 @@ class Orchestrator {
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
             if (!this.inputs.azureSession) {
-                this.inputs.azureSession = getAzureSession();
+                this.inputs.azureSession = await getAzureSession();
             }
             let repoAnalysisResult = await this.getRepositoryAnalysis();
             await this.getSelectedPipeline(repoAnalysisResult);
