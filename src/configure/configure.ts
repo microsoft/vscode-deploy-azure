@@ -64,11 +64,11 @@ export async function configurePipeline(node: AzureTreeItem) {
         }
         catch (error) {
             if (!(error instanceof UserCancelledError)) {
+                vscode.window.showErrorMessage(error.message);
                 if (extensionVariables.isErrorWhitelisted === true) {
                     telemetryHelper.setResult(Result.Succeeded);
                 } else {
                     extensionVariables.outputChannel.appendLine(error.message);
-                    vscode.window.showErrorMessage(error.message);
                     telemetryHelper.setResult(Result.Failed, error);
                 }
             }
