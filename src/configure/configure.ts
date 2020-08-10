@@ -405,7 +405,7 @@ class Orchestrator {
                 };
             }
             else {
-                let repositoryProvider: string = "Other";
+                let repositoryProvider: string;
 
                 if (remoteUrl.indexOf("bitbucket.org") >= 0) {
                     repositoryProvider = "Bitbucket";
@@ -413,8 +413,12 @@ class Orchestrator {
                 else if (remoteUrl.indexOf("gitlab.com") >= 0) {
                     repositoryProvider = "GitLab";
                 }
+                else {
+                    repositoryProvider = remoteUrl;
+                }
 
                 telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, repositoryProvider);
+                telemetryHelper.setTelemetry(TelemetryKeys.IsErrorWhitelisted, "true");
                 throw new Error(Messages.cannotIdentifyRespositoryDetails);
             }
         }
