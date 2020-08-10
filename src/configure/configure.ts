@@ -64,9 +64,13 @@ export async function configurePipeline(node: AzureTreeItem) {
         }
         catch (error) {
             if (!(error instanceof UserCancelledError)) {
-                extensionVariables.outputChannel.appendLine(error.message);
-                vscode.window.showErrorMessage(error.message);
-                telemetryHelper.setResult(Result.Failed, error);
+                if (extensionVariables.isErrorWhitelisted === true) {
+                    telemetryHelper.setResult(Result.Succeeded);
+                } else {
+                    extensionVariables.outputChannel.appendLine(error.message);
+                    vscode.window.showErrorMessage(error.message);
+                    telemetryHelper.setResult(Result.Failed, error);
+                }
             }
             else {
                 telemetryHelper.setResult(Result.Canceled, error);
@@ -417,6 +421,7 @@ class Orchestrator {
                     repositoryProvider = remoteUrl;
                 }
 
+                extensionVariables.isErrorWhitelisted = true;
                 telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, repositoryProvider);
                 telemetryHelper.setTelemetry(TelemetryKeys.IsErrorWhitelisted, "true");
                 throw new Error(Messages.cannotIdentifyRespositoryDetails);
