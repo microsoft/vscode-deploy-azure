@@ -64,9 +64,13 @@ export async function configurePipeline(node: AzureTreeItem) {
         }
         catch (error) {
             if (!(error instanceof UserCancelledError)) {
-                extensionVariables.outputChannel.appendLine(error.message);
                 vscode.window.showErrorMessage(error.message);
-                telemetryHelper.setResult(Result.Failed, error);
+                extensionVariables.outputChannel.appendLine(error.message);
+                if (extensionVariables.isErrorWhitelisted === true) {
+                    telemetryHelper.setResult(Result.Succeeded);
+                } else {
+                    telemetryHelper.setResult(Result.Failed, error);
+                }
             }
             else {
                 telemetryHelper.setResult(Result.Canceled, error);
@@ -405,7 +409,7 @@ class Orchestrator {
                 };
             }
             else {
-                let repositoryProvider: string = "Other";
+                let repositoryProvider: string;
 
                 if (remoteUrl.indexOf("bitbucket.org") >= 0) {
                     repositoryProvider = "Bitbucket";
@@ -413,8 +417,13 @@ class Orchestrator {
                 else if (remoteUrl.indexOf("gitlab.com") >= 0) {
                     repositoryProvider = "GitLab";
                 }
+                else {
+                    repositoryProvider = remoteUrl;
+                }
 
+                extensionVariables.isErrorWhitelisted = true;
                 telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, repositoryProvider);
+                telemetryHelper.setTelemetry(TelemetryKeys.IsErrorWhitelisted, "true");
                 throw new Error(Messages.cannotIdentifyRespositoryDetails);
             }
         }
