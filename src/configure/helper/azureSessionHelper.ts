@@ -17,14 +17,7 @@ export function getSubscriptionSession(subscriptionId: string): AzureSession {
 }
 
 export async function getAzureSession(): Promise<AzureSession> {
-    let currentSubscription = extensionVariables.azureAccountExtensionApi.subscriptions[0];
-    let count = 0;
-    while (isNullOrUndefined(currentSubscription) && count++ < 5) {
-        // tslint:disable-next-line: no-string-based-set-timeout
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        currentSubscription = extensionVariables.azureAccountExtensionApi.subscriptions[0];
-    }
-
+    const currentSubscription = extensionVariables.azureAccountExtensionApi.subscriptions[0];
     if (isNullOrUndefined(currentSubscription)) {
         throw new Error(Messages.AzureLoginError);
     }
