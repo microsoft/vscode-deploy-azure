@@ -16,7 +16,7 @@ export function getSubscriptionSession(subscriptionId: string): AzureSession {
     return currentSubscription.session;
 }
 
-export async function getAzureSession(): Promise<AzureSession> {
+export function getAzureSession(): AzureSession {
     const currentSubscription = extensionVariables.azureAccountExtensionApi.subscriptions[0];
     if (isNullOrUndefined(currentSubscription)) {
         throw new Error(Messages.AzureLoginError);
