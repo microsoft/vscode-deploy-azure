@@ -40,12 +40,13 @@ export async function configurePipeline(node: AzureTreeItem) {
                 // set telemetry
                 telemetryHelper.setTelemetry(TelemetryKeys.AzureLoginRequired, 'true');
 
-                let loginOption = await vscode.window.showInformationMessage(Messages.azureLoginRequired, Messages.signInLabel, Messages.signUpLabel);
+                const loginOption = await vscode.window.showInformationMessage(Messages.azureLoginRequired, Messages.signInLabel, Messages.signUpLabel);
                 if (loginOption && loginOption.toLowerCase() === Messages.signInLabel.toLowerCase()) {
                     telemetryHelper.setTelemetry(TelemetryKeys.AzureLoginOption, 'SignIn');
                     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.waitForAzureSignIn },
                         async () => {
                             await vscode.commands.executeCommand("azure-account.login");
+                            await extensionVariables.azureAccountExtensionApi.waitForSubscriptions();
                         });
                 }
                 else if (loginOption && loginOption.toLowerCase() === Messages.signUpLabel.toLowerCase()) {

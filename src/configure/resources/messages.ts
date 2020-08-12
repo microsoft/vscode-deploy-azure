@@ -109,4 +109,5 @@ export class Messages {
     public static languageNotSupported = "The language of the repository selected is not supported.";
     public static UnableToGetTemplateParameters = "Unable to get parameters for the selected template.";
     public static AnalyzingRepo = "Analyzing your repository";
+    public static AzureLoginError = "Error in getting Azure login information, Please try again.";
 }

@@ -177,6 +177,7 @@ export interface AzureAccountExtensionExports {
     subscriptions: { session: AzureSession, subscription: SubscriptionModels.Subscription }[];
     filters: { session: AzureSession, subscription: SubscriptionModels.Subscription }[];
     waitForLogin: () => Promise<boolean>;
+    waitForSubscriptions: () => Promise<boolean>;
 }
 
 export interface DevOpsProject {
