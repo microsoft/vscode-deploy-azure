@@ -29,6 +29,7 @@ import { TracePoints } from './resources/tracePoints';
 import { InputControlProvider } from './templateInputHelper/InputControlProvider';
 
 const uuid = require('uuid/v4');
+
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
@@ -39,12 +40,13 @@ export async function configurePipeline(node: AzureTreeItem) {
                 // set telemetry
                 telemetryHelper.setTelemetry(TelemetryKeys.AzureLoginRequired, 'true');
 
-                let loginOption = await vscode.window.showInformationMessage(Messages.azureLoginRequired, Messages.signInLabel, Messages.signUpLabel);
+                const loginOption = await vscode.window.showInformationMessage(Messages.azureLoginRequired, Messages.signInLabel, Messages.signUpLabel);
                 if (loginOption && loginOption.toLowerCase() === Messages.signInLabel.toLowerCase()) {
                     telemetryHelper.setTelemetry(TelemetryKeys.AzureLoginOption, 'SignIn');
                     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.waitForAzureSignIn },
                         async () => {
                             await vscode.commands.executeCommand("azure-account.login");
+                            await extensionVariables.azureAccountExtensionApi.waitForSubscriptions();
                         });
                 }
                 else if (loginOption && loginOption.toLowerCase() === Messages.signUpLabel.toLowerCase()) {
@@ -63,9 +65,13 @@ export async function configurePipeline(node: AzureTreeItem) {
         }
         catch (error) {
             if (!(error instanceof UserCancelledError)) {
-                extensionVariables.outputChannel.appendLine(error.message);
                 vscode.window.showErrorMessage(error.message);
-                telemetryHelper.setResult(Result.Failed, error);
+                extensionVariables.outputChannel.appendLine(error.message);
+                if (extensionVariables.isErrorWhitelisted === true) {
+                    telemetryHelper.setResult(Result.Succeeded);
+                } else {
+                    telemetryHelper.setResult(Result.Failed, error);
+                }
             }
             else {
                 telemetryHelper.setResult(Result.Canceled, error);
@@ -126,8 +132,10 @@ class Orchestrator {
     }
 
     private async getAzureResource(targetType: TargetResourceType) {
-        var azureResourceSelector = ResourceSelectorFactory.getAzureResourceSelector(targetType);
+        const azureResourceSelector = ResourceSelectorFactory.getAzureResourceSelector(targetType);
         this.inputs.targetResource.resource = await azureResourceSelector.getAzureResource(this.inputs);
+        this.azureResourceClient = ResourceSelectorFactory.getAzureResourceClient(targetType, this.inputs.azureSession.credentials,
+            this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceType, this.inputs.targetResource.resource.type);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, this.inputs.targetResource.resource.kind);
     }
@@ -232,10 +240,13 @@ class Orchestrator {
     private async getRepositoryAnalysis() {
         if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
             await this.getGithubPatToken();
-            return await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
-                return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
-                    this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
-            }, TelemetryKeys.RepositoryAnalysisDuration);
+            return await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.AnalyzingRepo },
+                () => telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+                    return await new RepoAnalysisHelper(this.inputs.azureSession, this.inputs.githubPATToken).getRepositoryAnalysis(
+                        this.inputs.sourceRepository, this.inputs.pipelineConfiguration.workingDirectory.split('/').join('\\'));
+                }, TelemetryKeys.RepositoryAnalysisDuration)
+            );
         }
         return null;
     }
@@ -399,7 +410,7 @@ class Orchestrator {
                 };
             }
             else {
-                let repositoryProvider: string = "Other";
+                let repositoryProvider: string;
 
                 if (remoteUrl.indexOf("bitbucket.org") >= 0) {
                     repositoryProvider = "Bitbucket";
@@ -407,8 +418,13 @@ class Orchestrator {
                 else if (remoteUrl.indexOf("gitlab.com") >= 0) {
                     repositoryProvider = "GitLab";
                 }
+                else {
+                    repositoryProvider = remoteUrl;
+                }
 
+                extensionVariables.isErrorWhitelisted = true;
                 telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, repositoryProvider);
+                telemetryHelper.setTelemetry(TelemetryKeys.IsErrorWhitelisted, "true");
                 throw new Error(Messages.cannotIdentifyRespositoryDetails);
             }
         }
@@ -479,7 +495,7 @@ class Orchestrator {
 
         if (!extensionVariables.templateServiceEnabled) {
             var localPipelines = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline(
                     this.inputs.sourceRepository.localPath,
                     this.inputs.sourceRepository.repositoryProvider,
@@ -489,7 +505,7 @@ class Orchestrator {
             appropriatePipelines = localPipelines;
         } else {
             var remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.analyzingRepo },
+                { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
                 () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
                     this.inputs.azureSession,
                     this.inputs.sourceRepository.localPath,
