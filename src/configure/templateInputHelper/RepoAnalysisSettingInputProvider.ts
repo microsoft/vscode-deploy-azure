@@ -69,9 +69,7 @@ export class RepoAnalysisSettingInputProvider {
                     selectedValue = possibleValues[0];
                 }
                 else {
-                    // HACK: Temporarily default to first value without asking user. Remove this HACK later and uncomment the next line
-                    selectedValue = possibleValues[0];               
-                    //selectedValue = await new ControlProvider().showQuickPick(repoAnalysisSettingKey, possibleValues, { placeHolder: inputControl.getInputDescriptor().name });
+                    selectedValue = await new ControlProvider().showQuickPick(repoAnalysisSettingKey, possibleValues, { placeHolder: inputControl.getInputDescriptor().name });
                 }
 
                 if (settingIndexMap.get(selectedValue.data).length === 1) {
