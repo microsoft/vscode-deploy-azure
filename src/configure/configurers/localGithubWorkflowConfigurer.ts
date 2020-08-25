@@ -43,18 +43,19 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
         this.githubClient = new GithubClient(inputs.githubPATToken, inputs.sourceRepository.remoteUrl);
         inputs.isNewOrganization = false;
         if (!inputs.sourceRepository.remoteUrl) {
-            let githubOrganizations = await this.githubClient.listOrganizations();
+            const githubOrganizations = await this.githubClient.listOrganizations();
 
             if (githubOrganizations && githubOrganizations.length > 0) {
-                let selectedOrganization = await this.controlProvider.showQuickPick(
+                const selectedOrganization = await this.controlProvider.showQuickPick(
                     constants.SelectGitHubOrganization,
                     githubOrganizations.map(x => { return { label: x.login }; }),
                     { placeHolder: Messages.selectGitHubOrganizationName },
                     TelemetryKeys.OrganizationListCount);
                 inputs.organizationName = selectedOrganization.label;
+                const isUserAccount = githubOrganizations.find((x) => x.login === selectedOrganization.label).isUserAccount;
 
                 try {
-                    let newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient) as GitHubRepo;
+                    const newGitHubRepo = await generateGitHubRepository(inputs.organizationName, inputs.sourceRepository.localPath, this.githubClient, isUserAccount) as GitHubRepo;
                     this.githubClient.setRepoUrl(newGitHubRepo.html_url);
                     inputs.sourceRepository.remoteName = newGitHubRepo.name;
                     inputs.sourceRepository.remoteUrl = newGitHubRepo.html_url + ".git";
@@ -71,7 +72,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
             }
             else {
                 vscode.window.showErrorMessage(Messages.createGitHubOrganization);
-                let error = new Error(Messages.createGitHubOrganization);
+                const error = new Error(Messages.createGitHubOrganization);
                 telemetryHelper.logError(Layer, TracePoints.NoGitHubOrganizationExists, error);
                 throw error;
             }
