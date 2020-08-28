@@ -16,7 +16,6 @@ import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
 import { InputControl } from '../templateInputHelper/InputControl';
 import * as templateConverter from '../utilities/templateConverter';
-import * as dotnetCoreVersionConverter from '../utilities/webAppDotNetCoreVersionConverter';
 import * as nodeVersionConverter from '../utilities/webAppNodeVersionConverter';
 import { LocalGitHubWorkflowConfigurer } from './localGithubWorkflowConfigurer';
 
@@ -176,12 +175,6 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
                         let nodeVersion: string = asset.inputs["webAppRuntimeNodeVersion"];
                         const armUri = "/providers/Microsoft.Web/availableStacks?osTypeSelected=Windows&api-version=2019-08-01";
                         this.assets[asset.id] = await nodeVersionConverter.webAppRuntimeNodeVersionConverter(nodeVersion, armUri, this.azureSession);
-                    }
-                    break;
-                case "DotNetCoreSdkVersionGetter":
-                    {
-                        let dotNetFrameworkVersion: string = asset.inputs["dotNetCoreRuntTimeVersion"];
-                        this.assets[asset.id] = await dotnetCoreVersionConverter.webAppDotNetCoreRuntimeConverter(dotNetFrameworkVersion);
                     }
                     break;
                 case "AzureCredentials:PublishProfile":

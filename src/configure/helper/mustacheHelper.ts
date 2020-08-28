@@ -197,6 +197,20 @@ export class MustacheHelper {
                     });
                     return arr;
                 };
+            },
+
+            /*
+            * Converts netcoreappx.x to DOTNETCORE|x.x 
+            */
+            "convertDotNetCoreVersion": function () {
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length < 1) {
+                        return "";
+                    }
+                    return "DOTNETCORE|" + parts[0].replace("netcoreapp", "");
+                }
             }
         };
     }
