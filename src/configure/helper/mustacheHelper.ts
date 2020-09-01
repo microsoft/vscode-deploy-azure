@@ -200,16 +200,17 @@ export class MustacheHelper {
             },
 
             /*
-            * Converts netcoreappx.x to DOTNETCORE|x.x 
+            * Replaces substring of the main string with new value
+            * Usage: {{#stringReplace}} OldString Old New {{/stringReplace}} -> 'NewString'
             */
-            "convertDotNetCoreVersion": function () {
+            "stringReplace": function () {
                 return function (text: string, render: any) {
                     var renderedText: string = render(text);
                     var parts = MustacheHelper.getParts(renderedText);
-                    if (parts.length < 1) {
+                    if (parts.length != 3) {
                         return "";
                     }
-                    return "DOTNETCORE|" + parts[0].replace("netcoreapp", "");
+                    return parts[0].replace(parts[1], parts[2]);
                 }
             }
         };
