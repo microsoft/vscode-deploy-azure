@@ -27,7 +27,7 @@ import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
 import { InputControlProvider } from './templateInputHelper/InputControlProvider';
-import { Utilities } from './utilities/utilities';
+import { Utilities, WhiteListedError } from './utilities/utilities';
 
 const uuid = require('uuid/v4');
 
@@ -68,7 +68,7 @@ export async function configurePipeline(node: AzureTreeItem) {
             if (!(error instanceof UserCancelledError)) {
                 vscode.window.showErrorMessage(error.message);
                 extensionVariables.outputChannel.appendLine(error.message);
-                if (extensionVariables.isErrorWhitelisted === true) {
+                if (error instanceof WhiteListedError) {
                     telemetryHelper.setTelemetry(TelemetryKeys.IsErrorWhitelisted, "true");
                     telemetryHelper.setResult(Result.Succeeded, error);
                 } else {
@@ -425,9 +425,8 @@ class Orchestrator {
                     repositoryProvider = remoteUrl;
                 }
 
-                extensionVariables.isErrorWhitelisted = true;
                 telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, repositoryProvider);
-                throw new Error(Messages.cannotIdentifyRespositoryDetails);
+                throw new WhiteListedError(Messages.cannotIdentifyRespositoryDetails);
             }
         }
         else {

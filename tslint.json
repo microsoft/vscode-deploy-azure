@@ -12,7 +12,7 @@
 			true,
 			"always"
 		],
-		"triple-equals": true,
+		"triple-equals": false,
 		"no-banned-terms": true,
 		"no-delete-expression": true,
 		"no-document-domain": true,
@@ -53,7 +53,8 @@
 		"no-angle-bracket-type-assertion": false,
 		"object-literal-sort-keys": false,
 		"prefer-type-cast": false,
-		"function-name": false
+		"function-name": false,
+		"max-classes-per-file": false
 	},
 	"defaultSeverity": "warning",
 	"extends": [

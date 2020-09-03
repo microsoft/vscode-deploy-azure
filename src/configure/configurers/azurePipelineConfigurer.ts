@@ -16,12 +16,13 @@ import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
 import { Build } from '../model/azureDevOps';
-import { AzureConnectionType, AzureSession, extensionVariables, RepositoryProvider, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, AzureSession, RepositoryProvider, TargetResourceType, WizardInputs } from "../model/models";
 import { LocalPipelineTemplate, TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
+import { WhiteListedError } from '../utilities/utilities';
 import { Configurer } from "./configurerBase";
 import Q = require('q');
 
@@ -104,8 +105,7 @@ export class AzurePipelineConfigurer implements Configurer {
         }
         catch (error) {
             if ((error.typeKey as string).toUpperCase() === constants.ExceptionType.UnauthorizedRequestException) {
-                extensionVariables.isErrorWhitelisted = true;
-                error.message = (error.message as string).concat(Messages.AdoDifferentTenantError);
+                throw new WhiteListedError((error.message as string).concat(Messages.AdoDifferentTenantError), error);
             }
             telemetryHelper.logError(Layer, TracePoints.GetAzureDevOpsDetailsFailed, error);
             throw error;
