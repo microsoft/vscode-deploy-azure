@@ -52,7 +52,8 @@
 		],
 		"no-angle-bracket-type-assertion": false,
 		"object-literal-sort-keys": false,
-		"prefer-type-cast": false
+		"prefer-type-cast": false,
+		"function-name": false
 	},
 	"defaultSeverity": "warning",
 	"extends": [

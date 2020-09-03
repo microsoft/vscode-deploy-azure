@@ -1,6 +1,5 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { ApplicationSettings, RepositoryAnalysis } from 'azureintegration-repoanalysis-client-internal';
-import * as crypto from 'crypto';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
@@ -28,6 +27,7 @@ import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
 import { InputControlProvider } from './templateInputHelper/InputControlProvider';
+import { Utilities } from './utilities/utilities';
 
 const uuid = require('uuid/v4');
 
@@ -140,8 +140,7 @@ class Orchestrator {
             this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceType, this.inputs.targetResource.resource.type);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, this.inputs.targetResource.resource.kind);
-        telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash,
-            crypto.createHash('sha256').update(this.inputs.targetResource.resource.id).digest('hex'));
+        telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash, Utilities.createSha256Hash(this.inputs.targetResource.resource.id));
     }
 
     private async selectTemplate(resource: GenericResource): Promise<void> {
