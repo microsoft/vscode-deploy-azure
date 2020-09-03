@@ -69,7 +69,8 @@ export async function configurePipeline(node: AzureTreeItem) {
                 vscode.window.showErrorMessage(error.message);
                 extensionVariables.outputChannel.appendLine(error.message);
                 if (extensionVariables.isErrorWhitelisted === true) {
-                    telemetryHelper.setResult(Result.Succeeded);
+                    telemetryHelper.setTelemetry(TelemetryKeys.IsErrorWhitelisted, "true");
+                    telemetryHelper.setResult(Result.Succeeded, error);
                 } else {
                     telemetryHelper.setResult(Result.Failed, error);
                 }
@@ -427,7 +428,6 @@ class Orchestrator {
 
                 extensionVariables.isErrorWhitelisted = true;
                 telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, repositoryProvider);
-                telemetryHelper.setTelemetry(TelemetryKeys.IsErrorWhitelisted, "true");
                 throw new Error(Messages.cannotIdentifyRespositoryDetails);
             }
         }

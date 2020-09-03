@@ -16,7 +16,7 @@ import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
 import { TemplateParameterHelper } from '../helper/templateParameterHelper';
 import { Build } from '../model/azureDevOps';
-import { AzureConnectionType, AzureSession, RepositoryProvider, TargetResourceType, WizardInputs } from "../model/models";
+import { AzureConnectionType, AzureSession, extensionVariables, RepositoryProvider, TargetResourceType, WizardInputs } from "../model/models";
 import { LocalPipelineTemplate, TemplateAssetType } from '../model/templateModels';
 import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -103,6 +103,10 @@ export class AzurePipelineConfigurer implements Configurer {
             telemetryHelper.setTelemetry(TelemetryKeys.NewOrganization, inputs.isNewOrganization.toString());
         }
         catch (error) {
+            if ((error.typeKey as string).toUpperCase() === constants.ExceptionType.UnauthorizedRequestException) {
+                extensionVariables.isErrorWhitelisted = true;
+                error.message = (error.message as string).concat(Messages.AdoDifferentTenantError);
+            }
             telemetryHelper.logError(Layer, TracePoints.GetAzureDevOpsDetailsFailed, error);
             throw error;
         }
