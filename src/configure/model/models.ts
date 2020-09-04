@@ -58,6 +58,7 @@ export class GitHubOrganization {
     id: number;
     url: string;
     repos_url: string;
+    isUserAccount?: boolean = false;
 }
 
 export class GitHubRepo {
