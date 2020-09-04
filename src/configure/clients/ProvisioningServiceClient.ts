@@ -13,7 +13,6 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
 }
 
   public async createProvisioningConfiguration(provisioningConfiguration: ProvisioningConfiguration, relativeUrl: string ): Promise<ProvisioningConfiguration> {  
-    console.log(this.url + relativeUrl);
     return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
         url: this.url + relativeUrl,
         headers: {
@@ -28,7 +27,6 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
   }
 
   public async getProvisioningConfiguration(relativeUrl: string): Promise<ProvisioningConfiguration> {
-    console.log(this.url + relativeUrl);
     return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
         url: this.url + relativeUrl,
         method: "GET",
