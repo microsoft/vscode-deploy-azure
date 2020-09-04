@@ -16,7 +16,6 @@ class ExtensionVariables implements UIExtensionVariables {
     public ui: IAzureUserInput;
     public enableGitHubWorkflow: boolean;
     public templateServiceEnabled: boolean;
-    public isErrorWhitelisted: boolean;
 
     constructor() {
         this.enableGitHubWorkflow = !workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub');

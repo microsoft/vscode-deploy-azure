@@ -27,6 +27,7 @@ import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
 import { InputControlProvider } from './templateInputHelper/InputControlProvider';
+import { Utilities, WhiteListedError } from './utilities/utilities';
 
 const uuid = require('uuid/v4');
 
@@ -67,8 +68,9 @@ export async function configurePipeline(node: AzureTreeItem) {
             if (!(error instanceof UserCancelledError)) {
                 vscode.window.showErrorMessage(error.message);
                 extensionVariables.outputChannel.appendLine(error.message);
-                if (extensionVariables.isErrorWhitelisted === true) {
-                    telemetryHelper.setResult(Result.Succeeded);
+                if (error instanceof WhiteListedError) {
+                    telemetryHelper.setTelemetry(TelemetryKeys.IsErrorWhitelisted, "true");
+                    telemetryHelper.setResult(Result.Succeeded, error);
                 } else {
                     telemetryHelper.setResult(Result.Failed, error);
                 }
@@ -110,7 +112,7 @@ class Orchestrator {
             await pipelineConfigurer.createPreRequisites(this.inputs, !!this.azureResourceClient ? this.azureResourceClient : new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId));
 
             telemetryHelper.setCurrentStep('CreateAssets');
-            if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
+            if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
                 await (pipelineConfigurer as RemoteGitHubWorkflowConfigurer).createAssets(ConfigurationStage.Pre);
             } else {
                 await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, assetType, data, inputs); });
@@ -138,6 +140,7 @@ class Orchestrator {
             this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceType, this.inputs.targetResource.resource.type);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, this.inputs.targetResource.resource.kind);
+        telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash, Utilities.createSha256Hash(this.inputs.targetResource.resource.id));
     }
 
     private async selectTemplate(resource: GenericResource): Promise<void> {
@@ -422,10 +425,8 @@ class Orchestrator {
                     repositoryProvider = remoteUrl;
                 }
 
-                extensionVariables.isErrorWhitelisted = true;
                 telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, repositoryProvider);
-                telemetryHelper.setTelemetry(TelemetryKeys.IsErrorWhitelisted, "true");
-                throw new Error(Messages.cannotIdentifyRespositoryDetails);
+                throw new WhiteListedError(Messages.cannotIdentifyRespositoryDetails);
             }
         }
         else {
