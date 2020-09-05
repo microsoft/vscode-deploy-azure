@@ -14,7 +14,7 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
     this.baseUrl = baseUrl;
     this.defaultHeaders = {
       "Content-Type": "application/json",
-      "X-GITHUB-TOKEN" : githubPAT,
+      "X-GITHUB-TOKEN": githubPAT,
     };
   }
 
