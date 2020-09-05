@@ -10,6 +10,7 @@ export interface CodeRepository {
   defaultBranch: string;
   authorizationInfo: Authorization;
 }
+
 export interface ProvisioningConfiguration {
   id: string;
   pipelineTemplateId: string;

@@ -6,7 +6,7 @@ import { ProvisioningServiceClient } from "./ProvisioningServiceClient";
 export class ProvisioningServiceClientFactory {
     private static client: IProvisioningServiceClient;
     
-    public static async getClient(githubPatToken: string, credentials?: ServiceClientCredentials, ): Promise<IProvisioningServiceClient> {
+    public static async getClient(githubPatToken: string, credentials?: ServiceClientCredentials ): Promise<IProvisioningServiceClient> {
         if (!!this.client) {
             return this.client;
         }
