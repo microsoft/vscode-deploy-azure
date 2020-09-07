@@ -4,8 +4,6 @@ import { IProvisioningServiceClient } from "./IProvisioningServiceClient";
 import { ProvisioningServiceClient } from "./ProvisioningServiceClient";
 
 export class ProvisioningServiceClientFactory {
-    private static client: IProvisioningServiceClient;
-    
     public static async getClient(githubPatToken: string, credentials?: ServiceClientCredentials ): Promise<IProvisioningServiceClient> {
         if (!!this.client) {
             return this.client;
@@ -17,7 +15,7 @@ export class ProvisioningServiceClientFactory {
         } else {
             this.client = new ProvisioningServiceClient(serviceDefinition.serviceUrl, githubPatToken, new TokenCredentials(githubPatToken, "token"));
         }
-        
         return this.client;
     }
+    private static client: IProvisioningServiceClient;
 }
