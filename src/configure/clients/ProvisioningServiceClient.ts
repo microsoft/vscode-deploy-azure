@@ -1,21 +1,30 @@
 import { ServiceClientCredentials, UrlBasedRequestPrepareOptions } from "ms-rest";
+import { IServiceUrlDefinition, ServiceFramework } from "../helper/remoteServiceUrlHelper";
 import { ProvisioningConfiguration } from "../model/provisioningConfiguration";
 import { IProvisioningServiceClient } from "./IProvisioningServiceClient";
 import { RestClient } from "./restClient";
 
 export class ProvisioningServiceClient implements IProvisioningServiceClient {
   private restClient: RestClient;
-  private baseUrl: string;
+  private serviceDefinition: IServiceUrlDefinition;
   private defaultHeaders: { [propertyName: string]: string };
   private readonly pipelineProvisioningJob = "PipelineProvisioningJob";
-  constructor( baseUrl: string, headers: { [propertyName: string]: string }, credentials: ServiceClientCredentials) {
+  private readonly PEProvisioningServiceAPIVersion = "6.1-preview.1";
+
+  constructor( serviceDefinition: IServiceUrlDefinition, headers: { [propertyName: string]: string }, credentials: ServiceClientCredentials) {
     this.restClient = new RestClient(credentials);
-    this.baseUrl = baseUrl;
+    this.serviceDefinition = serviceDefinition;
     this.defaultHeaders = headers;
   }
 
-  public async createProvisioningConfiguration(provisioningConfiguration: ProvisioningConfiguration, githubOrg: string, repositoryId: string, queryParams?: { [propertyName: string]: string } ): Promise<ProvisioningConfiguration> {
-    const requestUrl = this.baseUrl + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob;
+  public async createProvisioningConfiguration(provisioningConfiguration: ProvisioningConfiguration, githubOrg: string, repositoryId: string): Promise<ProvisioningConfiguration> {
+    const requestUrl = this.serviceDefinition.serviceUrl + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob;
+    // tslint:disable-next-line:prefer-const
+    let queryParams: { [propertyName: string]: string };
+    if (this.serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
+      queryParams = {"api-version": this.PEProvisioningServiceAPIVersion};
+    }
+
     return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions> {
         url: requestUrl,
         method: "POST",
@@ -28,8 +37,14 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
     );
   }
 
-  public async getProvisioningConfiguration(jobId: string, githubOrg: string, repositoryId: string, queryParams?: { [propertyName: string]: string }): Promise<ProvisioningConfiguration> {
-    const requestUrl = this.baseUrl + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob +  "/" + jobId;
+  public async getProvisioningConfiguration(jobId: string, githubOrg: string, repositoryId: string): Promise<ProvisioningConfiguration> {
+    const requestUrl = this.serviceDefinition.serviceUrl + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob +  "/" + jobId;
+    // tslint:disable-next-line:prefer-const
+    let queryParams: { [propertyName: string]: string };
+    if (this.serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
+      queryParams = {"api-version": this.PEProvisioningServiceAPIVersion};
+    }
+
     return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions> {
         url: requestUrl,
         method: "GET",
