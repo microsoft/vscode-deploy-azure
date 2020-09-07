@@ -8,7 +8,6 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
   private baseUrl: string;
   private defaultHeaders: { [propertyName: string]: string };
   private readonly pipelineProvisioningJob = "PipelineProvisioningJob";
-  
   constructor( baseUrl: string, githubPAT: string, credentials: ServiceClientCredentials) {
     this.restClient = new RestClient(credentials);
     this.baseUrl = baseUrl;
@@ -18,13 +17,13 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
     };
   }
 
-  public async createProvisioningConfiguration(provisioningConfiguration: ProvisioningConfiguration, githubOrg: string, repositoryId: string, queryParameters?: { [propertyName: string]: string } ): Promise<ProvisioningConfiguration> {  
+  public async createProvisioningConfiguration(provisioningConfiguration: ProvisioningConfiguration, githubOrg: string, repositoryId: string, queryParams?: { [propertyName: string]: string } ): Promise<ProvisioningConfiguration> {
     const requestUrl = this.baseUrl + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob;
-    return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
+    return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions> {
         url: requestUrl,
         method: "POST",
         headers: this.defaultHeaders,
-        queryParameters: queryParameters,
+        queryParameters: queryParams,
         body: provisioningConfiguration,
         serializationMapper: null,
         deserializationMapper: null,
@@ -32,16 +31,16 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
     );
   }
 
-  public async getProvisioningConfiguration(jobId: string, githubOrg: string, repositoryId: string, queryParameters?: { [propertyName: string]: string }): Promise<ProvisioningConfiguration> {
+  public async getProvisioningConfiguration(jobId: string, githubOrg: string, repositoryId: string, queryParams?: { [propertyName: string]: string }): Promise<ProvisioningConfiguration> {
     const requestUrl = this.baseUrl + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob +  "/" + jobId;
-    return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
+    return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions> {
         url: requestUrl,
         method: "GET",
         headers: this.defaultHeaders,
-        queryParameters: queryParameters,
+        queryParameters: queryParams,
         serializationMapper: null,
         deserializationMapper: null,
       }
-    );  
+    );
   }
 }
