@@ -8,13 +8,10 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
   private baseUrl: string;
   private defaultHeaders: { [propertyName: string]: string };
   private readonly pipelineProvisioningJob = "PipelineProvisioningJob";
-  constructor( baseUrl: string, githubPAT: string, credentials: ServiceClientCredentials) {
+  constructor( baseUrl: string, headers: { [propertyName: string]: string }, credentials: ServiceClientCredentials) {
     this.restClient = new RestClient(credentials);
     this.baseUrl = baseUrl;
-    this.defaultHeaders = {
-      "Content-Type": "application/json",
-      "X-GITHUB-TOKEN": githubPAT,
-    };
+    this.defaultHeaders = headers;
   }
 
   public async createProvisioningConfiguration(provisioningConfiguration: ProvisioningConfiguration, githubOrg: string, repositoryId: string, queryParams?: { [propertyName: string]: string } ): Promise<ProvisioningConfiguration> {
