@@ -8,6 +8,7 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
   private restClient: RestClient;
   private serviceDefinition: IServiceUrlDefinition;
   private defaultHeaders: { [propertyName: string]: string };
+  private defaultParameters: { [propertyName: string]: string };
   private readonly pipelineProvisioningJob = "PipelineProvisioningJob";
   private readonly PEProvisioningServiceAPIVersion = "6.1-preview.1";
 
@@ -15,21 +16,19 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
     this.restClient = new RestClient(credentials);
     this.serviceDefinition = serviceDefinition;
     this.defaultHeaders = headers;
+    if (this.serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
+        this.defaultParameters = {"api-version": this.PEProvisioningServiceAPIVersion};
+    }
   }
 
   public async createProvisioningConfiguration(provisioningConfiguration: ProvisioningConfiguration, githubOrg: string, repositoryId: string): Promise<ProvisioningConfiguration> {
     const requestUrl = this.serviceDefinition.serviceUrl + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob;
-    // tslint:disable-next-line:prefer-const
-    let queryParams: { [propertyName: string]: string };
-    if (this.serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
-      queryParams = {"api-version": this.PEProvisioningServiceAPIVersion};
-    }
 
     return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions> {
         url: requestUrl,
         method: "POST",
         headers: this.defaultHeaders,
-        queryParameters: queryParams,
+        queryParameters: this.defaultParameters,
         body: provisioningConfiguration,
         serializationMapper: null,
         deserializationMapper: null,
@@ -39,17 +38,12 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
 
   public async getProvisioningConfiguration(jobId: string, githubOrg: string, repositoryId: string): Promise<ProvisioningConfiguration> {
     const requestUrl = this.serviceDefinition.serviceUrl + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob +  "/" + jobId;
-    // tslint:disable-next-line:prefer-const
-    let queryParams: { [propertyName: string]: string };
-    if (this.serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
-      queryParams = {"api-version": this.PEProvisioningServiceAPIVersion};
-    }
 
     return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions> {
         url: requestUrl,
         method: "GET",
         headers: this.defaultHeaders,
-        queryParameters: queryParams,
+        queryParameters: this.defaultParameters,
         serializationMapper: null,
         deserializationMapper: null,
       }
