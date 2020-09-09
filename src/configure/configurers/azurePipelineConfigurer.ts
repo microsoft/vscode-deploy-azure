@@ -22,6 +22,7 @@ import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
+import { WhiteListedError } from '../utilities/utilities';
 import { Configurer } from "./configurerBase";
 import Q = require('q');
 
@@ -103,6 +104,9 @@ export class AzurePipelineConfigurer implements Configurer {
             telemetryHelper.setTelemetry(TelemetryKeys.NewOrganization, inputs.isNewOrganization.toString());
         }
         catch (error) {
+            if ((error.typeKey as string).toUpperCase() === constants.ExceptionType.UnauthorizedRequestException) {
+                throw new WhiteListedError((error.message as string).concat(Messages.AdoDifferentTenantError), error);
+            }
             telemetryHelper.logError(Layer, TracePoints.GetAzureDevOpsDetailsFailed, error);
             throw error;
         }
