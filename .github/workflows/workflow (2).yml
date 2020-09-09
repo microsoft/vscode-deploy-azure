@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+      - master
+
+name: Package and deploy simple web app
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    # checkout the repo
+    - uses: actions/checkout@master
+
+    # deploy web app using publish profile credentials
+    - uses: azure/webapps-deploy@v1
+      with:
+        app-name: vnm-demo
+        package: out/configure/test/test-fixtures
+        publish-profile: ${{ secrets.AZURE_CREDENTIALS_66dd6999 }}
