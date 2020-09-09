@@ -70,7 +70,7 @@ export class RepoAnalysisSettingInputProvider {
                 }
                 else {
                     // HACK: Temporarily default to first value without asking user. Remove this HACK later and uncomment the next line
-                    selectedValue = possibleValues[0];               
+                    selectedValue = possibleValues[0];
                     //selectedValue = await new ControlProvider().showQuickPick(repoAnalysisSettingKey, possibleValues, { placeHolder: inputControl.getInputDescriptor().name });
                 }
 

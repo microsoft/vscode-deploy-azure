@@ -269,6 +269,7 @@ export enum SupportedLanguage {
     NODE = 'node',
     PYTHON = 'python',
     DOTNETCORE = 'dotnetcore',
+    DOTNET = 'dotnet',
     DOCKER = 'docker'
 }
 
