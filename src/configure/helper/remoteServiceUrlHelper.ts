@@ -15,6 +15,7 @@ export interface IServiceUrlDefinition {
 export class RemoteServiceUrlHelper {
     public static repoAnalysisRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2127646";
     public static templateServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2133849";
+    public static provisioningServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2142042";
 
     public static async getTemplateServiceDefinition(): Promise<IServiceUrlDefinition> {
         return this.getServiceurlDefinition1("https://pepfcusc.portalext.visualstudio.com/_apis/TemplateService/", this.templateServiceRedirectUrl);
@@ -22,6 +23,10 @@ export class RemoteServiceUrlHelper {
 
     public static async getRepositoryAnalysisDefinition(): Promise<IServiceUrlDefinition> {
         return this.getServiceurlDefinition1("https://pepfcusc.portalext.visualstudio.com/_apis/RepositoryAnalysis?api-version=5.2-preview.1", this.repoAnalysisRedirectUrl);
+    }
+
+    public static async getProvisioningServiceDefinition(): Promise<IServiceUrlDefinition> {
+        return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/ProvisioningService/", this.provisioningServiceRedirectUrl);
     }
 
     private static async getServiceurlDefinition(serviceUrl: string, redirectUrl: string) {

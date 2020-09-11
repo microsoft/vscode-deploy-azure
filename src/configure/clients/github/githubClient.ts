@@ -13,7 +13,6 @@ export class GithubClient {
     private url: string;
     private listOrgPromise: Promise<GitHubOrganization[]>;
 
-
     constructor(patToken: string, remoteUrl: string) {
         this.patToken = patToken;
         this.url = remoteUrl;
@@ -24,17 +23,17 @@ export class GithubClient {
     }
 
     public async createOrUpdateGithubSecret(secretName: string, body: string): Promise<void> {
-        let secretKeyObject: GitHubSecretKey = await this._getGitHubSecretKey();
-        let sodiumObj = new SodiumLibHelper(secretKeyObject.key);
-        let encryptedBytes: Uint8Array = sodiumObj.encrypt(body);
-        let encryptedBytesAsString: string = SodiumLibHelper.convertUint8ArrayToString(encryptedBytes);
-        let encryptedEncodedText = SodiumLibHelper.encodeToBase64(encryptedBytesAsString);
+        const secretKeyObject: GitHubSecretKey = await this._getGitHubSecretKey();
+        const sodiumObj = new SodiumLibHelper(secretKeyObject.key);
+        const encryptedBytes: Uint8Array = sodiumObj.encrypt(body);
+        const encryptedBytesAsString: string = SodiumLibHelper.convertUint8ArrayToString(encryptedBytes);
+        const encryptedEncodedText = SodiumLibHelper.encodeToBase64(encryptedBytesAsString);
         await this._setGithubSecret(secretName, secretKeyObject.key_id, encryptedEncodedText);
     }
 
-    public async createGithubRepo(orgName: string, repoName: string): Promise<GitHubRepo> {
-        let restClient = new RestClient();
-        let Url = "https://api.github.com/orgs/" + orgName + "/repos";
+    public async createGithubRepo(orgName: string, repoName: string, isUserAccount: boolean = false): Promise<GitHubRepo> {
+        const restClient = new RestClient();
+        const Url = isUserAccount ? "https://api.github.com/user/repos" : "https://api.github.com/orgs/" + orgName + "/repos";
         return restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
             url: Url,
             headers: {
@@ -68,29 +67,43 @@ export class GithubClient {
 
     public async listOrganizations(forceRefresh?: boolean): Promise<GitHubOrganization[]> {
         if (!this.listOrgPromise || forceRefresh) {
-            let restClient = new RestClient();
-            this.listOrgPromise = restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
-                url: "https://api.github.com/user/orgs",
-                method: 'GET',
-                headers: {
-                    "Authorization": "Bearer " + this.patToken,
-                    "User-Agent": UserAgent,
-                    "Content-Type": "application/json",
-                    "Accept": "*/*"
-                },
-                deserializationMapper: null,
-                serializationMapper: null
-            })
-                .then((organizations: Array<GitHubOrganization>) => {
-                    organizations = organizations.sort((org1, org2) => stringCompareFunction(org1.login, org2.login));
-                    return organizations;
+            const restClient = new RestClient();
+            this.listOrgPromise = Promise.all([
+                restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
+                    url: "https://api.github.com/user/orgs",
+                    method: 'GET',
+                    headers: {
+                        "Authorization": "Bearer " + this.patToken,
+                        "User-Agent": UserAgent,
+                        "Content-Type": "application/json",
+                        "Accept": "*/*"
+                    },
+                    deserializationMapper: null,
+                    serializationMapper: null
+                }),
+                restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
+                    url: "https://api.github.com/user",
+                    method: 'GET',
+                    headers: {
+                        "Authorization": "Bearer " + this.patToken,
+                        "User-Agent": UserAgent,
+                        "Content-Type": "application/json",
+                        "Accept": "*/*"
+                    },
+                    deserializationMapper: null,
+                    serializationMapper: null
+                })
+            ])
+                .then(([organizations, userInfo]) => {
+                    (userInfo as GitHubOrganization).isUserAccount = true;
+                    return ((organizations as GitHubOrganization[]).concat(userInfo as GitHubOrganization)).sort((org1, org2) => stringCompareFunction(org1.login, org2.login));
                 });
         }
         return this.listOrgPromise;
     }
 
     public async _getGitHubSecretKey(): Promise<GitHubSecretKey> {
-        let request = <UrlBasedRequestPrepareOptions>{
+        const request = <UrlBasedRequestPrepareOptions>{
             url: GitHubProvider.getFormattedGitHubApiUrlBase(this.url) + "/actions/secrets/public-key",
             method: 'GET',
             headers: {
@@ -102,13 +115,13 @@ export class GithubClient {
             serializationMapper: null,
             deserializationMapper: null
         };
-        let restClient = new RestClient();
+        const restClient = new RestClient();
         return (await restClient.sendRequest(request)) as GitHubSecretKey;
     }
 
     public async _setGithubSecret(secretName: string, key_id: string, encrypted_secret: string): Promise<void> {
-        let restClient = new RestClient();
-        let request = <UrlBasedRequestPrepareOptions>{
+        const restClient = new RestClient();
+        const request = <UrlBasedRequestPrepareOptions>{
             url: GitHubProvider.getFormattedGitHubApiUrlBase(this.url) + "/actions/secrets/" + secretName,
             headers: {
                 "User-Agent": UserAgent,
