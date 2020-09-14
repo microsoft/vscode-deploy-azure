@@ -61,6 +61,9 @@ export class RepoAnalysisSettingInputProvider {
                 }
                 let keyValue = analysisSetting.settings[repoAnalysisSettingKey];
                 if (Array.isArray(keyValue)) {
+                    if (keyValue.length === 0) {
+                        return;
+                    }
                     keyValue = keyValue.toString();
                 }
 
@@ -71,7 +74,7 @@ export class RepoAnalysisSettingInputProvider {
                 }
             });
             if (settingIndexMap.size === 0) {
-                let error = new Error(`RepostioryAnalysisSetting doesn't contain ${repoAnalysisSettingKey} for input ${inputControl.getInputControlId()}`);
+                const error = new Error(`RepostioryAnalysisSetting doesn't contain ${repoAnalysisSettingKey} for input ${inputControl.getInputControlId()}`);
                 telemetryHelper.logError(Layer, TracePoints.SetInputControlValueFromRepoAnalysisResult, error);
                 let value = await new ControlProvider().showInputBox(repoAnalysisSettingKey, {
                     placeHolder: inputControl.getInputDescriptor().name,
@@ -92,12 +95,15 @@ export class RepoAnalysisSettingInputProvider {
                     this._selectedRepoAnalysisSettingIndex = settingIndexMap.get(selectedValue.data)[0];
                 }
 
-                let repoAnalysisValue = this._repoAnalysisSettings[settingIndexMap.get(selectedValue.data)[0]].settings[repoAnalysisSettingKey];
+                const repoAnalysisValue = this._repoAnalysisSettings[settingIndexMap.get(selectedValue.data)[0]].settings[repoAnalysisSettingKey];
                 if (inputControl.getInputDataType() === InputDataType.String && Array.isArray(repoAnalysisValue)) {
-                    possibleValues = repoAnalysisValue.map((value) => ({ label: value, data: value }));
-                    selectedValue = await new ControlProvider().showQuickPick(repoAnalysisSettingKey, possibleValues, { placeHolder: inputControl.getInputDescriptor().name });
+                    if (repoAnalysisValue.length === 1) {
+                        selectedValue = repoAnalysisValue[0];
+                    } else {
+                        possibleValues = repoAnalysisValue.map((value) => ({ label: value, data: value }));
+                        selectedValue = await new ControlProvider().showQuickPick(repoAnalysisSettingKey, possibleValues, { placeHolder: inputControl.getInputDescriptor().name });
+                    }
                 }
-
                 inputControl.setValue(selectedValue.data);
             }
         }
