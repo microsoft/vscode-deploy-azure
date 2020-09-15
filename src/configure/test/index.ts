@@ -1,18 +1,30 @@
+import * as fs from 'fs';
 import * as glob from 'glob';
 import * as Mocha from 'mocha';
+import * as os from 'os';
 import * as path from 'path';
 
 export function run(): Promise<void> {
 	// Create the mocha test
+	const testsRoot = path.resolve(__dirname, '..');
+	const testResultDir = path.join(testsRoot, 'test', 'deploy-azure-extension-testResult');
+	if (!fs.existsSync(testResultDir)) {
+		fs.mkdirSync(testResultDir);
+	}
+	const testResultFileName = path.normalize(path.join(testResultDir, os.platform() + "-" + ((new Date()).toJSON().slice(0, 19).replace('T', '_').replace(/:/g, '')) + ".xml"));
 	const mocha = new Mocha({
 		ui: 'bdd',
-		color: true
+		color: true,
+		reporter: "xunit",
+		reporterOptions: {
+			output: testResultFileName,
+		}
 	});
 
-	const testsRoot = path.resolve(__dirname, '..');
 
 	return new Promise((c, e) => {
-		glob('**/suite/**.test.js', { cwd: testsRoot }, (err, files) => {
+		glob('**/suite/E2ETests/**.test.js', { cwd: testsRoot }, (err, files) => {
+			//			glob('**/suite/**/**.test.js', { cwd: testsRoot }, (err, files) => {
 			if (err) {
 				return e(err);
 			}

@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { GithubClient } from "../../clients/github/githubClient";
+import { GithubClient } from "../../../clients/github/githubClient";
 
 var expect = require('chai').expect;
 var nock = require('nock');
@@ -28,6 +28,13 @@ var orgList = [
         "repos_url": "https://api.github.com/orgs/SampleOrganizationC/repos"
     }];
 
+var userInfo = {
+    "login": "username",
+    "id": 66721313,
+    "url": "https://api.github.com/users/username",
+    "repos_url": "https://api.github.com/users/username/repos"
+}
+
 var repoCreationResponseOnSuccess = {
     "id": 278008782,
     "name": repoName,
@@ -51,10 +58,12 @@ describe('# Testing listOrganizations() ', function () {
         it('should return a list of organizations', function (done) {
             nock('https://api.github.com')
                 .get('/user/orgs')
-                .reply(200, orgList);
+                .reply(200, orgList)
+                .get('/user')
+                .reply(200, userInfo);
             githubClient.listOrganizations(true).then((orgs) => {
                 expect(Array.isArray(orgs)).to.equal(true);
-                expect(orgs.length).to.equal(3);
+                expect(orgs.length).to.equal(4);
                 orgs.forEach((org) => {
                     expect(org).to.have.property('login');
                     expect(org).to.have.property('id');
@@ -69,10 +78,12 @@ describe('# Testing listOrganizations() ', function () {
         it('Should return an empty list of organization', function (done) {
             nock('https://api.github.com')
                 .get('/user/orgs')
-                .reply(200, []);
+                .reply(200, [])
+                .get('/user')
+                .reply(200, userInfo);
             githubClient.listOrganizations(true).then((orgs) => {
                 expect(Array.isArray(orgs)).to.equal(true);
-                expect(orgs.length).to.equal(0);
+                expect(orgs.length).to.equal(1);
                 done();
             });
         });

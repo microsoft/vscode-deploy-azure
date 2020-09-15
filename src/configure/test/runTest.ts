@@ -13,7 +13,7 @@ async function testHost() {
 		const extensionTestsPath = path.resolve(__dirname, './index');
 
 		// Download VS Code, unzip it and run the integration test
-		await runTests({ extensionDevelopmentPath, extensionTestsPath });
+		await runTests({ launchArgs: ["/Users/vineetmimrot/work/raw-work/repo/github/staticwebapp"], extensionDevelopmentPath, extensionTestsPath });
 	} catch (err) {
 		console.error('Failed to run tests. Error : ' + err);
 		process.exit(1);

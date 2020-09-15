@@ -202,7 +202,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                 displayMessage = Messages.modifyAndCommitMultipleFiles;
             }
 
-            let commitOrDiscard = await vscode.window.showInformationMessage(
+            const commitOrDiscard = await this.controlProvider.showInformationBox(
                 utils.format(displayMessage, Messages.commitAndPush, inputs.sourceRepository.branch, inputs.sourceRepository.remoteName),
                 Messages.commitAndPush,
                 Messages.discardPipeline);

@@ -27,13 +27,17 @@
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
-                "${workspaceRoot}/src/test/workspace/",
+                "/Users/vineetmimrot/work/raw-work/repo/github/staticwebapp",
                 "--extensionDevelopmentPath=${workspaceFolder}",
-                "--extensionTestsPath=${workspaceFolder}/out/test"
+                "--extensionTestsPath=${workspaceFolder}/out/configure/test"
             ],
             "outFiles": [
-                "${workspaceFolder}/out/test/**/*.js"
-            ]
+                "${workspaceFolder}/out/configure/test/**/*.js"
+            ],
+            "env": {
+                // Uncomment below line to show telemetry on Debug console
+                "DEBUGTELEMETRY": "v",
+            }
         },
         {
             "name": "Extension Tests From Server",
