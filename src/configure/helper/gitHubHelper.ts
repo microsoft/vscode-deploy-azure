@@ -1,7 +1,6 @@
 export class GitHubProvider {
     // private gitHubPatToken: string;
-    private static GitHubUrl1 = 'https://github.com/';
-    private static GitHubUrl2 = 'https://www.github.com/';
+    private static GitHubUrl = 'https://github.com/';
     private static SSHGitHubUrl = 'git@github.com:';
 
     // constructor(gitHubPat: string) {
@@ -9,7 +8,7 @@ export class GitHubProvider {
     // }
 
     public static isGitHubUrl(remoteUrl: string): boolean {
-        return remoteUrl.startsWith(GitHubProvider.GitHubUrl1) || remoteUrl.startsWith(GitHubProvider.GitHubUrl2) || remoteUrl.startsWith(GitHubProvider.SSHGitHubUrl);
+        return remoteUrl.startsWith(GitHubProvider.GitHubUrl) || remoteUrl.startsWith(GitHubProvider.SSHGitHubUrl);
     }
 
     public static getRepositoryIdFromUrl(remoteUrl: string): string {
@@ -18,13 +17,12 @@ export class GitHubProvider {
             return remoteUrl.substring(GitHubProvider.SSHGitHubUrl.length);
         }
 
-        let endCount: number = remoteUrl.indexOf('.git', remoteUrl.lastIndexOf('/') + 1);
+        let endCount: number = remoteUrl.indexOf('.git');
         if (endCount < 0) {
             endCount = remoteUrl.length;
         }
 
-        return remoteUrl.startsWith(GitHubProvider.GitHubUrl1) ?
-            remoteUrl.substring(GitHubProvider.GitHubUrl1.length, endCount) : remoteUrl.substring(GitHubProvider.GitHubUrl2.length, endCount);
+        return remoteUrl.substring(GitHubProvider.GitHubUrl.length, endCount);
     }
 
     public static getFormattedRemoteUrl(remoteUrl: string): string {
