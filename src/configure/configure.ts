@@ -34,7 +34,7 @@ const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
 export async function configurePipeline(node: AzureTreeItem) {
-    vscode.window.showErrorMessage("new flow");
+    vscode.window.showErrorMessage("inside configure pipeline");
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
         try {
             if (!(await extensionVariables.azureAccountExtensionApi.waitForLogin())) {
@@ -93,6 +93,7 @@ class Orchestrator {
 
     public async configure(node: any): Promise<void> {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
+        vscode.window.showErrorMessage("inside configure");
         await this.getInputs(node);
 
         if (this.continueOrchestration) {
@@ -162,6 +163,7 @@ class Orchestrator {
     }
 
     private async getInputs(node: any): Promise<void> {
+        vscode.window.showErrorMessage("inside get inputs");
         let resourceNode = await this.analyzeNode(node);
 
         if (this.continueOrchestration) {
