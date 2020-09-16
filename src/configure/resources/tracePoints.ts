@@ -36,4 +36,7 @@ export class TracePoints {
     public static InitializeGitRepositoryFailed = 'InitializeGitRepositoryFailed';
     public static CommitAndPushPipelineFileFailed = 'CommitAndPushPipelineFileFailed';
     public static LanguageClientActivationFailed = 'LanguageClientActivationFailed';
+    public static UnableToCreateProvisioningPipeline = 'UnableToCreateProvisioningPipeline';
+    public static UnabletoGetProvisioningPipeline = 'UnabletoGetProvisioningPipeline';
+    public static RemotePipelineConfiguringFailed = 'RemotePipelineConfiguringFailed';
 }

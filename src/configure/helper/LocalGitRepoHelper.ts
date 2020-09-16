@@ -197,4 +197,10 @@ export class LocalGitRepoHelper {
             manifestFilePath);
         await vscode.window.showTextDocument(vscode.Uri.file(manifestFilePath));
     }
+
+    public async readFileConetent(pathToFile: string): Promise<string>{
+        await vscode.workspace.saveAll(true);
+        const buf = fs.readFileSync(pathToFile);
+        return buf.toString();
+    }
 }

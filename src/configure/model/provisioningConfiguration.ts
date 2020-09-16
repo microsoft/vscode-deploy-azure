@@ -15,7 +15,7 @@ export interface ProvisioningConfiguration {
   id: string;
   pipelineTemplateId: string;
   pipelineTemplateParameters: { [key: string]: string };
-  repository: CodeRepository;
+  branch: string;
   provisioningMode: provisioningMode;
   draftPipelineConfiguration?: DraftPipelineConfiguration;
   result?: Result;
@@ -34,14 +34,14 @@ export interface PipelineConfiguration {
 
 export interface CompletePipelineConfiguration extends PipelineConfiguration {
   path: string;
-  commitd: string;
+  commitId: string;
 }
 
-export interface DraftPipelineConfiguration extends PipelineConfiguration {e
-  files: Files[];
+export interface DraftPipelineConfiguration extends PipelineConfiguration {
+  files: File[];
 }
 
-export interface Files {
+export interface File {
   content: string;
   path: string;
 }

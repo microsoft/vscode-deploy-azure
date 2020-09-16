@@ -111,4 +111,5 @@ export class Messages {
     public static AnalyzingRepo = "Analyzing your repository";
     public static AzureLoginError = "Error in getting Azure login information, Please try again.";
     public static AdoDifferentTenantError = " One potential reason can be the AAD tenant of your Azure DevOps repository is different than the one you have been logged-in to VSCode. Open 'Command Pallete' and select 'Azure: Sign Out' and then Sign-In to other tenant by invoking 'Deploy to Azure' extension";
+    public static ConfiguringPipelineFailed = "Configuring provisioning pipeline failed due to %s";
 }
