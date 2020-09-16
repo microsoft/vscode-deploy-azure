@@ -58,7 +58,6 @@ export class RemoteConfigurer implements IRemoteConfigurerBase {
     public async checkProvisioningPipeline(jobId: string, githubOrg: string, repository: string, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration> {
         try {
             const provisioningServiceResponse = await this.getProvisioningPipeline(jobId, githubOrg, repository, wizardInputs);
-            // Add a check whether status is received or not
             if ( provisioningServiceResponse.result.status ===  "Queued" ||  provisioningServiceResponse.result.status == "InProgress") {
                await sleepForMilliSeconds(this.refreshTime);
                return await this.checkProvisioningPipeline(jobId, githubOrg, repository, wizardInputs);
