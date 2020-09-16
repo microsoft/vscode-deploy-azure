@@ -171,7 +171,7 @@ class Orchestrator {
     }
 
     private async getInputs(node: any): Promise<void> {
-        vscode.window.showErrorMessage("inside get inputs");
+        vscode.window.showErrorMessage("inside get inputs" + node);
         let resourceNode = await this.analyzeNode(node);
 
         if (this.continueOrchestration) {
