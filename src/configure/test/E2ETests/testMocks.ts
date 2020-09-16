@@ -83,6 +83,6 @@ export class TestMocks {
     public assertMocks() {
         this.mockedObjectArray.forEach(({ mockObject: object, count: cnt }) => {
             sinon.assert.callCount(object, cnt);
-        })
+        });
     }
 }

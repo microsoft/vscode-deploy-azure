@@ -21,7 +21,6 @@ export function setupTest(suiteName: string, suitePath: string): Promise<void> {
 
 	return new Promise((c, e) => {
 		glob(suitePath + '/**.test.js', { cwd: testsRoot }, (err, files) => {
-			//			glob('**/suite/**/**.test.js', { cwd: testsRoot }, (err, files) => {
 			if (err) {
 				return e(err);
 			}
