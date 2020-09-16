@@ -8,6 +8,7 @@ async function testHost() {
 	try {
 		// The folder containing the Extension Manifest package.json
 		// Passed to `--extensionDevelopmentPath`
+		validateEnvironmentVariables();
 		const extensionDevelopmentPath = path.resolve(__dirname, '../../../');
 
 		const extensionTestsEnv = {
@@ -41,6 +42,24 @@ async function setupGitHubRepoFolderForStaticWebApp(): Promise<string> {
 	const gitUrl = "https://github.com/vineetmimrot/StaticWebapp.git";
 	await git(projectPath).clone(gitUrl, projectPath);
 	return projectPath;
+}
+
+function validateEnvironmentVariables() {
+	let unsetVariables: string = "";
+	if (!process.env.Azure_UserName) {
+		unsetVariables += "Azure_UserName, "
+	}
+
+	if (!process.env.Azure_PAT) {
+		unsetVariables += "Azure_PAT, "
+	}
+
+	if (!process.env.GITHUB_TOKEN) {
+		unsetVariables += "GITHUB_TOKEN"
+	}
+	if (unsetVariables != "") {
+		throw new Error(`Env variable ${unsetVariables} are not set`);
+	}
 }
 
 testHost();

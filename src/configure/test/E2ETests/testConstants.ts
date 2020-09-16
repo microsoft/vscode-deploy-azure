@@ -5,9 +5,9 @@ import { AzureEnvironment } from 'ms-rest-azure';
 export class TestConstants {
     public static extensionId = "ms-vscode-deploy-azure.azure-deploy";
 
-    public static userName = process.env.Azure_UserName || "vimimrot@microsoft.com";
-    public static AzurePAT = process.env.Azure_PAT || "ltieun33kps4sn7ys4a7zbybc73w7htynjypxpaesr2bnb2nvdfq";
-    public static GithubPAT = process.env.GithubPAT || "f3a7efaeebab40560a706b5b5a79fc61edf4c358";
+    public static userName = process.env.Azure_UserName;
+    public static AzurePAT = process.env.Azure_PAT;
+    public static GithubPAT = process.env.GITHUB_TOKEN;
     public static PublishProfile = process.env.PublishProfile || "DummyPublishProfile";
 
     public static credentials = new BasicAuthenticationCredentials(TestConstants.userName, TestConstants.AzurePAT);
@@ -16,14 +16,14 @@ export class TestConstants {
 
     public static session = {
         userId: TestConstants.userName,
-        tenantId: "72f988bf-86f1-41af-91ab-2d7cd011db47",
+        tenantId: "f7841ef5-a478-4164-8a1e-e8e95a786cd7",
         credentials: TestConstants.credentials,
         environment: AzureEnvironment.Azure
     }
 
     public static subscription = {
-        id: "/subscriptions/c00d16c7-6c1f-4c03-9be1-6934a4c49682",
-        subscriptionId: "c00d16c7-6c1f-4c03-9be1-6934a4c49682",
+        id: "/subscriptions/8f67c458-5874-41fe-8cf9-f3b0429be6ff",
+        subscriptionId: "8f67c458-5874-41fe-8cf9-f3b0429be6ff",
         displayName: "RMDev"
     }
 
@@ -37,8 +37,8 @@ export class TestConstants {
     };
 
     public static windowsWebAppResource = <GenericResource>{
-        id: "/subscriptions/c00d16c7-6c1f-4c03-9be1-6934a4c49682/resourceGroups/vnmtestlinux93c8/providers/Microsoft.Web/sites/vnm-demo",
-        name: "vnm-demo",
+        id: "/subscriptions/8f67c458-5874-41fe-8cf9-f3b0429be6ff/resourceGroups/vnmtestlinux93c8/providers/Microsoft.Web/sites/test-app",
+        name: "test-app",
         type: "Microsoft.Web/sites",
         kind: "app"
     };
