@@ -15,7 +15,11 @@ export interface ProvisioningConfiguration {
   id: string;
   pipelineTemplateId: string;
   pipelineTemplateParameters: { [key: string]: string };
+<<<<<<< HEAD
   branch: string;
+=======
+  repository: CodeRepository;
+>>>>>>> e44232fe504c5b595f42d2c6c142499652a3d062
   provisioningMode: provisioningMode;
   draftPipelineConfiguration?: DraftPipelineConfiguration;
   result?: Result;
