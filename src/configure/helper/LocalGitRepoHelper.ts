@@ -146,7 +146,7 @@ export class LocalGitRepoHelper {
 
     public async getGitRootDirectory(): Promise<string> {
         let gitRootDir = await this.gitReference.revparse(["--show-toplevel"]);
-        return path.normalize(gitRootDir.trim());
+        return fs.realpathSync(path.normalize(gitRootDir.trim()));
     }
 
     public async initializeGitRepository(remoteName: string, remoteUrl: string, filesToExcludeRegex?: string): Promise<void> {

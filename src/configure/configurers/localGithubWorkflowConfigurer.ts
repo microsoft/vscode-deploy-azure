@@ -22,10 +22,9 @@ import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
+import { Utilities } from '../utilities/utilities';
 import { Configurer } from "./configurerBase";
 
-
-const uuid = require('uuid/v4');
 const Layer = 'LocalGitHubWorkflowConfigurer';
 
 export class LocalGitHubWorkflowConfigurer implements Configurer {
@@ -109,7 +108,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                 });
 
             if (!!azureConnectionSecret) {
-                inputs.targetResource.serviceConnectionId = 'AZURE_CREDENTIALS_' + uuid().substr(0, 8);
+                inputs.targetResource.serviceConnectionId = constants.githubSecretNamePrefix + Utilities.shortGuid(8);
                 try {
                     await vscode.window.withProgress(
                         {
@@ -203,6 +202,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
             }
 
             const commitOrDiscard = await this.controlProvider.showInformationBox(
+                constants.CheckInPipelineFilesToRepository,
                 utils.format(displayMessage, Messages.commitAndPush, inputs.sourceRepository.branch, inputs.sourceRepository.remoteName),
                 Messages.commitAndPush,
                 Messages.discardPipeline);

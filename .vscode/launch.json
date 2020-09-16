@@ -27,9 +27,9 @@
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
-                "/Users/vineetmimrot/work/raw-work/repo/github/staticwebapp",
+                "/Users/vineetmimrot/work/raw-work/repo/github/staticwebapp/",
                 "--extensionDevelopmentPath=${workspaceFolder}",
-                "--extensionTestsPath=${workspaceFolder}/out/configure/test"
+                "--extensionTestsPath=${workspaceFolder}/out/configure/test/E2ETests/Static_Win_WebApp_Suite"
             ],
             "outFiles": [
                 "${workspaceFolder}/out/configure/test/**/*.js"

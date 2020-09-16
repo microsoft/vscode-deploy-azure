@@ -1,5 +1,6 @@
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { ApplicationSettings, RepositoryAnalysis } from 'azureintegration-repoanalysis-client-internal';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
@@ -29,10 +30,7 @@ import { TracePoints } from './resources/tracePoints';
 import { InputControlProvider } from './templateInputHelper/InputControlProvider';
 import { Utilities, WhiteListedError } from './utilities/utilities';
 
-const uuid = require('uuid/v4');
-
 const Layer: string = 'configure';
-export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
 export async function configurePipeline(node: AzureTreeItem) {
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
@@ -94,7 +92,6 @@ class Orchestrator {
     public constructor() {
         this.inputs = new WizardInputs();
         this.controlProvider = new ControlProvider();
-        UniqueResourceNameSuffix = uuid().substr(0, 5);
     }
 
     public async configure(node: any): Promise<void> {
@@ -291,7 +288,7 @@ class Orchestrator {
 
             if (workspaceFolders.length === 1) {
                 telemetryHelper.setTelemetry(TelemetryKeys.MultipleWorkspaceFolders, 'false');
-                this.workspacePath = workspaceFolders[0].uri.fsPath;
+                this.workspacePath = fs.realpathSync(workspaceFolders[0].uri.fsPath);
             }
             else {
                 telemetryHelper.setTelemetry(TelemetryKeys.MultipleWorkspaceFolders, 'true');

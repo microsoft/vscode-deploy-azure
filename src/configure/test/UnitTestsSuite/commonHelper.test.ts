@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
-import { GithubClient } from "../../../clients/github/githubClient";
-import { generateGitHubRepository } from "../../../helper/commonHelper";
+import { GithubClient } from "../../clients/github/githubClient";
+import { generateGitHubRepository } from "../../helper/commonHelper";
 
 var expect = require('chai').expect;
 var nock = require('nock');

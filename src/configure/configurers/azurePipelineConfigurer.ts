@@ -6,7 +6,6 @@ import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient, VSTSDeploymentMessage } from '../clients/azure/appServiceClient';
 import { AzureResourceClient } from '../clients/azure/azureResourceClient';
 import { AzureDevOpsClient } from "../clients/devOps/azureDevOpsClient";
-import { UniqueResourceNameSuffix } from '../configure';
 import { generateDevOpsOrganizationName, generateDevOpsProjectName } from '../helper/commonHelper';
 import { ControlProvider } from '../helper/controlProvider';
 import { AzureDevOpsHelper } from "../helper/devOps/azureDevOpsHelper";
@@ -22,7 +21,7 @@ import * as constants from '../resources/constants';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
-import { WhiteListedError } from '../utilities/utilities';
+import { Utilities, WhiteListedError } from '../utilities/utilities';
 import { Configurer } from "./configurerBase";
 import Q = require('q');
 
@@ -150,7 +149,7 @@ export class AzurePipelineConfigurer implements Configurer {
                 },
                 async () => {
                     try {
-                        let serviceConnectionName = `${inputs.sourceRepository.repositoryName}-${UniqueResourceNameSuffix}`;
+                        let serviceConnectionName = `${inputs.sourceRepository.repositoryName}-${Utilities.shortGuid()}`;
                         inputs.sourceRepository.serviceConnectionId = await serviceConnectionHelper.createGitHubServiceConnection(serviceConnectionName, inputs.githubPATToken);
                     }
                     catch (error) {
@@ -170,7 +169,7 @@ export class AzurePipelineConfigurer implements Configurer {
                 },
                 async () => {
                     try {
-                        let serviceConnectionName = `${inputs.targetResource.resource.name}-${UniqueResourceNameSuffix}`;
+                        let serviceConnectionName = `${inputs.targetResource.resource.name}-${Utilities.shortGuid()}`;
                         switch ((inputs.pipelineConfiguration.template as LocalPipelineTemplate).azureConnectionType) {
                             case AzureConnectionType.None:
                                 return '';
@@ -240,7 +239,8 @@ export class AzurePipelineConfigurer implements Configurer {
         }
 
         while (!inputs.sourceRepository.commitId) {
-            let commitOrDiscard = await vscode.window.showInformationMessage(
+            let commitOrDiscard = await this.controlProvider.showInformationBox(
+                constants.CheckInPipelineFilesToRepository,
                 commitMessage,
                 Messages.commitAndPush,
                 Messages.discardPipeline);
@@ -250,7 +250,7 @@ export class AzurePipelineConfigurer implements Configurer {
                     try {
                         if (!inputs.sourceRepository.remoteUrl) {
                             let repositoryName = path.basename(inputs.sourceRepository.localPath).trim().replace(/[^a-zA-Z0-9-]/g, '');
-                            repositoryName = !!repositoryName ? (repositoryName + UniqueResourceNameSuffix) : "codetoazure";
+                            repositoryName = !!repositoryName ? (repositoryName + Utilities.shortGuid()) : "codetoazure";
                             let repository = await this.azureDevOpsClient.createRepository(inputs.organizationName, inputs.project.id, repositoryName);
                             inputs.sourceRepository.repositoryName = repository.name;
                             inputs.sourceRepository.repositoryId = repository.id;
@@ -289,7 +289,7 @@ export class AzurePipelineConfigurer implements Configurer {
             try {
                 let targetResource = AzurePipelineConfigurer.getTargetResource(inputs);
 
-                let pipelineName = `${(targetResource ? targetResource.name : inputs.pipelineConfiguration.template.label)}-${UniqueResourceNameSuffix}`;
+                let pipelineName = `${(targetResource ? targetResource.name : inputs.pipelineConfiguration.template.label)}-${Utilities.shortGuid()}`;
                 return await this.azureDevOpsHelper.createAndRunPipeline(pipelineName, inputs);
             }
             catch (error) {

@@ -32,3 +32,6 @@ var mkdir = function (options, target) {
 mkdir("-p", path.join(__dirname, 'out/configure/templates'));
 cp("-Rf", path.join(__dirname, 'src/configure/templates/*'), path.join(__dirname, 'out/configure/templates'));
 //# sourceMappingURL=copyStaticFiles.js.map
+
+mkdir("-p", path.join(__dirname, 'out/configure/test/E2ETests/testFixtures'));
+cp("-Rf", path.join(__dirname, 'src/configure/test/E2ETests/testFixtures/*'), path.join(__dirname, 'out/configure/test/E2ETests/testFixtures'));

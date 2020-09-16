@@ -167,6 +167,7 @@ export const TargetResource = 'targetResource';
 export const ResourceDynamicValidationFailure = 'ResourceDynamicValidationFailure';
 export const EnterGithubRepositoryName = 'EnterGithubRepositoryName';
 export const SelectGitHubOrganization = 'selectGitHubOrganization';
+export const CheckInPipelineFilesToRepository = "checkInPipelineFilesToRepository";
 
 //RepoAnalysis constants expected in response of Repository Analysis Service
 export const RepoAnalysisConstants = {
@@ -197,6 +198,7 @@ export const azurePipeline: string = "Azure-pipeline";
 export const githubWorkflow: string = "Github-workflow";
 export const clientPropertyKey: string = "ms.client.vscode";
 export const inputModeProperty: string = "inputMode";
+export const githubSecretNamePrefix: string = "AZURE_CREDENTIALS_";
 
 export const ExceptionType = {
     UnauthorizedRequestException: 'UNAUTHORIZEDREQUESTEXCEPTION'
