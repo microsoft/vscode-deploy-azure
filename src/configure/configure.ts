@@ -100,7 +100,7 @@ class Orchestrator {
 
     public async configure(node: any): Promise<void> {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
-        vscode.window.showErrorMessage("inside configure");
+        vscode.window.showErrorMessage(node.value.id);
         await this.getInputs(node);
 
         if (this.continueOrchestration) {
