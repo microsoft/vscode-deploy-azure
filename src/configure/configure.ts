@@ -27,6 +27,7 @@ import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
 import { InputControlProvider } from './templateInputHelper/InputControlProvider';
+import { Utilities, WhiteListedError } from './utilities/utilities';
 
 const uuid = require('uuid/v4');
 
@@ -41,12 +42,13 @@ export async function configurePipeline(node: AzureTreeItem) {
                 // set telemetry
                 telemetryHelper.setTelemetry(TelemetryKeys.AzureLoginRequired, 'true');
 
-                let loginOption = await vscode.window.showInformationMessage(Messages.azureLoginRequired, Messages.signInLabel, Messages.signUpLabel);
+                const loginOption = await vscode.window.showInformationMessage(Messages.azureLoginRequired, Messages.signInLabel, Messages.signUpLabel);
                 if (loginOption && loginOption.toLowerCase() === Messages.signInLabel.toLowerCase()) {
                     telemetryHelper.setTelemetry(TelemetryKeys.AzureLoginOption, 'SignIn');
                     await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.waitForAzureSignIn },
                         async () => {
                             await vscode.commands.executeCommand("azure-account.login");
+                            await extensionVariables.azureAccountExtensionApi.waitForSubscriptions();
                         });
                 }
                 else if (loginOption && loginOption.toLowerCase() === Messages.signUpLabel.toLowerCase()) {
@@ -65,9 +67,14 @@ export async function configurePipeline(node: AzureTreeItem) {
         }
         catch (error) {
             if (!(error instanceof UserCancelledError)) {
-                extensionVariables.outputChannel.appendLine(error.message);
                 vscode.window.showErrorMessage(error.message);
-                telemetryHelper.setResult(Result.Failed, error);
+                extensionVariables.outputChannel.appendLine(error.message);
+                if (error instanceof WhiteListedError) {
+                    telemetryHelper.setTelemetry(TelemetryKeys.IsErrorWhitelisted, "true");
+                    telemetryHelper.setResult(Result.Succeeded, error);
+                } else {
+                    telemetryHelper.setResult(Result.Failed, error);
+                }
             }
             else {
                 telemetryHelper.setResult(Result.Canceled, error);
@@ -107,7 +114,7 @@ class Orchestrator {
             await pipelineConfigurer.createPreRequisites(this.inputs, !!this.azureResourceClient ? this.azureResourceClient : new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId));
 
             telemetryHelper.setCurrentStep('CreateAssets');
-            if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
+            if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
                 await (pipelineConfigurer as RemoteGitHubWorkflowConfigurer).createAssets(ConfigurationStage.Pre);
             } else {
                 await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => { return pipelineConfigurer.createAsset(name, assetType, data, inputs); });
@@ -135,6 +142,7 @@ class Orchestrator {
             this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceType, this.inputs.targetResource.resource.type);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, this.inputs.targetResource.resource.kind);
+        telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash, Utilities.createSha256Hash(this.inputs.targetResource.resource.id));
     }
 
     private async selectTemplate(resource: GenericResource): Promise<void> {
@@ -408,7 +416,7 @@ class Orchestrator {
                 };
             }
             else {
-                let repositoryProvider: string = "Other";
+                let repositoryProvider: string;
 
                 if (remoteUrl.indexOf("bitbucket.org") >= 0) {
                     repositoryProvider = "Bitbucket";
@@ -416,9 +424,12 @@ class Orchestrator {
                 else if (remoteUrl.indexOf("gitlab.com") >= 0) {
                     repositoryProvider = "GitLab";
                 }
+                else {
+                    repositoryProvider = remoteUrl;
+                }
 
                 telemetryHelper.setTelemetry(TelemetryKeys.RepoProvider, repositoryProvider);
-                throw new Error(Messages.cannotIdentifyRespositoryDetails);
+                throw new WhiteListedError(Messages.cannotIdentifyRespositoryDetails);
             }
         }
         else {

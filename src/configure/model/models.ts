@@ -57,6 +57,7 @@ export class GitHubOrganization {
     id: number;
     url: string;
     repos_url: string;
+    isUserAccount?: boolean = false;
 }
 
 export class GitHubRepo {
@@ -176,6 +177,7 @@ export interface AzureAccountExtensionExports {
     subscriptions: { session: AzureSession, subscription: SubscriptionModels.Subscription }[];
     filters: { session: AzureSession, subscription: SubscriptionModels.Subscription }[];
     waitForLogin: () => Promise<boolean>;
+    waitForSubscriptions: () => Promise<boolean>;
 }
 
 export interface DevOpsProject {
@@ -267,6 +269,7 @@ export enum SupportedLanguage {
     NODE = 'node',
     PYTHON = 'python',
     DOTNETCORE = 'dotnetcore',
+    DOTNET = 'dotnet',
     DOCKER = 'docker'
 }
 
