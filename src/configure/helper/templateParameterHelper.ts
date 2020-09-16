@@ -1,5 +1,4 @@
 import { GenericResource } from "azure-arm-resource/lib/resource/models";
-import * as crypto from 'crypto';
 import * as utils from 'util';
 import { AppServiceClient } from "../clients/azure/appServiceClient";
 import { ArmRestClient } from "../clients/azure/armRestClient";
@@ -11,6 +10,7 @@ import { LocalPipelineTemplate, PreDefinedDataSourceIds, TemplateParameter, Temp
 import * as constants from '../resources/constants';
 import { Messages } from "../resources/messages";
 import { TelemetryKeys } from "../resources/telemetryKeys";
+import { Utilities } from "../utilities/utilities";
 import { getSubscriptionSession } from "./azureSessionHelper";
 import { ControlProvider } from "./controlProvider";
 import { MustacheHelper } from "./mustacheHelper";
@@ -131,10 +131,9 @@ export class TemplateParameterHelper {
                         }
                         else {
 
-                            telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash,
-                                crypto.createHash('sha256').update(selectedResource.data.id).digest('hex'));
+                            telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash, Utilities.createSha256Hash(selectedResource.data.id));
 
-                            //handling case senstivity issue of httpApplicationRouting
+                            // handling case senstivity issue of httpApplicationRouting
                             if (detailedResource.properties.addonProfiles) {
                                 let addonProfiles = JSON.parse(JSON.stringify(detailedResource.properties.addonProfiles).toLowerCase());
                                 if (addonProfiles.httpapplicationrouting) {
@@ -177,8 +176,7 @@ export class TemplateParameterHelper {
                         { placeHolder: Messages.selectTargetResource },
                         TelemetryKeys.AzureResourceListCount);
 
-                    telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash,
-                        crypto.createHash('sha256').update((<GenericResource>selectedResource.data).id).digest('hex'));
+                    telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash, Utilities.createSha256Hash((<GenericResource>selectedResource.data).id));
                     if (await appServiceClient.isScmTypeSet((<GenericResource>selectedResource.data).id)) {
                         await openBrowseExperience((<GenericResource>selectedResource.data).id);
                         throw Error(Messages.setupAlreadyConfigured);

@@ -1,5 +1,7 @@
 {
-	"rulesDirectory": ["node_modules/tslint-microsoft-contrib"],
+	"rulesDirectory": [
+		"node_modules/tslint-microsoft-contrib"
+	],
 	"rules": {
 		"no-string-throw": true,
 		"no-unused-expression": true,
@@ -10,7 +12,7 @@
 			true,
 			"always"
 		],
-		"triple-equals": true,
+		"triple-equals": false,
 		"no-banned-terms": true,
 		"no-delete-expression": true,
 		"no-document-domain": true,
@@ -29,17 +31,17 @@
 		"max-line-length": [
 			true,
 			{
-			  "limit": 135,
-			  "ignore-pattern": "^import [^,]+ from |^export | implements"
+				"limit": 135,
+				"ignore-pattern": "^import [^,]+ from |^export | implements"
 			}
-		  ],
+		],
 		"trailing-comma": false,
 		"one-line": false,
 		"ordered-imports": [
 			true,
 			{
-			  "import-sources-order": "case-insensitive",
-			  "named-imports-order": "case-insensitive"
+				"import-sources-order": "case-insensitive",
+				"named-imports-order": "case-insensitive"
 			}
 		],
 		"no-constant-condition": [
@@ -47,8 +49,16 @@
 			{
 				"checkLoops": false
 			}
-		]
+		],
+		"no-angle-bracket-type-assertion": false,
+		"object-literal-sort-keys": false,
+		"prefer-type-cast": false,
+		"function-name": false,
+		"max-classes-per-file": false
 	},
 	"defaultSeverity": "warning",
-	"extends": ["tslint-microsoft-contrib/recommended", "tslint:recommended"]
+	"extends": [
+		"tslint-microsoft-contrib/recommended",
+		"tslint:recommended"
+	]
 }

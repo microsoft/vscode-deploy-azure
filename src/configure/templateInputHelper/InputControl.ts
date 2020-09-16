@@ -77,6 +77,10 @@ export class InputControl {
         this.inputDescriptor[key] = value;
     }
 
+    public getInputDataType(): InputDataType {
+        return this.inputDescriptor.type;
+    }
+
     public updateControlType(controlType: ControlType): void {
         this.controlType = controlType;
     }
