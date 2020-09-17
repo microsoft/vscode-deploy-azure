@@ -27,8 +27,10 @@
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
-                "/Users/vineetmimrot/work/raw-work/repo/github/staticwebapp/",
+                // Add repository path on which you want to test
+                "",
                 "--extensionDevelopmentPath=${workspaceFolder}",
+                // Change this to whatever test you want to debug
                 "--extensionTestsPath=${workspaceFolder}/out/configure/test/E2ETests/Static_Win_WebApp_Suite"
             ],
             "outFiles": [
