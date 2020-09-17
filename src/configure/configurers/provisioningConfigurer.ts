@@ -97,7 +97,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         if (!!commitOrDiscard && commitOrDiscard.toLowerCase() === Messages.commitAndPush.toLowerCase()) {
              provisioningServiceResponse = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
                 try {
-                    provisioningConfiguration.draftPipelineConfiguration = await this.createFilesToCheckin(draftPipelineConfiguration.id, draftPipelineConfiguration.type);
+                    provisioningConfiguration.pipelineConfiguration = await this.createFilesToCheckin(draftPipelineConfiguration.id, draftPipelineConfiguration.type);
                     const completeProvisioningSvcResp = await this.createProvisioningPipeline(provisioningConfiguration, inputs);
                     if ( completeProvisioningSvcResp.id != "" ){
                         const OrgAndRepoDetails = inputs.sourceRepository.repositoryId.split('/');

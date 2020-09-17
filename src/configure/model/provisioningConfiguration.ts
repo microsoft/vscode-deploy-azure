@@ -17,7 +17,7 @@ export interface ProvisioningConfiguration {
   pipelineTemplateParameters: { [key: string]: string };
   branch: string;
   provisioningMode: provisioningMode;
-  draftPipelineConfiguration?: DraftPipelineConfiguration;
+  pipelineConfiguration?: DraftPipelineConfiguration;
   result?: Result;
 }
 
