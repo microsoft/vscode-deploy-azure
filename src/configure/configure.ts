@@ -8,7 +8,7 @@ import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
-import { RemoteConfigurer } from './configurers/remoteConfigurer';
+import { ProvisioningConfigurer } from './configurers/provisioningConfigurer';
 import { RemoteGitHubWorkflowConfigurer } from './configurers/remoteGitHubWorkflowConfigurer';
 import { ResourceSelectorFactory } from './configurers/ResourceSelectorFactory';
 import { AssetHandler } from './helper/AssetHandler';
@@ -667,26 +667,26 @@ class Orchestrator {
       }
 
     private async configurePipelineRemotely(): Promise<void>{
-        const remoteConfigurer = new RemoteConfigurer(this.localGitRepoHelper);
+        const provisioningConfigurer = new ProvisioningConfigurer(this.localGitRepoHelper);
         const template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
-        await remoteConfigurer.CreatePreRequisiteParams(this.inputs);
+        await provisioningConfigurer.CreatePreRequisiteParams(this.inputs);
         const provisioningConfiguration =  this.createProvisioningConfiguration(template.id, this.inputs.sourceRepository.branch, this.inputs.pipelineConfiguration.params , provisioningMode.draft );
         try {
             // Initially send the provisioning request in draft mode to get workflow files
-            const provisioningServiceDraftModeResponse  = await remoteConfigurer.createProvisioningPipeline(provisioningConfiguration, this.inputs);
-            if (provisioningServiceDraftModeResponse.id  != undefined ) {
+            const provisioningServiceDraftModeResponse  = await provisioningConfigurer.createProvisioningPipeline(provisioningConfiguration, this.inputs);
+            if (provisioningServiceDraftModeResponse.id  != "" ) {
                 const OrgAndRepoDetails =  this.inputs.sourceRepository.repositoryId.split('/');
 
                 // Monitor the provisioning pipeline
-                const provisioningDraftPipeline =  await remoteConfigurer.checkProvisioningPipeline(provisioningServiceDraftModeResponse.id, OrgAndRepoDetails[0], OrgAndRepoDetails[1], this.inputs );
+                const provisioningDraftPipeline =  await provisioningConfigurer.checkProvisioningPipeline(provisioningServiceDraftModeResponse.id, OrgAndRepoDetails[0], OrgAndRepoDetails[1], this.inputs );
 
                 provisioningConfiguration.provisioningMode =  provisioningMode.complete;
 
                // After recieving the draft workflow files, show them to user and confirm to checkin
-                await remoteConfigurer.postSteps(provisioningConfiguration, (provisioningDraftPipeline.result.pipelineConfiguration as DraftPipelineConfiguration), this.inputs);
+                await provisioningConfigurer.postSteps(provisioningConfiguration, (provisioningDraftPipeline.result.pipelineConfiguration as DraftPipelineConfiguration), this.inputs);
 
                 // All done, now browse the pipeline
-                await remoteConfigurer.browseQueuedPipeline();
+                await provisioningConfigurer.browseQueuedPipeline();
             } else {
                 throw new Error("Failed to configure provisioning pipeline");
             }

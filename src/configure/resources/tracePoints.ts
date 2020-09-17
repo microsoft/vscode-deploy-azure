@@ -39,4 +39,5 @@ export class TracePoints {
     public static UnableToCreateProvisioningPipeline = 'UnableToCreateProvisioningPipeline';
     public static UnabletoGetProvisioningPipeline = 'UnabletoGetProvisioningPipeline';
     public static RemotePipelineConfiguringFailed = 'RemotePipelineConfiguringFailed';
+    public static SPNCreationFailed = 'SPNCreationFailed';
 }

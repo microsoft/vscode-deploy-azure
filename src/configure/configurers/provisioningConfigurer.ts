@@ -6,14 +6,18 @@ import { UserCancelledError } from 'vscode-azureextensionui';
 import { IProvisioningServiceClient } from "../clients/IProvisioningServiceClient";
 import { ProvisioningServiceClientFactory } from "../clients/provisioningServiceClientFactory";
 import { sleepForMilliSeconds } from '../helper/commonHelper';
+import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
+import { InputDataType } from "../model/Contracts";
 import { WizardInputs } from "../model/models";
 import { CompletePipelineConfiguration, DraftPipelineConfiguration, File, ProvisioningConfiguration } from "../model/provisioningConfiguration";
+import { RemotePipelineTemplate } from '../model/templateModels';
 import { Messages } from '../resources/messages';
 import { TelemetryKeys } from '../resources/telemetryKeys';
 import { TracePoints } from '../resources/tracePoints';
-import { IRemoteConfigurerBase } from "./remoteConfigurerBase";
+import { InputControl } from '../templateInputHelper/InputControl';
+import { IProvisioningConfigurer } from './IProvisioningConfigurer';
 
 // tslint:disable-next-line:interface-name
 interface DraftFile {
@@ -22,8 +26,8 @@ interface DraftFile {
     absPath: string;
 }
 
-const Layer: string = "RemoteConfigurer";
-export class RemoteConfigurer implements IRemoteConfigurerBase {
+const Layer: string = "ProvisioningConfigurer";
+export class ProvisioningConfigurer implements IProvisioningConfigurer {
     private provisioningServiceClient: IProvisioningServiceClient;
     private queuedPipelineUrl: string;
     private refreshTime: number = 5 * 1000;
@@ -84,11 +88,7 @@ export class RemoteConfigurer implements IRemoteConfigurerBase {
     public async postSteps(provisioningConfiguration: ProvisioningConfiguration, draftPipelineConfiguration: DraftPipelineConfiguration, inputs: WizardInputs): Promise<void> {
         await this.getFileToCommit(draftPipelineConfiguration);
         await this.showPipelineFiles();
-        let displayMessage = Messages.modifyAndCommitFile;
-        if (this.filesToCommit.length > 1) {
-            displayMessage = Messages.modifyAndCommitMultipleFiles;
-        }
-
+        const displayMessage = (this.filesToCommit.length > 1) ?  Messages.modifyAndCommitMultipleFiles : Messages.modifyAndCommitFile;
         const commitOrDiscard = await vscode.window.showInformationMessage(
             utils.format(displayMessage, Messages.commitAndPush, inputs.sourceRepository.branch, inputs.sourceRepository.remoteName),
             Messages.commitAndPush,
@@ -99,7 +99,7 @@ export class RemoteConfigurer implements IRemoteConfigurerBase {
                 try {
                     provisioningConfiguration.draftPipelineConfiguration = await this.createFilesToCheckin(draftPipelineConfiguration.id, draftPipelineConfiguration.type);
                     const completeProvisioningSvcResp = await this.createProvisioningPipeline(provisioningConfiguration, inputs);
-                    if ( completeProvisioningSvcResp.id != undefined ){
+                    if ( completeProvisioningSvcResp.id != "" ){
                         const OrgAndRepoDetails = inputs.sourceRepository.repositoryId.split('/');
                         return await this.checkProvisioningPipeline(completeProvisioningSvcResp.id, OrgAndRepoDetails[0], OrgAndRepoDetails[1], inputs);
                     } else {
@@ -166,11 +166,39 @@ export class RemoteConfigurer implements IRemoteConfigurerBase {
     }
 
     public async CreatePreRequisiteParams(wizardInputs: WizardInputs): Promise<void>{
-        const parsedCredentials: { [key: string]: any } = JSON.parse(JSON.stringify(wizardInputs.azureSession.credentials));
+        const parsedCredentials = JSON.parse(JSON.stringify(wizardInputs.azureSession.credentials));
         wizardInputs.pipelineConfiguration.params["armAuthToken"] = "Bearer " + parsedCredentials["tokenCache"]["target"]["_entries"][0]["accessToken"];
-        wizardInputs.pipelineConfiguration.params["containerPort"]  = JSON.stringify(wizardInputs.pipelineConfiguration.params["containerPort"]);
-      // TO DO:  wizardInputs.pipelineConfiguration.params["azureAuth"] = await this.getAzureSPNSecret(wizardInputs);
+        const template = wizardInputs.pipelineConfiguration.template as RemotePipelineTemplate;
+        const inputDescriptor = template.parameters.inputs.find((value) => (value.type === InputDataType.Authorization && value.id === "azureAuth"));
+        const scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", wizardInputs.pipelineConfiguration.params);
+        if ( scope.length > 0 && scope[0] != "" ){
+            wizardInputs.pipelineConfiguration.params["azureAuth"] = await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.CreatingSPN },
+                async () => {
+                    try {
+                        // TODO: Need to support for array of scope
+                        return await this.getAzureSPNSecret(wizardInputs, scope[0]);
+                    } catch (error){
+                        telemetryHelper.logError(Layer, TracePoints.SPNCreationFailed, error);
+                        return error;
+                    }
+                } );
+        }
     }
+
+    private async getAzureSPNSecret(inputs: WizardInputs, scope?: string): Promise<string> {
+        const  aadAppName = GraphHelper.generateAadApplicationName(inputs.sourceRepository.remoteName, 'github');
+        const aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
+        return JSON.stringify({
+        scheme:  'ServicePrincipal',
+        parameters: {
+            serviceprincipalid: `${aadApp.appId}`,
+            serviceprincipalkey: `${aadApp.secret}`,
+            subscriptionId: `${inputs.subscriptionId}`,
+            tenantid: `${inputs.azureSession.tenantId}`,
+        }
+        });
+   }
 
    // tslint:disable-next-line:no-reserved-keywords
    private async createFilesToCheckin(id: string, type: string): Promise<DraftPipelineConfiguration>{
