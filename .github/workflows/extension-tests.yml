@@ -7,25 +7,29 @@ jobs:
 
     strategy:
       fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
 
-    - uses: actions/setup-node@v2-beta
-      name: Setup node
+    - name: Setup node
+      uses: actions/setup-node@v2-beta
       with:
         node-version: '12'
 
-    - run: npm install
-      name: npm install
+    - name: npm install
+      run: npm install
 
-    - run: npm run compile
-      name: Build extension
+    - name: Build extension
+      run: npm run compile
 
-    - name: Running Tests
-      run: npm test
+    - name: Run tests
+      uses: GabrielBB/xvfb-action@v1.2
+      with:
+        run: npm test
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         Azure_UserName: ${{ secrets.Azure_UserName }}
