@@ -13,8 +13,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - name: Setup node
     - uses: actions/setup-node@v2-beta
+      name: Setup node
       with:
         node-version: '12'
 
