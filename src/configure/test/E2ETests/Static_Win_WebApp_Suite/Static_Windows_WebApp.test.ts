@@ -13,12 +13,13 @@ let expect = chai.expect;
 
 describe('# Configure Pipeline for Static Website on Windows AppSvc @vscode-deploy-azure ', function () {
     context('Should start extension @vscode-deploy-azure', function () {
-        it('should be able to activate the extension', async function () {
+        it('should be able to activate the extension', async function (done) {
             this.timeout(2000);
             const extension = vscode.extensions.getExtension(TestConstants.extensionId);
             if (!extension.isActive) {
                 expect(extension.activate()).should.be.fulfilled;
             }
+            done();
         });
     });
 
