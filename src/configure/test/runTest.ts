@@ -1,8 +1,9 @@
+import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as git from 'simple-git/promise';
-import { runTests } from 'vscode-test';
+import { downloadAndUnzipVSCode, resolveCliPathFromVSCodeExecutablePath, runTests } from 'vscode-test';
 
 async function testHost() {
 	try {
@@ -20,6 +21,14 @@ async function testHost() {
 		// The path to test runner
 		// Passed to --extensionTestsPath
 		let extensionTestsPath: string;
+
+		const vscodeExecutablePath = await downloadAndUnzipVSCode();
+		const cliPath = resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath);
+		cp.spawnSync(cliPath, ['--install-extension', 'ms-vscode.azure-account'], {
+			encoding: 'utf-8',
+			stdio: 'inherit'
+		});
+
 
 		console.log("### Running Unit Tests ###")
 		extensionTestsPath = path.resolve(__dirname, './UnitTestsSuite');
@@ -71,7 +80,7 @@ function printTestResultFiles() {
 	console.log("\n### Test Report ###");
 	let count = 1;
 	filenames.forEach((file) => {
-		console.log("### " + count++ + ". Test Suite:" + path.parse(file).name + " ###");
+		console.log("### " + count++ + ". Test Suite: " + path.parse(file).name + " ###");
 		console.log("\n" + fs.readFileSync(path.resolve(testResultDir, file), 'utf-8'));
 		console.log("\n");
 	});
