@@ -32,11 +32,10 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         Azure_UserName: ${{ secrets.Azure_UserName }}
         Azure_PAT: ${{ secrets.Azure_PAT }}
-      continue-on-error: true
 
     - name: Create an issue
       uses: JasonEtco/create-an-issue@v2.4.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        filename: .github/ISSUE_TEMPLATE/build-failed-issue.md
+        filename: .github/ISSUE_TEMPLATE/test-failed-issue.md
