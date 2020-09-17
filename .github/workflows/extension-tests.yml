@@ -1,0 +1,40 @@
+name: "Extension Test analysis"
+
+on: [push]
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Setup node
+    - uses: actions/setup-node@v2-beta
+      with:
+        node-version: '12'
+
+    - run: npm install
+      name: npm install
+
+    - run: npm run compile
+      name: Build extension
+
+    - name: Running Tests
+      run: npm test
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        Azure_UserName: ${{ secrets.Azure_UserName }}
+        Azure_PAT: ${{ secrets.Azure_PAT }}
+
+    - name: Create an issue
+      uses: JasonEtco/create-an-issue@v2.4.0
+      if: ${{ failure() && github.ref == 'refs/heads/master' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        filename: .github/ISSUE_TEMPLATE/build-failed-issue.md
