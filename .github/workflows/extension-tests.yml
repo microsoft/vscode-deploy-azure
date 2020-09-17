@@ -37,7 +37,7 @@ jobs:
 
     - name: Create an issue
       uses: JasonEtco/create-an-issue@v2.4.0
-      if: failed()
+      if: ${{ failure() }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
