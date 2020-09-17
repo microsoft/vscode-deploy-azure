@@ -36,7 +36,6 @@ jobs:
 
     - name: Create an issue
       uses: JasonEtco/create-an-issue@v2.4.0
-      if: ${{ failure() && github.ref == 'refs/heads/master' }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
