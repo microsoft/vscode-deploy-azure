@@ -1,9 +1,8 @@
-import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as git from 'simple-git/promise';
-import { downloadAndUnzipVSCode, resolveCliPathFromVSCodeExecutablePath, runTests } from 'vscode-test';
+import { runTests } from 'vscode-test';
 
 async function testHost() {
 	try {
@@ -22,12 +21,12 @@ async function testHost() {
 		// Passed to --extensionTestsPath
 		let extensionTestsPath: string;
 
-		const vscodeExecutablePath = await downloadAndUnzipVSCode();
-		const cliPath = resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath);
-		cp.spawnSync(cliPath, ['--install-extension', 'ms-vscode.azure-account'], {
-			encoding: 'utf-8',
-			stdio: 'inherit'
-		});
+		// const vscodeExecutablePath = await downloadAndUnzipVSCode();
+		// const cliPath = resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath);
+		// cp.spawnSync(cliPath, ['--install-extension', 'ms-vscode.azure-account'], {
+		// 	encoding: 'utf-8',
+		// 	stdio: 'inherit'
+		// });
 
 
 		console.log("### Running Unit Tests ###")

@@ -27,9 +27,7 @@ jobs:
       run: npm run compile
 
     - name: Run tests
-      uses: GabrielBB/xvfb-action@v1.2
-      with:
-        run: npm test
+      run: npm test
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         Azure_UserName: ${{ secrets.Azure_UserName }}
