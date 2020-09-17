@@ -1,19 +1,20 @@
 import * as vscode from 'vscode';
 import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
-
 import { AppServiceClient, ScmType } from './clients/azure/appServiceClient';
 import { getSubscriptionSession } from './helper/azureSessionHelper';
 import { ControlProvider } from './helper/controlProvider';
-import { telemetryHelper, Result } from './helper/telemetryHelper';
-import { AzureSession, ParsedAzureResourceId, extensionVariables } from './model/models';
+import { Result, telemetryHelper } from './helper/telemetryHelper';
+import { AzureSession, extensionVariables, ParsedAzureResourceId } from './model/models';
 import * as constants from './resources/constants';
 import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
 
+
 const Layer = 'browsePipeline';
 
 export async function browsePipeline(node: AzureTreeItem): Promise<void> {
+    vscode.window.showErrorMessage("inside brpwse pipeline func");
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
         try {
             if (!!node && !!node.fullId) {
@@ -47,7 +48,7 @@ async function browsePipelineInternal(resourceId: string, appServiceClient: AppS
     if (scmType === ScmType.VSTSRM.toLowerCase()) {
         await browseAzurePipeline(resourceId, appServiceClient);
     }
-    else if(scmType === ScmType.GITHUBACTION.toLowerCase() && extensionVariables.enableGitHubWorkflow) {
+    else if (scmType === ScmType.GITHUBACTION.toLowerCase() && extensionVariables.enableGitHubWorkflow) {
         await browseGitHubWorkflow(resourceId, appServiceClient);
     }
     else if (scmType === '' || scmType === ScmType.NONE.toLowerCase()) {
@@ -85,7 +86,7 @@ async function browseGitHubWorkflow(resourceId: string, appServiceClient: AppSer
     let webAppMetaData = await appServiceClient.getAppServiceMetadata(resourceId);
 
     if (!!webAppSourceControl && !!webAppSourceControl.properties && webAppSourceControl.properties.isGitHubAction) {
-        let url = `${webAppSourceControl.properties.repoUrl}/actions?query=${encodeURI("workflow:\"" + (!!webAppMetaData.properties.configName ? webAppMetaData.properties.configName : webAppMetaData.properties.configPath)  + "\"")}`;
+        let url = `${webAppSourceControl.properties.repoUrl}/actions?query=${encodeURI("workflow:\"" + (!!webAppMetaData.properties.configName ? webAppMetaData.properties.configName : webAppMetaData.properties.configPath) + "\"")}`;
         await vscode.env.openExternal(vscode.Uri.parse(url));
         telemetryHelper.setTelemetry(TelemetryKeys.BrowsedExistingPipeline, 'true');
     }
