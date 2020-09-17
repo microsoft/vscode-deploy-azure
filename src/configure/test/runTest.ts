@@ -1,8 +1,9 @@
+import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as git from 'simple-git/promise';
-import { runTests } from 'vscode-test';
+import { downloadAndUnzipVSCode, resolveCliPathFromVSCodeExecutablePath, runTests } from 'vscode-test';
 
 async function testHost() {
 	try {
@@ -21,12 +22,12 @@ async function testHost() {
 		// Passed to --extensionTestsPath
 		let extensionTestsPath: string;
 
-		// const vscodeExecutablePath = await downloadAndUnzipVSCode();
-		// const cliPath = resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath);
-		// cp.spawnSync(cliPath, ['--install-extension', 'ms-vscode.azure-account'], {
-		// 	encoding: 'utf-8',
-		// 	stdio: 'inherit'
-		// });
+		const vscodeExecutablePath = await downloadAndUnzipVSCode();
+		const cliPath = resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath);
+		cp.spawnSync(cliPath, ['--install-extension', 'ms-vscode.azure-account'], {
+			encoding: 'utf-8',
+			stdio: 'inherit'
+		});
 
 
 		console.log("### Running Unit Tests ###")
@@ -74,6 +75,10 @@ function validateEnvironmentVariables() {
 function printTestResultFiles() {
 	const testsRoot = path.resolve(__dirname);
 	const testResultDir = path.join(testsRoot, 'deploy-azure-extension-testResult');
+	if (!fs.existsSync(testResultDir)) {
+		return;
+	}
+
 	let filenames = fs.readdirSync(testResultDir);
 
 	console.log("\n### Test Report ###");
