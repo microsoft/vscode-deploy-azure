@@ -29,9 +29,10 @@ async function testHost() {
 		extensionTestsPath = path.resolve(__dirname, './E2ETests/Static_Win_WebApp_Suite');
 		sampleRepoFolder = await setupGitHubRepoFolderForStaticWebApp();
 		await runTests({ launchArgs: [sampleRepoFolder], extensionDevelopmentPath, extensionTestsPath, extensionTestsEnv });
-
+		printTestResultFiles();
 	} catch (err) {
 		console.error('Failed to run tests. Error : ' + err);
+		printTestResultFiles();
 		process.exit(1);
 	}
 }
@@ -60,6 +61,20 @@ function validateEnvironmentVariables() {
 	if (unsetVariables != "") {
 		throw new Error(`Env variable ${unsetVariables} are not set`);
 	}
+}
+
+function printTestResultFiles() {
+	const testsRoot = path.resolve(__dirname);
+	const testResultDir = path.join(testsRoot, 'deploy-azure-extension-testResult');
+	let filenames = fs.readdirSync(testResultDir);
+
+	console.log("\n### Test Report ###");
+	let count = 1;
+	filenames.forEach((file) => {
+		console.log("### " + count++ + ". Test Suite:" + path.parse(file).name + " ###");
+		console.log("\n" + fs.readFileSync(path.resolve(testResultDir, file), 'utf-8'));
+		console.log("\n");
+	});
 }
 
 testHost();

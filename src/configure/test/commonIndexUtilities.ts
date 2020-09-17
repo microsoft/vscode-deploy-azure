@@ -4,8 +4,8 @@ import * as Mocha from 'mocha';
 import * as path from 'path';
 
 export function setupTest(suiteName: string, suitePath: string): Promise<void> {
-	const testsRoot = path.resolve(__dirname, '..');
-	const testResultDir = path.join(testsRoot, 'test', 'deploy-azure-extension-testResult');
+	const testsRoot = path.resolve(__dirname);
+	const testResultDir = path.join(testsRoot, 'deploy-azure-extension-testResult');
 	if (!fs.existsSync(testResultDir)) {
 		fs.mkdirSync(testResultDir);
 	}
