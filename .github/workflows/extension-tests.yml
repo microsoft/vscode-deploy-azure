@@ -35,6 +35,11 @@ jobs:
         Azure_UserName: ${{ secrets.Azure_UserName }}
         Azure_PAT: ${{ secrets.Azure_PAT }}
 
+    - name: view result files
+      shell: bash
+      run: |
+        echo $(Build.SourceBranch) | sed "s|refs/[^/]*/||" > branch.txt
+
     - name: Create an issue
       uses: JasonEtco/create-an-issue@v2.4.0
       if: ${{ failure() && github.ref == 'refs/heads/master' }}
