@@ -212,6 +212,36 @@ export class MustacheHelper {
                     }
                     return parts[0].replace(parts[1], parts[2]);
                 }
+            },
+
+            /*
+            * Evaluates the arithmetic clause and return output per the result of clause
+            * Usage: {{#evaluate}} a > b <on true value> <on false value>{{/evaluate}}
+            */
+
+            "evaluate": function () {
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length < 3) {
+                        return "";
+                    }
+                    var firstOperand = MustacheHelper.getSanitizedDecimal(parts[0]);
+                    var secondOperand = MustacheHelper.getSanitizedDecimal(parts[2]);
+                    switch (parts[1]) {
+                        case ">":
+                            if (firstOperand > secondOperand) {
+                                return parts[3];
+                            }
+                            else return parts[4];
+                        case "<":
+                            if (firstOperand < secondOperand) {
+                                return parts[3];
+                            }
+                            else return parts[4];
+                        default: return false;
+                    }
+                }
             }
         };
     }
@@ -260,5 +290,21 @@ export class MustacheHelper {
         }
 
         return parts;
+    }
+
+    public static getSanitizedDecimal(text: string): number {
+        var parts = text.split('.');
+        var result = "";
+        var i = 0;
+        parts.forEach(part => {
+            if (!isNaN(Number(part))) {
+                if (i == 1)
+                    result += ".";
+                result += part;
+            }
+            i++;
+        });
+
+        return Number(result);
     }
 }
