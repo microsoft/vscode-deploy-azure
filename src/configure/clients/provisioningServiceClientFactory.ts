@@ -12,7 +12,7 @@ export class ProvisioningServiceClientFactory {
         const defaultHeaders: { [propertyName: string]: string } =   { "Content-Type": "application/json" };
         const serviceDefinition = await RemoteServiceUrlHelper.getProvisioningServiceDefinition();
         if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
-            defaultHeaders["X-GITHUB-TOKEN"] = githubPatToken;
+            defaultHeaders["X-GITHUB-TOKEN"] = "token " + githubPatToken;
             this.client = new ProvisioningServiceClient(serviceDefinition, defaultHeaders, credentials);
         } else {
             this.client = new ProvisioningServiceClient(serviceDefinition, defaultHeaders, new TokenCredentials(githubPatToken, "token"));
