@@ -186,7 +186,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                            return await new ArmRestClient(wizardInputs.azureSession).createResourceGroup(wizardInputs.subscriptionId, createResourceGroup[0], wizardInputs.pipelineConfiguration.params["location"]);
                         } catch (error){
                             telemetryHelper.logError(Layer, TracePoints.ACRResourceGroupCreationFailed, error);
-                            return error;
+                            throw error;
                         }
                     } );
             }
@@ -197,11 +197,11 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                     { location: vscode.ProgressLocation.Notification, title: Messages.CreatingSPN },
                     async () => {
                         try {
-                            // TODO: Need to support for array of scope
+                            // TODO: Need to add support for array of scope
                             return await this.getAzureSPNSecret(wizardInputs, scope[0]);
                         } catch (error){
                             telemetryHelper.logError(Layer, TracePoints.SPNCreationFailed, error);
-                            return error;
+                            throw error;
                         }
                     } );
             }
