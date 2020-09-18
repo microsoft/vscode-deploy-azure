@@ -183,7 +183,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                     { location: vscode.ProgressLocation.Notification, title: Messages.CreatingACRResourceGroup },
                     async () => {
                         try {
-                           return await new ArmRestClient(wizardInputs.azureSession).createResourceGroup(wizardInputs.subscriptionId, createResourceGroup[0], wizardInputs.pipelineConfiguration.params["location"]);
+                           return await new ArmRestClient(wizardInputs.azureSession).createResourceGroup(wizardInputs.subscriptionId, createResourceGroup[0], wizardInputs.pipelineConfiguration.params["containerRegistryLocation"]);
                         } catch (error){
                             telemetryHelper.logError(Layer, TracePoints.ACRResourceGroupCreationFailed, error);
                             throw error;
