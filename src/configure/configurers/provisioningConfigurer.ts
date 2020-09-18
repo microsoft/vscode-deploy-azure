@@ -3,13 +3,15 @@ import * as Path from 'path';
 import * as utils from 'util';
 import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
+import { ArmRestClient } from '../clients/azure/armRestClient';
 import { IProvisioningServiceClient } from "../clients/IProvisioningServiceClient";
 import { ProvisioningServiceClientFactory } from "../clients/provisioningServiceClientFactory";
 import { sleepForMilliSeconds } from '../helper/commonHelper';
+import { ControlProvider } from '../helper/controlProvider';
 import { GraphHelper } from '../helper/graphHelper';
 import { LocalGitRepoHelper } from '../helper/LocalGitRepoHelper';
 import { telemetryHelper } from '../helper/telemetryHelper';
-import { InputDataType } from "../model/Contracts";
+import { ExtendedInputDescriptor, InputDataType } from "../model/Contracts";
 import { WizardInputs } from "../model/models";
 import { CompletePipelineConfiguration, DraftPipelineConfiguration, File, ProvisioningConfiguration } from "../model/provisioningConfiguration";
 import { RemotePipelineTemplate } from '../model/templateModels';
@@ -62,13 +64,17 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     public async checkProvisioningPipeline(jobId: string, githubOrg: string, repository: string, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration> {
         try {
             const provisioningServiceResponse = await this.getProvisioningPipeline(jobId, githubOrg, repository, wizardInputs);
-            if ( provisioningServiceResponse.result.status ===  "Queued" ||  provisioningServiceResponse.result.status == "InProgress") {
-               await sleepForMilliSeconds(this.refreshTime);
-               return await this.checkProvisioningPipeline(jobId, githubOrg, repository, wizardInputs);
-            } else if (provisioningServiceResponse.result.status ===  "Failed") {
-               throw new Error(provisioningServiceResponse.result.message) ;
-            } else {
-                return provisioningServiceResponse;
+            if ( provisioningServiceResponse.result){
+                if ( provisioningServiceResponse.result.status ===  "Queued" ||  provisioningServiceResponse.result.status == "InProgress") {
+                await sleepForMilliSeconds(this.refreshTime);
+                return await this.checkProvisioningPipeline(jobId, githubOrg, repository, wizardInputs);
+                } else if (provisioningServiceResponse.result.status ===  "Failed") {
+                throw new Error(provisioningServiceResponse.result.message) ;
+                } else {
+                    return provisioningServiceResponse;
+                }
+            }else {
+                throw new Error("Failed to receive queued pipeline provisioning job status");
             }
         } catch (error) {
             throw error;
@@ -76,7 +82,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     }
 
     public async browseQueuedPipeline(): Promise<void> {
-        vscode.window.showInformationMessage(Messages.githubWorkflowSetupSuccessfully, Messages.browseWorkflow)
+        new ControlProvider().showInformationBox("Browse queued pipeline", Messages.githubWorkflowSetupSuccessfully, Messages.browseWorkflow)
             .then((action: string) => {
                 if (action && action.toLowerCase() === Messages.browseWorkflow.toLowerCase()) {
                     telemetryHelper.setTelemetry(TelemetryKeys.BrowsePipelineClicked, 'true');
@@ -89,13 +95,15 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         await this.getFileToCommit(draftPipelineConfiguration);
         await this.showPipelineFiles();
         const displayMessage = (this.filesToCommit.length > 1) ?  Messages.modifyAndCommitMultipleFiles : Messages.modifyAndCommitFile;
-        const commitOrDiscard = await vscode.window.showInformationMessage(
+        const commitOrDiscard = await new ControlProvider().showInformationBox(
+            "Commit or discard",
             utils.format(displayMessage, Messages.commitAndPush, inputs.sourceRepository.branch, inputs.sourceRepository.remoteName),
             Messages.commitAndPush,
             Messages.discardPipeline);
         let provisioningServiceResponse: ProvisioningConfiguration;
         if (!!commitOrDiscard && commitOrDiscard.toLowerCase() === Messages.commitAndPush.toLowerCase()) {
-             provisioningServiceResponse = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment }, async () => {
+             provisioningServiceResponse = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment },
+             async () => {
                 try {
                     provisioningConfiguration.pipelineConfiguration = await this.createFilesToCheckin(draftPipelineConfiguration.id, draftPipelineConfiguration.type);
                     const completeProvisioningSvcResp = await this.createProvisioningPipeline(provisioningConfiguration, inputs);
@@ -111,10 +119,10 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                     return null;
                 }
             });
-            } else {
+        } else {
                 telemetryHelper.setTelemetry(TelemetryKeys.PipelineDiscarded, 'true');
                 throw new UserCancelledError(Messages.operationCancelled);
-            }
+        }
 
         if ( provisioningServiceResponse != undefined) {
             this.setQueuedPipelineUrl(provisioningServiceResponse, inputs);
@@ -166,24 +174,65 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     }
 
     public async CreatePreRequisiteParams(wizardInputs: WizardInputs): Promise<void>{
-        const parsedCredentials = JSON.parse(JSON.stringify(wizardInputs.azureSession.credentials));
-        wizardInputs.pipelineConfiguration.params["armAuthToken"] = "Bearer " + parsedCredentials["tokenCache"]["target"]["_entries"][0]["accessToken"];
-        const template = wizardInputs.pipelineConfiguration.template as RemotePipelineTemplate;
-        const inputDescriptor = template.parameters.inputs.find((value) => (value.type === InputDataType.Authorization && value.id === "azureAuth"));
-        const scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", wizardInputs.pipelineConfiguration.params);
-        if ( scope.length > 0 && scope[0] != "" ){
-            wizardInputs.pipelineConfiguration.params["azureAuth"] = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.CreatingSPN },
-                async () => {
-                    try {
-                        // TODO: Need to support for array of scope
-                        return await this.getAzureSPNSecret(wizardInputs, scope[0]);
-                    } catch (error){
-                        telemetryHelper.logError(Layer, TracePoints.SPNCreationFailed, error);
-                        return error;
-                    }
-                } );
+        // Create SPN and ACRResource group for reuseACR flow set to false
+        const inputDescriptor = this.getInputDescriptor(wizardInputs, "azureAuth");
+        if (inputDescriptor != undefined){
+            const createResourceGroup = InputControl.getInputDescriptorProperty(inputDescriptor, "createResourceGroup", wizardInputs.pipelineConfiguration.params);
+            if ( createResourceGroup.length > 0 && createResourceGroup[0] != "" ){
+                await vscode.window.withProgress(
+                    { location: vscode.ProgressLocation.Notification, title: Messages.CreatingACRResourceGroup },
+                    async () => {
+                        try {
+                           return await new ArmRestClient(wizardInputs.azureSession).createResourceGroup(wizardInputs.subscriptionId, createResourceGroup[0], wizardInputs.pipelineConfiguration.params["location"]);
+                        } catch (error){
+                            telemetryHelper.logError(Layer, TracePoints.ACRResourceGroupCreationFailed, error);
+                            return error;
+                        }
+                    } );
+            }
+
+            const scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", wizardInputs.pipelineConfiguration.params);
+            if ( scope.length > 0 && scope[0] != "" ){
+                wizardInputs.pipelineConfiguration.params["azureAuth"] = await vscode.window.withProgress(
+                    { location: vscode.ProgressLocation.Notification, title: Messages.CreatingSPN },
+                    async () => {
+                        try {
+                            // TODO: Need to support for array of scope
+                            return await this.getAzureSPNSecret(wizardInputs, scope[0]);
+                        } catch (error){
+                            telemetryHelper.logError(Layer, TracePoints.SPNCreationFailed, error);
+                            return error;
+                        }
+                    } );
+            }
+        } else {
+            throw new Error("Input descriptor undefined");
         }
+
+        // Create armAuthToken
+        const parsedCredentials = JSON.parse(JSON.stringify(wizardInputs.azureSession.credentials));
+        if (parsedCredentials.tokenCache && parsedCredentials.tokenCache.target &&
+            parsedCredentials.tokenCache.target._entries[0] && parsedCredentials.tokenCache.target._entries[0].accessToken){
+                wizardInputs.pipelineConfiguration.params["armAuthToken"] = "Bearer " + parsedCredentials.tokenCache.target._entries[0].accessToken;
+        } else {
+            const error =  new Error("Failed to get armAuthToken");
+            telemetryHelper.logError(Layer, TracePoints.UndefinedArmAuthToken, error);
+            throw error;
+        }
+    }
+
+    private getInputDescriptor(wizardInputs: WizardInputs, inputId: string ): ExtendedInputDescriptor{
+        const template = wizardInputs.pipelineConfiguration.template as RemotePipelineTemplate;
+        let inputDataType: InputDataType;
+        switch (inputId){
+            case "azureAuth":
+                inputDataType = InputDataType.Authorization;
+                break;
+            default:
+                 return undefined;
+        }
+
+        return template.parameters.inputs.find((value) => (value.type === inputDataType && value.id === inputId));
     }
 
     private async getAzureSPNSecret(inputs: WizardInputs, scope?: string): Promise<string> {
@@ -204,7 +253,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
    private async createFilesToCheckin(id: string, type: string): Promise<DraftPipelineConfiguration>{
        const files: File[] = [];
        for ( const file of this.filesToCommit){
-           const fileContent = await this.localGitRepoHelper.readFileConetent(file.absPath);
+           const fileContent = await this.localGitRepoHelper.readFileContent(file.absPath);
            const encodedContent = new Buffer(fileContent, 'utf-8').toString('base64');
            files.push({path: file.path, content: encodedContent});
         }

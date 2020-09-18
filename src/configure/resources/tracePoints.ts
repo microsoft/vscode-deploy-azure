@@ -40,4 +40,7 @@ export class TracePoints {
     public static UnabletoGetProvisioningPipeline = 'UnabletoGetProvisioningPipeline';
     public static RemotePipelineConfiguringFailed = 'RemotePipelineConfiguringFailed';
     public static SPNCreationFailed = 'SPNCreationFailed';
+    public static ConfiguringDraftPipelineFailed = "ConfiguringDraftPipelineFailed";
+    public static ACRResourceGroupCreationFailed = "ACRResourceGroupCreationFailed";
+    public static UndefinedArmAuthToken = "UndefinedArmAuthToken";
 }
