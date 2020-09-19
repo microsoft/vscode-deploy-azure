@@ -223,9 +223,11 @@ export class MustacheHelper {
                 return function (text: string, render: any) {
                     var renderedText: string = render(text);
                     var parts = MustacheHelper.getParts(renderedText);
-                    if (parts.length < 3) {
+                    if (parts.length != 5) {
                         return "";
                     }
+                    if (parts[0].trim().length == 0 || parts[2].trim().length == 0)
+                        return parts[4];
                     var firstOperand = MustacheHelper.getSanitizedDecimal(parts[0]);
                     var secondOperand = MustacheHelper.getSanitizedDecimal(parts[2]);
                     switch (parts[1]) {
@@ -239,8 +241,8 @@ export class MustacheHelper {
                                 return parts[3];
                             }
                             else return parts[4];
-                        default: return false;
                     }
+                    return parts[4];
                 }
             }
         };
@@ -292,7 +294,7 @@ export class MustacheHelper {
         return parts;
     }
 
-    public static getSanitizedDecimal(text: string): number {
+    public static getSanitizedDecimal(text: string): any {
         var parts = text.split('.');
         var result = "";
         var i = 0;
@@ -305,6 +307,6 @@ export class MustacheHelper {
             i++;
         });
 
-        return Number(result);
+        return result;
     }
 }
