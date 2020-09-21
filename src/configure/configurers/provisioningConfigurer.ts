@@ -64,14 +64,13 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
 
     public async awaitProvisioningPipelineJob(jobId: string, githubOrg: string, repository: string, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration> {
         let statusNotFound: number = 0;
-        try {
-            const provisioningServiceResponse = await this.getProvisioningPipeline(jobId, githubOrg, repository, wizardInputs);
-            if ( provisioningServiceResponse.result){
+        const provisioningServiceResponse = await this.getProvisioningPipeline(jobId, githubOrg, repository, wizardInputs);
+        if ( provisioningServiceResponse && provisioningServiceResponse.result ) {
                 if ( provisioningServiceResponse.result.status ===  "Queued" ||  provisioningServiceResponse.result.status == "InProgress") {
-                await sleepForMilliSeconds(this.refreshTime);
-                return await this.awaitProvisioningPipelineJob(jobId, githubOrg, repository, wizardInputs);
+                    await sleepForMilliSeconds(this.refreshTime);
+                    return await this.awaitProvisioningPipelineJob(jobId, githubOrg, repository, wizardInputs);
                 } else if (provisioningServiceResponse.result.status ===  "Failed") {
-                throw new Error(provisioningServiceResponse.result.message) ;
+                    throw new Error(provisioningServiceResponse.result.message) ;
                 } else {
                     return provisioningServiceResponse;
                 }
@@ -84,9 +83,6 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                  throw new Error("Failed to receive queued pipeline provisioning job status");
                 }
             }
-        } catch (error) {
-            throw error;
-        }
     }
 
     public async browseQueuedPipeline(): Promise<void> {
@@ -139,6 +135,28 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         } else {
             throw new Error("Failed to configure provisoining pipeline");
         }
+    }
+
+    public async preSteps( provisioningConfiguration: ProvisioningConfiguration, inputs: WizardInputs): Promise<ProvisioningConfiguration> {
+      return await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.ConfiguringDraftPipeline }, async () =>
+        {
+            try {
+                telemetryHelper.setCurrentStep('QueuedDraftProvisioningPipeline');
+                    // Initially send the provisioning request in draft mode to get workflow files
+                const provisioningServiceDraftModeResponse: ProvisioningConfiguration  = await this.queueProvisioningPipelineJob(provisioningConfiguration, inputs);
+                if (provisioningServiceDraftModeResponse.id  != "" ) {
+                        // Monitor the provisioning pipeline
+                        telemetryHelper.setCurrentStep('AwaitDraftProvisioningPipeline');
+                        const OrgAndRepoDetails =  inputs.sourceRepository.repositoryId.split('/');
+                        return await this.awaitProvisioningPipelineJob(provisioningServiceDraftModeResponse.id, OrgAndRepoDetails[0], OrgAndRepoDetails[1], inputs );
+                    } else {
+                        throw new Error("Failed to configure provisioning pipeline");
+                    }
+                } catch (error) {
+                    telemetryHelper.logError(Layer, TracePoints.ConfiguringDraftPipelineFailed, error);
+                    throw error;
+                }
+        });
     }
 
     public async showPipelineFiles(): Promise<void> {

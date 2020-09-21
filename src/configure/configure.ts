@@ -663,28 +663,9 @@ class Orchestrator {
             await provisioningConfigurer.CreatePreRequisiteParams(this.inputs);
 
             // Draft pipeline step
-            telemetryHelper.setCurrentStep('QueuedDraftProvisioningPipeline');
-            let provisioningServiceDraftModeResponse: ProvisioningConfiguration;
-            let draftProvisioningPipeline: ProvisioningConfiguration;
+            telemetryHelper.setCurrentStep('ConfiguringDraftProvisioningPipeline');
             const provisioningConfiguration =  this.createProvisioningConfigurationObject(template.id, this.inputs.sourceRepository.branch, this.inputs.pipelineConfiguration.params , provisioningMode.draft );
-            await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.ConfiguringDraftPipeline }, async () =>
-                {
-                    try {
-                            // Initially send the provisioning request in draft mode to get workflow files
-                            provisioningServiceDraftModeResponse  = await provisioningConfigurer.queueProvisioningPipelineJob(provisioningConfiguration, this.inputs);
-                            if (provisioningServiceDraftModeResponse.id  != "" ) {
-                                // Monitor the provisioning pipeline
-                                telemetryHelper.setCurrentStep('AwaitDraftProvisioningPipeline');
-                                const OrgAndRepoDetails =  this.inputs.sourceRepository.repositoryId.split('/');
-                                draftProvisioningPipeline =  await provisioningConfigurer.awaitProvisioningPipelineJob(provisioningServiceDraftModeResponse.id, OrgAndRepoDetails[0], OrgAndRepoDetails[1], this.inputs );
-                            }else {
-                                throw new Error("Failed to configure provisioning pipeline");
-                            }
-                        }catch (error){
-                            telemetryHelper.logError(Layer, TracePoints.ConfiguringDraftPipelineFailed, error);
-                            throw error;
-                        }
-                });
+            const draftProvisioningPipeline: ProvisioningConfiguration = await provisioningConfigurer.preSteps(provisioningConfiguration, this.inputs);
 
             // After recieving the draft workflow files, show them to user and confirm to checkin
             telemetryHelper.setCurrentStep('ConfiguringCompleteProvisioningPipeline');
@@ -694,7 +675,7 @@ class Orchestrator {
             // All done, now browse the pipeline
             telemetryHelper.setCurrentStep('BrowsingPipeline');
             await provisioningConfigurer.browseQueuedPipeline();
-        } catch (error){
+        } catch (error) {
             telemetryHelper.logError(Layer, TracePoints.RemotePipelineConfiguringFailed, error);
             throw error;
        }

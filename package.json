@@ -103,11 +103,6 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Use GitHub for creating new repository"
-                },
-                "deployToAzure.UseRemoteConfigurer": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Use remote configurer to setup CI/CD for Github repository"
                 }
             }
         }
