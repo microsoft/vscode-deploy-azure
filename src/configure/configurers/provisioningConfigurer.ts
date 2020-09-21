@@ -33,6 +33,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     private provisioningServiceClient: IProvisioningServiceClient;
     private queuedPipelineUrl: string;
     private refreshTime: number = 5 * 1000;
+    private maxNonStatusRetry: number = 60; // retries for max 5 min
     private localGitRepoHelper: LocalGitRepoHelper;
     private filesToCommit: DraftFile[] = [];
 
@@ -40,7 +41,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         this.localGitRepoHelper = localGitRepoHelper;
     }
 
-    public async createProvisioningPipeline(provisioningConfiguration: ProvisioningConfiguration, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration>{
+    public async queueProvisioningPipelineJob(provisioningConfiguration: ProvisioningConfiguration, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration>{
         try {
             this.provisioningServiceClient =  await ProvisioningServiceClientFactory.getClient(wizardInputs.githubPATToken, wizardInputs.azureSession.credentials);
             const OrgAndRepoDetails = wizardInputs.sourceRepository.repositoryId.split('/');
@@ -61,20 +62,27 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
        }
     }
 
-    public async checkProvisioningPipeline(jobId: string, githubOrg: string, repository: string, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration> {
+    public async awaitProvisioningPipelineJob(jobId: string, githubOrg: string, repository: string, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration> {
+        let statusNotFound: number = 0;
         try {
             const provisioningServiceResponse = await this.getProvisioningPipeline(jobId, githubOrg, repository, wizardInputs);
             if ( provisioningServiceResponse.result){
                 if ( provisioningServiceResponse.result.status ===  "Queued" ||  provisioningServiceResponse.result.status == "InProgress") {
                 await sleepForMilliSeconds(this.refreshTime);
-                return await this.checkProvisioningPipeline(jobId, githubOrg, repository, wizardInputs);
+                return await this.awaitProvisioningPipelineJob(jobId, githubOrg, repository, wizardInputs);
                 } else if (provisioningServiceResponse.result.status ===  "Failed") {
                 throw new Error(provisioningServiceResponse.result.message) ;
                 } else {
                     return provisioningServiceResponse;
                 }
             }else {
-                throw new Error("Failed to receive queued pipeline provisioning job status");
+                if ( statusNotFound < this.maxNonStatusRetry ) {
+                    statusNotFound++;
+                    await sleepForMilliSeconds(this.refreshTime);
+                    return await this.awaitProvisioningPipelineJob(jobId, githubOrg, repository, wizardInputs);
+                } else {
+                 throw new Error("Failed to receive queued pipeline provisioning job status");
+                }
             }
         } catch (error) {
             throw error;
@@ -105,11 +113,13 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
              provisioningServiceResponse = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment },
              async () => {
                 try {
+                    telemetryHelper.setCurrentStep('QueuedCompleteProvisioiningPipeline');
                     provisioningConfiguration.pipelineConfiguration = await this.createFilesToCheckin(draftPipelineConfiguration.id, draftPipelineConfiguration.type);
-                    const completeProvisioningSvcResp = await this.createProvisioningPipeline(provisioningConfiguration, inputs);
+                    const completeProvisioningSvcResp = await this.queueProvisioningPipelineJob(provisioningConfiguration, inputs);
                     if ( completeProvisioningSvcResp.id != "" ){
                         const OrgAndRepoDetails = inputs.sourceRepository.repositoryId.split('/');
-                        return await this.checkProvisioningPipeline(completeProvisioningSvcResp.id, OrgAndRepoDetails[0], OrgAndRepoDetails[1], inputs);
+                        telemetryHelper.setCurrentStep('AwaitCompleteProvisioningPipeline');
+                        return await this.awaitProvisioningPipelineJob(completeProvisioningSvcResp.id, OrgAndRepoDetails[0], OrgAndRepoDetails[1], inputs);
                     } else {
                         throw new Error("Failed to configure pipeline");
                     }
@@ -166,6 +176,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                 }
             }
             catch (error) {
+                telemetryHelper.logError(Layer, TracePoints.GetPathToWorkFlowFileFailed, error);
                 throw error;
             }
         });
@@ -178,12 +189,14 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         const inputDescriptor = this.getInputDescriptor(wizardInputs, "azureAuth");
         if (inputDescriptor != undefined){
             const createResourceGroup = InputControl.getInputDescriptorProperty(inputDescriptor, "createResourceGroup", wizardInputs.pipelineConfiguration.params);
-            if ( createResourceGroup.length > 0 && createResourceGroup[0] != "" ){
+            const location = InputControl.getInputDescriptorProperty(inputDescriptor, "location", wizardInputs.pipelineConfiguration.params);
+            if ( createResourceGroup.length > 0 && createResourceGroup[0] != "" && location.length > 0 && location[0] != "" ){
                 await vscode.window.withProgress(
                     { location: vscode.ProgressLocation.Notification, title: Messages.CreatingACRResourceGroup },
                     async () => {
                         try {
-                           return await new ArmRestClient(wizardInputs.azureSession).createResourceGroup(wizardInputs.subscriptionId, createResourceGroup[0], wizardInputs.pipelineConfiguration.params["containerRegistryLocation"]);
+                            // TODO: Add support for multiple resource group
+                           return await new ArmRestClient(wizardInputs.azureSession).createResourceGroup(wizardInputs.subscriptionId, createResourceGroup[0], location[0]);
                         } catch (error){
                             telemetryHelper.logError(Layer, TracePoints.ACRResourceGroupCreationFailed, error);
                             throw error;

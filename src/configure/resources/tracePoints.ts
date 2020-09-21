@@ -43,4 +43,5 @@ export class TracePoints {
     public static ConfiguringDraftPipelineFailed = "ConfiguringDraftPipelineFailed";
     public static ACRResourceGroupCreationFailed = "ACRResourceGroupCreationFailed";
     public static UndefinedArmAuthToken = "UndefinedArmAuthToken";
+    public static GetPathToWorkFlowFileFailed = "GetPathToWorkFlowFileFailed";
 }

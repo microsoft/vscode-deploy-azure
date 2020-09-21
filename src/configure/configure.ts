@@ -104,38 +104,12 @@ class Orchestrator {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
         await this.getInputs(node);
         if (this.continueOrchestration) {
-            if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
-                this.inputs.targetResource.resource.type == TargetResourceType.AKS ) {
+            if ( extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
+                this.inputs.targetResource.resource.type === TargetResourceType.AKS ) {
                return await this.configurePipelineRemotely();
             }
 
-            const pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession,
-            this.inputs.pipelineConfiguration.template.templateType, this.localGitRepoHelper);
-            const selectedCICDProvider = (pipelineConfigurer.constructor.name === "AzurePipelineConfigurer") ? constants.azurePipeline : constants.githubWorkflow;
-            telemetryHelper.setTelemetry(TelemetryKeys.SelectedCICDProvider, selectedCICDProvider);
-            await pipelineConfigurer.getInputs(this.inputs);
-            telemetryHelper.setCurrentStep('CreatePreRequisites');
-            await pipelineConfigurer.createPreRequisites(this.inputs, !!this.azureResourceClient ? this.azureResourceClient : new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId));
-
-            telemetryHelper.setCurrentStep('CreateAssets');
-            if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
-                await (pipelineConfigurer as RemoteGitHubWorkflowConfigurer).createAssets(ConfigurationStage.Pre);
-            } else {
-                await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => pipelineConfigurer.createAsset(name, assetType, data, inputs));
-            }
-
-            telemetryHelper.setCurrentStep('CheckInPipeline');
-            await this.checkInPipelineFileToRepository(pipelineConfigurer);
-
-            telemetryHelper.setCurrentStep('CreateAndRunPipeline');
-            await pipelineConfigurer.createAndQueuePipeline(this.inputs);
-
-            telemetryHelper.setCurrentStep('PostPipelineCreation');
-            // This step should be determined by the resoruce target provider (azure app service, function app, aks) type and pipelineProvider(azure pipeline vs github)
-            pipelineConfigurer.executePostPipelineCreationSteps(this.inputs, this.azureResourceClient ? this.azureResourceClient : new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.subscriptionId));
-
-            telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
-            pipelineConfigurer.browseQueuedPipeline();
+            return this.ConfigurePipelineLocally();
         }
     }
 
@@ -154,8 +128,16 @@ class Orchestrator {
     private async selectTemplate(resource: GenericResource): Promise<void> {
         switch (resource.type) {
             case TargetResourceType.AKS:
-               this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.REMOTE);
-               break;
+                if ( extensionVariables.remoteConfigurerEnabled === true) {
+                    this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.REMOTE);
+                } else {
+                    this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.LOCAL);
+                }
+                if ( this.inputs.pipelineConfiguration.template  === undefined) {
+                    telemetryHelper.logError(Layer, TracePoints.TemplateNotFound, new Error(Messages.TemplateNotFound + " RepoId: " + this.inputs.sourceRepository.repositoryId));
+                    throw new Error(Messages.TemplateNotFound);
+                }
+                break;
             case TargetResourceType.WebApp:
                 let shortlistedTemplates = [];
                 shortlistedTemplates = this.inputs.potentialTemplates.filter((template) => template.targetKind === resource.kind);
@@ -676,19 +658,20 @@ class Orchestrator {
             await provisioningConfigurer.CreatePreRequisiteParams(this.inputs);
 
             // Draft pipeline step
-            telemetryHelper.setCurrentStep('ConfiguringDraftPipeline');
+            telemetryHelper.setCurrentStep('QueuedDraftProvisioningPipeline');
             let provisioningServiceDraftModeResponse: ProvisioningConfiguration;
-            let provisioningDraftPipeline: ProvisioningConfiguration;
+            let draftProvisioningPipeline: ProvisioningConfiguration;
             const provisioningConfiguration =  this.createProvisioningConfigurationObject(template.id, this.inputs.sourceRepository.branch, this.inputs.pipelineConfiguration.params , provisioningMode.draft );
             await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.ConfiguringDraftPipeline }, async () =>
                 {
                     try {
                             // Initially send the provisioning request in draft mode to get workflow files
-                            provisioningServiceDraftModeResponse  = await provisioningConfigurer.createProvisioningPipeline(provisioningConfiguration, this.inputs);
+                            provisioningServiceDraftModeResponse  = await provisioningConfigurer.queueProvisioningPipelineJob(provisioningConfiguration, this.inputs);
                             if (provisioningServiceDraftModeResponse.id  != "" ) {
                                 // Monitor the provisioning pipeline
+                                telemetryHelper.setCurrentStep('AwaitDraftProvisioningPipeline');
                                 const OrgAndRepoDetails =  this.inputs.sourceRepository.repositoryId.split('/');
-                                provisioningDraftPipeline =  await provisioningConfigurer.checkProvisioningPipeline(provisioningServiceDraftModeResponse.id, OrgAndRepoDetails[0], OrgAndRepoDetails[1], this.inputs );
+                                draftProvisioningPipeline =  await provisioningConfigurer.awaitProvisioningPipelineJob(provisioningServiceDraftModeResponse.id, OrgAndRepoDetails[0], OrgAndRepoDetails[1], this.inputs );
                             }else {
                                 throw new Error("Failed to configure provisioning pipeline");
                             }
@@ -699,9 +682,9 @@ class Orchestrator {
                 });
 
             // After recieving the draft workflow files, show them to user and confirm to checkin
-            telemetryHelper.setCurrentStep('ConfiguringCompletePipeline');
+            telemetryHelper.setCurrentStep('ConfiguringCompleteProvisioningPipeline');
             provisioningConfiguration.provisioningMode =  provisioningMode.complete;
-            await provisioningConfigurer.postSteps(provisioningConfiguration, (provisioningDraftPipeline.result.pipelineConfiguration as DraftPipelineConfiguration), this.inputs);
+            await provisioningConfigurer.postSteps(provisioningConfiguration, (draftProvisioningPipeline.result.pipelineConfiguration as DraftPipelineConfiguration), this.inputs);
 
             // All done, now browse the pipeline
             telemetryHelper.setCurrentStep('BrowsingPipeline');
@@ -710,6 +693,36 @@ class Orchestrator {
             telemetryHelper.logError(Layer, TracePoints.RemotePipelineConfiguringFailed, error);
             throw error;
        }
+    }
+
+    private async ConfigurePipelineLocally(){
+        const pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession,
+            this.inputs.pipelineConfiguration.template.templateType, this.localGitRepoHelper);
+        const selectedCICDProvider = (pipelineConfigurer.constructor.name === "AzurePipelineConfigurer") ? constants.azurePipeline : constants.githubWorkflow;
+        telemetryHelper.setTelemetry(TelemetryKeys.SelectedCICDProvider, selectedCICDProvider);
+        await pipelineConfigurer.getInputs(this.inputs);
+        telemetryHelper.setCurrentStep('CreatePreRequisites');
+        await pipelineConfigurer.createPreRequisites(this.inputs, !!this.azureResourceClient ? this.azureResourceClient : new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId));
+
+        telemetryHelper.setCurrentStep('CreateAssets');
+        if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+                await (pipelineConfigurer as RemoteGitHubWorkflowConfigurer).createAssets(ConfigurationStage.Pre);
+            } else {
+                await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => pipelineConfigurer.createAsset(name, assetType, data, inputs));
+            }
+
+        telemetryHelper.setCurrentStep('CheckInPipeline');
+        await this.checkInPipelineFileToRepository(pipelineConfigurer);
+
+        telemetryHelper.setCurrentStep('CreateAndRunPipeline');
+        await pipelineConfigurer.createAndQueuePipeline(this.inputs);
+
+        telemetryHelper.setCurrentStep('PostPipelineCreation');
+        // This step should be determined by the resoruce target provider (azure app service, function app, aks) type and pipelineProvider(azure pipeline vs github)
+        pipelineConfigurer.executePostPipelineCreationSteps(this.inputs, this.azureResourceClient ? this.azureResourceClient : new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.subscriptionId));
+
+        telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
+        pipelineConfigurer.browseQueuedPipeline();
     }
 }
 
