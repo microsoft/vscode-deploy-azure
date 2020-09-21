@@ -199,7 +199,6 @@ export class LocalGitRepoHelper {
     }
 
     public async readFileContent(pathToFile: string): Promise<string>{
-        await vscode.workspace.saveAll(true);
         const buf = fs.readFileSync(pathToFile);
         return buf.toString();
     }
