@@ -169,6 +169,11 @@ class Orchestrator {
     }
 
     private async getInputs(node: any): Promise<void> {
+        telemetryHelper.setTelemetry(TelemetryKeys.FF_UseGithubForCreatingNewRepository,
+            vscode.workspace.getConfiguration().get('deployToAzure.UseGithubForCreatingNewRepository'));
+        telemetryHelper.setTelemetry(TelemetryKeys.FF_UseAzurePipelinesForGithub,
+            vscode.workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub'));
+
         let resourceNode = await this.analyzeNode(node);
 
         if (this.continueOrchestration) {
