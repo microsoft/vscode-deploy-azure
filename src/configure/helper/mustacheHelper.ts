@@ -1,4 +1,5 @@
 import * as Mustache from 'mustache';
+import * as Semver from 'semver';
 
 export class MustacheHelper {
     public static getHelperMethods(): any {
@@ -215,34 +216,25 @@ export class MustacheHelper {
             },
 
             /*
-            * Evaluates the arithmetic clause and return output per the result of clause
-            * Usage: {{#evaluate}} a > b <on true value> <on false value>{{/evaluate}}
+            * Evaluates if the semver condition is satified and return output accordingly
+            * Usage: {{#semverSatisfy}} 'given.version' 'condition' <on true value> <on false value>{{/semverSatisfy}}
             */
 
-            "evaluate": function () {
+            "semverSatisfy": function () {
                 return function (text: string, render: any) {
                     var renderedText: string = render(text);
                     var parts = MustacheHelper.getParts(renderedText);
-                    if (parts.length != 5) {
+                    if (parts.length != 4) {
                         return "";
                     }
-                    if (parts[0].trim().length == 0 || parts[2].trim().length == 0)
-                        return parts[4];
-                    var firstOperand = MustacheHelper.getSanitizedDecimal(parts[0]);
-                    var secondOperand = MustacheHelper.getSanitizedDecimal(parts[2]);
-                    switch (parts[1]) {
-                        case ">":
-                            if (firstOperand > secondOperand) {
-                                return parts[3];
-                            }
-                            else return parts[4];
-                        case "<":
-                            if (firstOperand < secondOperand) {
-                                return parts[3];
-                            }
-                            else return parts[4];
-                    }
-                    return parts[4];
+                    var givenVersion = parts[0].trim();
+                    var semverCondition = parts[1].trim();
+                    if (givenVersion.length == 0 || semverCondition.length == 0)
+                        return parts[3];
+                    givenVersion = Semver.minVersion(givenVersion);
+                    if (Semver.satisfies(givenVersion, semverCondition))
+                        return parts[2];
+                    return parts[3];
                 }
             }
         };
@@ -292,21 +284,5 @@ export class MustacheHelper {
         }
 
         return parts;
-    }
-
-    public static getSanitizedDecimal(text: string): any {
-        var parts = text.split('.');
-        var result = "";
-        var i = 0;
-        parts.forEach(part => {
-            if (!isNaN(Number(part))) {
-                if (i == 1)
-                    result += ".";
-                result += part;
-            }
-            i++;
-        });
-
-        return result;
     }
 }

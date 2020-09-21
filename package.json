@@ -147,6 +147,7 @@
         "jsonpath-plus": "^3.0.0",
         "mustache": "3.0.1",
         "q": "1.5.1",
+        "semver": "^7.3.2",
         "shelljs": "^0.3.0",
         "simple-git": "^1.110.0",
         "tweetsodium": "0.0.4",
