@@ -36,4 +36,12 @@ export class TracePoints {
     public static InitializeGitRepositoryFailed = 'InitializeGitRepositoryFailed';
     public static CommitAndPushPipelineFileFailed = 'CommitAndPushPipelineFileFailed';
     public static LanguageClientActivationFailed = 'LanguageClientActivationFailed';
+    public static UnableToCreateProvisioningPipeline = 'UnableToCreateProvisioningPipeline';
+    public static UnabletoGetProvisioningPipeline = 'UnabletoGetProvisioningPipeline';
+    public static RemotePipelineConfiguringFailed = 'RemotePipelineConfiguringFailed';
+    public static SPNCreationFailed = 'SPNCreationFailed';
+    public static ConfiguringDraftPipelineFailed = "ConfiguringDraftPipelineFailed";
+    public static ACRResourceGroupCreationFailed = "ACRResourceGroupCreationFailed";
+    public static UndefinedArmAuthToken = "UndefinedArmAuthToken";
+    public static GetPathToWorkFlowFileFailed = "GetPathToWorkFlowFileFailed";
 }
