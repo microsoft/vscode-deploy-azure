@@ -90,7 +90,7 @@ export class DataSourceExpression {
 
             // If both data sources evaluate to string, then take the first one
             if (!Array.isArray(result[0]) && !Array.isArray(result[1])) {
-                return result[0];
+                return result[0] || result[1];
             }
 
             if (Array.isArray(result[0]) && Array.isArray(result[1])) {
@@ -169,5 +169,6 @@ export class DataSourceExpression {
 
 export enum Operator {
     UNDEFINED = 0,
-    INTERSECT = 1
+    INTERSECT = 1,
+    OR = 2
 }
