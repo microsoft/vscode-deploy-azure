@@ -659,17 +659,13 @@ class Orchestrator {
         const template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
         try {
             // presteps params
-            telemetryHelper.setCurrentStep('ConfiguringPreStepsParams');
-            await provisioningConfigurer.createPreStepsParams(this.inputs);
+            telemetryHelper.setCurrentStep('ConfiguringPreRequisiteParams');
+            await provisioningConfigurer.createPreRequisiteParams(this.inputs);
 
             // Draft pipeline step
             telemetryHelper.setCurrentStep('ConfiguringDraftProvisioningPipeline');
             const provisioningConfiguration =  this.createProvisioningConfigurationObject(template.id, this.inputs.sourceRepository.branch, this.inputs.pipelineConfiguration.params , provisioningMode.draft );
             const draftProvisioningPipeline: ProvisioningConfiguration = await provisioningConfigurer.preSteps(provisioningConfiguration, this.inputs);
-
-            // poststeps params
-            telemetryHelper.setCurrentStep('ConfiguringPostStepsParams');
-            await provisioningConfigurer.createPostStepsParams(this.inputs);
 
             // After recieving the draft workflow files, show them to user and confirm to checkin
             telemetryHelper.setCurrentStep('ConfiguringCompleteProvisioningPipeline');
