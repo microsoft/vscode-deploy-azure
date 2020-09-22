@@ -83,6 +83,7 @@ export class GraphHelper {
 
         return accountName + "-" + projectName + "-" + guid;
     }
+
     public static async getAccessToken(session: AzureSession): Promise<string>{
       const token = await this.getRefreshToken(session);
       return token.accessToken;
