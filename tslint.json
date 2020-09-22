@@ -54,7 +54,8 @@
 		"object-literal-sort-keys": false,
 		"prefer-type-cast": false,
 		"function-name": false,
-		"max-classes-per-file": false
+		"max-classes-per-file": false,
+		"no-backbone-get-set-outside-model": false
 	},
 	"defaultSeverity": "warning",
 	"extends": [
