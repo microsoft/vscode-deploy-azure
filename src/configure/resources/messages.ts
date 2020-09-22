@@ -114,5 +114,5 @@ export class Messages {
     public static ConfiguringPipelineFailed = "Configuring provisioning pipeline failed due to %s";
     public static CreatingSPN = "Creating SPN";
     public static ConfiguringDraftPipeline = "Configuring draft pipeline";
-    public static CreatingACRResourceGroup = "Creating ACR resource group";
+    public static CreatingResourceGroup = "Creating resource group";
 }
