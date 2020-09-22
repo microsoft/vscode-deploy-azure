@@ -2,7 +2,7 @@ export class Messages {
     public static acquireTokenFromRefreshTokenFailed: string = 'Acquiring token with refresh token failed. Error: %s.';
     public static addAzurePipelinesYmlFile: string = 'Added Azure Pipelines YAML definition.';
     public static addGitHubWorkflowYmlFile: string = 'Added GitHub Workflow YAML definition.';
-    public static analyzingRepo: string = 'Analyzing your repository';
+    public static fetchingTemplates: string = 'Fetching templates';
     public static appKindIsNotSupported: string = 'App type "%s" is not yet supported.';
     public static azureResourceIsNull: string = 'ArgumentNullException: resource. The Azure target resource is empty, kindly select a resource and try again.';
     public static azureAccountExntesionUnavailable: string = 'Azure-Account extension could not be fetched. Please ensure it\'s installed and activated.';
@@ -108,4 +108,11 @@ export class Messages {
     public static cannotCreateGitHubRepository = "New GitHub repository could not be created as the repository with the same name already exists";
     public static languageNotSupported = "The language of the repository selected is not supported.";
     public static UnableToGetTemplateParameters = "Unable to get parameters for the selected template.";
+    public static AnalyzingRepo = "Analyzing your repository";
+    public static AzureLoginError = "Error in getting Azure login information, Please try again.";
+    public static AdoDifferentTenantError = " One potential reason can be the AAD tenant of your Azure DevOps repository is different than the one you have been logged-in to VSCode. Open 'Command Pallete' and select 'Azure: Sign Out' and then Sign-In to other tenant by invoking 'Deploy to Azure' extension";
+    public static ConfiguringPipelineFailed = "Configuring provisioning pipeline failed due to %s";
+    public static CreatingSPN = "Creating SPN";
+    public static ConfiguringDraftPipeline = "Configuring draft pipeline";
+    public static CreatingACRResourceGroup = "Creating ACR resource group";
 }

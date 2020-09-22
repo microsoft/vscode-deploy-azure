@@ -1,8 +1,8 @@
-import { ResourceListResult, GenericResource } from 'azure-arm-resource/lib/resource/models';
-import { ServiceClientCredentials } from 'ms-rest';
+import { GenericResource, ResourceListResult } from 'azure-arm-resource/lib/resource/models';
 import * as ResourceManagementClient from 'azure-arm-resource/lib/resource/resourceManagementClient';
-import { TargetResourceType, TargetKind } from '../../model/models';
+import { ServiceClientCredentials } from 'ms-rest';
 import * as utils from 'util';
+import { TargetKind, TargetResourceType } from '../../model/models';
 import { Messages } from '../../resources/messages';
 
 export class AzureResourceClient {
@@ -59,7 +59,7 @@ export class AzureResourceClient {
 
     public async updateCdSetupResourceTag(resource: GenericResource, repositoryId: string, branch: string, workflowFileName: string, commitId: string, namespaceName: string, apiVersion: string = '2019-10-01'): Promise<GenericResource> {
         let deploymentData: string = "GH" + ":" + repositoryId + ":" + branch + ":" + workflowFileName + ":" + workflowFileName + ":" + commitId + ":" + namespaceName + ":" + Date.now();
-        resource.tags = resource.tags ? resource.tags :  {};
+        resource.tags = resource.tags ? resource.tags : {};
         resource.tags = this.ComputeDeploymentResourceTags(resource.tags, deploymentData);
         return await this.azureRmClient.resources.updateById(resource.id, apiVersion, resource);
     }
@@ -74,7 +74,7 @@ export class AzureResourceClient {
             //check if existing entry for resource tags
             if (tagName.startsWith(DevopsInfoTagHeader)) {
                 // check if resource tags can be stored in tag Key field
-                if (resourceTags[tagName].length + deploymentData.length < MaxTagKeyLength) {
+                if (tagName.length + deploymentData.length < MaxTagKeyLength) {
                     startNewRow = false;
                     newTagKey = tagName;
                     newTagValue = resourceTags[tagName];
