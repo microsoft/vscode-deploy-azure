@@ -241,15 +241,8 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         }
 
         // Create armAuthToken
-        const parsedCredentials = JSON.parse(JSON.stringify(wizardInputs.azureSession.credentials));
-        if (parsedCredentials.tokenCache && parsedCredentials.tokenCache.target &&
-            parsedCredentials.tokenCache.target._entries[0] && parsedCredentials.tokenCache.target._entries[0].accessToken){
-                wizardInputs.pipelineConfiguration.params["armAuthToken"] = "Bearer " + parsedCredentials.tokenCache.target._entries[0].accessToken;
-        } else {
-            const error =  new Error("Failed to get armAuthToken");
-            telemetryHelper.logError(Layer, TracePoints.UndefinedArmAuthToken, error);
-            throw error;
-        }
+        wizardInputs.pipelineConfiguration.params["armAuthToken"] = "Bearer " + await GraphHelper.getAccessToken(wizardInputs.azureSession);
+        console.log( wizardInputs.pipelineConfiguration.params["armAuthToken"] );
     }
 
     private getInputDescriptor(wizardInputs: WizardInputs, inputId: string ): ExtendedInputDescriptor{

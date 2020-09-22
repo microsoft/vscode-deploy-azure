@@ -1,18 +1,14 @@
 const uuid = require('uuid/v1');
+import { AuthenticationContext, MemoryCache, TokenResponse } from 'adal-node';
+import { ServiceClientCredentials, TokenCredentials, UrlBasedRequestPrepareOptions } from 'ms-rest';
 import { AzureEnvironment } from 'ms-rest-azure';
-import { AzureSession, Token, AadApplication } from '../model/models';
-import { generateRandomPassword, executeFunctionWithRetry } from './commonHelper';
-import { Messages } from '../resources/messages';
-import { RestClient } from '../clients/restClient';
-import { TokenCredentials, UrlBasedRequestPrepareOptions, ServiceClientCredentials } from 'ms-rest';
-import { TokenResponse, MemoryCache, AuthenticationContext } from 'adal-node';
 import * as util from 'util';
+import { RestClient } from '../clients/restClient';
+import { AadApplication, AzureSession, Token } from '../model/models';
+import { Messages } from '../resources/messages';
+import { executeFunctionWithRetry, generateRandomPassword } from './commonHelper';
 
 export class GraphHelper {
-
-    private static contributorRoleId = "b24988ac-6180-42a0-ab88-20f7382dd24c";
-    private static retryTimeIntervalInSec = 2;
-    private static retryCount = 20;
 
     public static async createSpnAndAssignRole(session: AzureSession, aadAppName: string, scope: string): Promise<AadApplication> {
         let graphCredentials = await this.getGraphToken(session);
@@ -87,6 +83,14 @@ export class GraphHelper {
 
         return accountName + "-" + projectName + "-" + guid;
     }
+    public static async getAccessToken(session: AzureSession): Promise<string>{
+      const token = await this.getRefreshToken(session);
+      return token.accessToken;
+     }
+
+    private static contributorRoleId = "b24988ac-6180-42a0-ab88-20f7382dd24c";
+    private static retryTimeIntervalInSec = 2;
+    private static retryCount = 20;
 
     private static async getGraphToken(session: AzureSession): Promise<TokenResponse> {
         let refreshTokenResponse = await this.getRefreshToken(session);
