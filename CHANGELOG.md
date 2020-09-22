@@ -3,6 +3,27 @@ All notable changes to the Deploy to Azure extension will be documented in this 
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/). Versioning follows an internal Azure DevOps format that is not compatible with SemVer.
 
+## 1.1.3
+### Added
+- Fixed bugs
+
+## 1.1.2
+### Added
+- Fixed session undefined bug
+
+## 1.1.1
+### Added
+- Improved telemetry for better insights
+
+## 1.1.0
+### Added
+- If not a remote repo, have a provision of creating github repo
+- Added support for selecting the working directory if multiple applications are there to deploy
+
+## 1.0.6
+### Added
+- Added telemetry for better insights
+
 ## 1.0.5
 ### Added
 - Added validations on auto generated GitHub secret names

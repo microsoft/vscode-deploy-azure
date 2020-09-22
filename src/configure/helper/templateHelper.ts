@@ -782,7 +782,8 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
             templateWeight: 100,
             templateType: TemplateType.LOCAL
         }
-    ]
+    ],
+    'dotnet': []
 };
 
 let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[] } = {
@@ -1187,7 +1188,8 @@ let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
             templateType: TemplateType.LOCAL
         },
     ],
-    'dotnetcore': []
+    'dotnetcore': [],
+    'dotnet': []
 };
 
 const azurePipelineTargetBasedTemplates: { [key in AzureTarget]: LocalPipelineTemplate[] } =

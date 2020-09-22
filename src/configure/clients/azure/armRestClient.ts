@@ -37,6 +37,15 @@ export class ArmRestClient {
             null);
     }
 
+    public async createResourceGroup(subscriptionId: string, resourceGroup: string, location: string ): Promise<any>{
+        return this.sendRequest(
+            this.resourceManagerEndpointUrl + `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}`,
+            'PUT',
+            '2020-06-01',
+            { "location": location }
+            );
+    }
+
     private async sendRequest(url: string, httpMethod: string, apiVersion: string, body?: any): Promise<any> {
         return this.restClient.sendRequest(
             {

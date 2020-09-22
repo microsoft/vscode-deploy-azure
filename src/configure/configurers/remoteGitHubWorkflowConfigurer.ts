@@ -39,8 +39,8 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     private localGitHelper: LocalGitRepoHelper;
     private templateServiceClient: ITemplateServiceClient;
 
-    constructor(azureSession: AzureSession, subscriptionId: string, localGitHelper: LocalGitRepoHelper) {
-        super(azureSession, subscriptionId, localGitHelper);
+    constructor(azureSession: AzureSession, localGitHelper: LocalGitRepoHelper) {
+        super(localGitHelper);
         this.azureSession = azureSession;
         this.localGitHelper = localGitHelper;
     }
@@ -74,7 +74,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
             assets: this.assets,
             secrets: this.secrets,
             system: this.system
-        }
+        };
 
         for (let variable of this.template.configuration.variables) {
             let expression = variable.value;
@@ -92,7 +92,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         if (!!assets && assets.length > 0) {
             for (let asset of assets) {
                 if (asset.stage === stage) {
-                    asset = MustacheHelper.renderObject(asset, this.mustacheContext)
+                    asset = MustacheHelper.renderObject(asset, this.mustacheContext);
                     try {
                         await this.createAssetInternal(asset);
                     }
@@ -225,7 +225,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
         return {
             path: workFlowFileName,
             content: workflowFileContent
-        }
+        };
     }
 
     private async getTemplateFile(fileName: string): Promise<string> {

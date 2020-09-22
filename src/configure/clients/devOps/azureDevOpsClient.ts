@@ -242,7 +242,7 @@ export class AzureDevOpsClient {
             return org.accountName.toLowerCase() === organizationName.toLowerCase();
         });
 
-        if(!organizationName) {
+        if (!organizationName) {
             organization = (await this.listOrganizations(true)).find((org) => {
                 return org.accountName.toLowerCase() === organizationName.toLowerCase();
             });
