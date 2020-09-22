@@ -658,7 +658,7 @@ class Orchestrator {
         const provisioningConfigurer = new ProvisioningConfigurer(this.localGitRepoHelper);
         const template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
         try {
-            // presteps params
+            // prerequisite params
             telemetryHelper.setCurrentStep('ConfiguringPreRequisiteParams');
             await provisioningConfigurer.createPreRequisiteParams(this.inputs);
 
