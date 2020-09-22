@@ -201,7 +201,12 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         return Path.join(directoryPath, fileName);
     }
 
-    public async CreatePreRequisiteParams(wizardInputs: WizardInputs): Promise<void> {
+    public async createPreStepsParams(wizardInputs: WizardInputs): Promise<void> {
+        // Create armAuthToken
+        wizardInputs.pipelineConfiguration.params["armAuthToken"] = "Bearer " + await GraphHelper.getAccessToken(wizardInputs.azureSession);
+    }
+
+    public async createPostStepsParams( wizardInputs: WizardInputs): Promise<void> {
         // Create SPN and ACRResource group for reuseACR flow set to false
         const inputDescriptor = this.getInputDescriptor(wizardInputs, "azureAuth");
         if (inputDescriptor != undefined) {
@@ -238,9 +243,6 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         } else {
             throw new Error("Input descriptor undefined");
         }
-
-        // Create armAuthToken
-        wizardInputs.pipelineConfiguration.params["armAuthToken"] = "Bearer " + await GraphHelper.getAccessToken(wizardInputs.azureSession);
     }
 
     private getInputDescriptor(wizardInputs: WizardInputs, inputId: string): ExtendedInputDescriptor {

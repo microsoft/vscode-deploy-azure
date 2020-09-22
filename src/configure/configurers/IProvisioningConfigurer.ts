@@ -4,6 +4,7 @@ import { DraftPipelineConfiguration, ProvisioningConfiguration } from '../model/
 export interface IProvisioningConfigurer {
     queueProvisioningPipelineJob(provisioningConfiguration: ProvisioningConfiguration, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration>;
     getProvisioningPipeline(jobId: string, githubOrg: string, repository: string, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration>;
-    postSteps(provisioningConfiguration: ProvisioningConfiguration, draftPipelineConfiguration: DraftPipelineConfiguration, inputs: WizardInputs): Promise<void>
+    postSteps(provisioningConfiguration: ProvisioningConfiguration, draftPipelineConfiguration: DraftPipelineConfiguration, inputs: WizardInputs): Promise<void>;
+    preSteps(provisioningConfiguration: ProvisioningConfiguration, inputs: WizardInputs): Promise<ProvisioningConfiguration>;
     browseQueuedPipeline(): Promise<void>;
 }
