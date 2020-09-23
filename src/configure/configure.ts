@@ -186,12 +186,13 @@ class Orchestrator {
 
                 if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
                     this.context['resourceId'] = this.inputs.targetResource.resource.id;
+                    // Getting cluster related properties for AKS scenario
                     if (this.inputs.targetResource.resource.type === TargetResourceType.AKS) {
                         this.context['kubernetesVersion'] = this.inputs.targetResource.resource.properties.kubernetesVersion;
-                        let addonProfiles = JSON.parse(JSON.stringify(this.inputs.targetResource.resource.properties.addonProfiles).toLowerCase());
+                        const addonProfiles = JSON.parse(JSON.stringify(this.inputs.targetResource.resource.properties.addonProfiles).toLowerCase());
                         this.context['httpApplicationRoutingEnabled'] = addonProfiles.httpapplicationrouting.enabled;
                         if (this.context['httpApplicationRoutingEnabled']) {
-                            this.context['httpApplicationRoutingDomain'] = addonProfiles.httpapplicationrouting.httpapplicationroutingZoneName;
+                            this.context['httpApplicationRoutingDomain'] = addonProfiles.httpapplicationrouting.config.httpapplicationroutingzonename;
                         }
                     }
                 }
@@ -522,7 +523,7 @@ class Orchestrator {
             appropriatePipelines = remotePipelines;
         }
         const pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
-        this.filterMapByResource(pipelineMap);
+        this.filterPipelinesByResourceType(pipelineMap);
         const pipelineLabels = Array.from(pipelineMap.keys());
         if (pipelineLabels.length === 0) {
             telemetryHelper.setTelemetry(TelemetryKeys.UnsupportedLanguage, Messages.languageNotSupported);
@@ -543,7 +544,7 @@ class Orchestrator {
         }
     }
 
-    private filterMapByResource(pipelineMap: Map<string, PipelineTemplate[]>) {
+    private filterPipelinesByResourceType(pipelineMap: Map<string, PipelineTemplate[]>) {
         if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
             pipelineMap.forEach((element) => {
                 if (element.length > 0 && element[0].targetType !== this.inputs.targetResource.resource.type) {
