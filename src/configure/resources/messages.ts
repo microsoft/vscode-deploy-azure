@@ -115,5 +115,5 @@ export class Messages {
     public static CreatingSPN = "Creating SPN";
     public static GeneratingWorkflowFiles = "Generating workflow files";
     public static CreatingResourceGroup = "Creating resource group";
-    public static ConfiguringWorkflowAndDeployment = 'Configuring workflow and proceeding to deployment...';
+    public static ConfiguringWorkflowAndDeployment = 'Configuring github workflow and proceeding to deployment...';
 }
