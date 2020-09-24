@@ -40,7 +40,7 @@ export class AzureDevOpsHelper {
         if (remoteUrl.indexOf(AzureDevOpsHelper.AzureReposUrl) >= 0) {
             let part = remoteUrl.substr(remoteUrl.indexOf(AzureDevOpsHelper.AzureReposUrl) + AzureDevOpsHelper.AzureReposUrl.length);
             let parts = part.split('/').filter((value) => !!value);
-            if(parts.length !== 4) {
+            if (parts.length !== 4) {
                 telemetryHelper.logError(Layer, TracePoints.GetRepositoryDetailsFromRemoteUrlFailed, new Error(`RemoteUrlFormat: ${AzureDevOpsHelper.AzureReposUrl}, Parts: ${parts.slice(2).toString()}, Length: ${parts.length}`));
                 throw new Error(Messages.failedToDetermineAzureRepoDetails);
             }
@@ -56,7 +56,7 @@ export class AzureDevOpsHelper {
                 parts = parts.slice(1);
             }
 
-            if(parts.length !== 3) {
+            if (parts.length !== 3) {
                 telemetryHelper.logError(Layer, TracePoints.GetRepositoryDetailsFromRemoteUrlFailed, new Error(`RemoteUrlFormat: ${AzureDevOpsHelper.VSOUrl}, Parts: ${parts.slice(1).toString()}, Length: ${parts.length}`));
                 throw new Error(Messages.failedToDetermineAzureRepoDetails);
             }
@@ -66,7 +66,7 @@ export class AzureDevOpsHelper {
             let urlFormat = remoteUrl.indexOf(AzureDevOpsHelper.SSHAzureReposUrl) >= 0 ? AzureDevOpsHelper.SSHAzureReposUrl : AzureDevOpsHelper.SSHVsoReposUrl;
             let part = remoteUrl.substr(remoteUrl.indexOf(urlFormat) + urlFormat.length);
             let parts = part.split('/').filter((value) => !!value);
-            if(parts.length !== 3) {
+            if (parts.length !== 3) {
                 telemetryHelper.logError(Layer, TracePoints.GetRepositoryDetailsFromRemoteUrlFailed, new Error(`RemoteUrlFormat: ${urlFormat}, Parts: ${parts.slice(2).toString()}, Length: ${parts.length}`));
                 throw new Error(Messages.failedToDetermineAzureRepoDetails);
             }
@@ -145,14 +145,14 @@ export class AzureDevOpsHelper {
         let queues = await this.azureDevOpsClient.getAgentQueues(organizationName, projectName);
         let queueId: number = queues.length > 0 ? queues[0].id : null;
 
-        for(let queue of queues) {
-            if(queue.pool && queue.pool.name && queue.pool.name.toLowerCase() === poolName.toLowerCase()) {
+        for (let queue of queues) {
+            if (queue.pool && queue.pool.name && queue.pool.name.toLowerCase() === poolName.toLowerCase()) {
                 queueId = queue.id;
                 break;
             }
         }
 
-        if(queueId !== null) {
+        if (queueId !== null) {
             return queueId;
         }
 

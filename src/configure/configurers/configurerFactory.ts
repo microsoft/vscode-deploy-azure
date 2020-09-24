@@ -8,15 +8,15 @@ import { LocalGitHubWorkflowConfigurer } from './localGithubWorkflowConfigurer';
 import { RemoteGitHubWorkflowConfigurer } from './remoteGitHubWorkflowConfigurer';
 
 export class ConfigurerFactory {
-    public static GetConfigurer(sourceRepositoryDetails: GitRepositoryParameters, azureSession: AzureSession, subscriptionId: string, templateType: TemplateType, localGitRepoHelper: LocalGitRepoHelper): Configurer {
+    public static GetConfigurer(sourceRepositoryDetails: GitRepositoryParameters, azureSession: AzureSession, templateType: TemplateType, localGitRepoHelper: LocalGitRepoHelper): Configurer {
         switch (sourceRepositoryDetails.repositoryProvider) {
             case RepositoryProvider.Github:
                 if (extensionVariables.enableGitHubWorkflow) {
-                    return templateType === TemplateType.LOCAL ? new LocalGitHubWorkflowConfigurer(azureSession, subscriptionId, localGitRepoHelper) : new RemoteGitHubWorkflowConfigurer(azureSession, subscriptionId, localGitRepoHelper);
+                    return templateType === TemplateType.LOCAL ? new LocalGitHubWorkflowConfigurer(localGitRepoHelper) : new RemoteGitHubWorkflowConfigurer(azureSession, localGitRepoHelper);
                 }
-                return new AzurePipelineConfigurer(azureSession);  
+                return new AzurePipelineConfigurer(azureSession);
             case RepositoryProvider.AzureRepos:
-                return new AzurePipelineConfigurer(azureSession);   
+                return new AzurePipelineConfigurer(azureSession);
             default:
                 throw new Error(Messages.cannotIdentifyRespositoryDetails);
         }

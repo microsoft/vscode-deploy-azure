@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
-import { AzureTreeItem,createApiProvider, IActionContext, registerCommand } from 'vscode-azureextensionui';
+import { AzureTreeItem, createApiProvider, IActionContext, registerCommand } from 'vscode-azureextensionui';
 import { AzureExtensionApi, AzureExtensionApiProvider } from 'vscode-azureextensionui/api';
-
 import { browsePipeline } from './browse';
 import { configurePipeline } from './configure';
 import { telemetryHelper } from './helper/telemetryHelper';
