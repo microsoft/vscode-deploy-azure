@@ -186,15 +186,6 @@ class Orchestrator {
 
                 if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
                     this.context['resourceId'] = this.inputs.targetResource.resource.id;
-                    // Getting cluster related properties for AKS scenario
-                    if (this.inputs.targetResource.resource.type === TargetResourceType.AKS) {
-                        this.context['kubernetesVersion'] = this.inputs.targetResource.resource.properties.kubernetesVersion;
-                        const addonProfiles = JSON.parse(JSON.stringify(this.inputs.targetResource.resource.properties.addonProfiles).toLowerCase());
-                        this.context['httpApplicationRoutingEnabled'] = addonProfiles.httpapplicationrouting.enabled;
-                        if (this.context['httpApplicationRoutingEnabled']) {
-                            this.context['httpApplicationRoutingDomain'] = addonProfiles.httpapplicationrouting.config.httpapplicationroutingzonename;
-                        }
-                    }
                 }
 
                 this.selectTemplate(this.inputs.targetResource.resource);
