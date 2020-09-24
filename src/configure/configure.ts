@@ -176,12 +176,12 @@ class Orchestrator {
 
             try {
                 if (!resourceNode) {
-                    this.context['rightClickScenario'] = false;
+                    this.context['isResourceAlreadySelected'] = false;
                     await this.getAzureSubscription();
                     await this.getAzureResource(this.getSelectedPipelineTargetType());
                 }
                 else {
-                    this.context['rightClickScenario'] = true;
+                    this.context['isResourceAlreadySelected'] = true;
                 }
 
                 if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
@@ -255,7 +255,7 @@ class Orchestrator {
     }
 
     private async analyzeNode(node: any): Promise<GenericResource> {
-        if (!!node && !!node.cloudResource.id) {
+        if (!!node) {
             return await this.extractAzureResourceFromNode(node);
         }
         else if (node && node.fsPath) {
@@ -462,9 +462,8 @@ class Orchestrator {
             this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.subscriptionId);
             const cluster = await this.azureResourceClient.getResource(node.cloudResource.id, '2019-08-01');
             telemetryHelper.setTelemetry(TelemetryKeys.resourceType, cluster.type);
-            telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, cluster.kind);
             AzureResourceClient.validateTargetResourceType(cluster);
-            cluster["parsedResourceId"] = new ParsedAzureResourceId(cluster.id);;
+            cluster["parsedResourceId"] = new ParsedAzureResourceId(cluster.id);
             this.inputs.targetResource.resource = cluster;
         }
 
@@ -538,7 +537,7 @@ class Orchestrator {
     private filterPipelinesByResourceType(pipelineMap: Map<string, PipelineTemplate[]>) {
         if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
             pipelineMap.forEach((element) => {
-                if (element.length > 0 && element[0].targetType !== this.inputs.targetResource.resource.type) {
+                if (element[0].targetType !== this.inputs.targetResource.resource.type) {
                     pipelineMap.delete(element[0].label);
                 }
             });
