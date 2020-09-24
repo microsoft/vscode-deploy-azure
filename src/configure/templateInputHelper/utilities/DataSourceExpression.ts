@@ -88,7 +88,7 @@ export class DataSourceExpression {
                 return result[1];
             }
 
-            // If both data sources evaluate to string, then take the first one
+            // If both data sources evaluate to string, then take that is not empty
             if (!Array.isArray(result[0]) && !Array.isArray(result[1])) {
                 return result[0] || result[1];
             }
