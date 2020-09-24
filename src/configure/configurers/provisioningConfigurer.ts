@@ -106,6 +106,8 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
             Messages.discardPipeline);
         let provisioningServiceResponse: ProvisioningConfiguration;
         if (!!commitOrDiscard && commitOrDiscard.toLowerCase() === Messages.commitAndPush.toLowerCase()) {
+            telemetryHelper.setCurrentStep('ConfiguringPreRequisiteParamsForCompleteMode');
+            await this.createSPN(inputs);
             provisioningServiceResponse = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment },
                 async () => {
                     try {
@@ -201,7 +203,12 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         return Path.join(directoryPath, fileName);
     }
 
-    public async CreatePreRequisiteParams(wizardInputs: WizardInputs): Promise<void> {
+    public async createPreRequisiteParams(wizardInputs: WizardInputs): Promise<void> {
+        // Create armAuthToken
+        wizardInputs.pipelineConfiguration.params["armAuthToken"] = "Bearer " + await GraphHelper.getAccessToken(wizardInputs.azureSession);
+    }
+
+    public async createSPN( wizardInputs: WizardInputs): Promise<void> {
         // Create SPN and ACRResource group for reuseACR flow set to false
         const inputDescriptor = this.getInputDescriptor(wizardInputs, "azureAuth");
         if (inputDescriptor != undefined) {
@@ -238,9 +245,6 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         } else {
             throw new Error("Input descriptor undefined");
         }
-
-        // Create armAuthToken
-        wizardInputs.pipelineConfiguration.params["armAuthToken"] = "Bearer " + await GraphHelper.getAccessToken(wizardInputs.azureSession);
     }
 
     private getInputDescriptor(wizardInputs: WizardInputs, inputId: string): ExtendedInputDescriptor {
