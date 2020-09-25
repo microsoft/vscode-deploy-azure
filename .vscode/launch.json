@@ -27,13 +27,19 @@
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
-                "${workspaceRoot}/src/test/workspace/",
+                // Add repository path on which you want to test
+                "",
                 "--extensionDevelopmentPath=${workspaceFolder}",
-                "--extensionTestsPath=${workspaceFolder}/out/test"
+                // Change this to whatever test you want to debug
+                "--extensionTestsPath=${workspaceFolder}/out/configure/test/E2ETests/Static_Win_WebApp_Suite"
             ],
             "outFiles": [
-                "${workspaceFolder}/out/test/**/*.js"
-            ]
+                "${workspaceFolder}/out/configure/test/**/*.js"
+            ],
+            "env": {
+                // Uncomment below line to show telemetry on Debug console
+                "DEBUGTELEMETRY": "v",
+            }
         },
         {
             "name": "Extension Tests From Server",

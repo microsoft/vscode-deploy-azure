@@ -2,11 +2,11 @@ import * as utils from 'util';
 import * as vscode from 'vscode';
 import { AppServiceClient } from '../clients/azure/appServiceClient';
 import { ArmRestClient } from '../clients/azure/armRestClient';
-import { UniqueResourceNameSuffix } from '../configure';
 import { TargetResourceType, WizardInputs } from "../model/models";
 import { LocalPipelineTemplate, TemplateAsset, TemplateAssetType, TemplateParameterType } from '../model/templateModels';
 import { Messages } from '../resources/messages';
 import { TracePoints } from '../resources/tracePoints';
+import { Utilities } from '../utilities/utilities';
 import { GraphHelper } from './graphHelper';
 import { SodiumLibHelper } from './sodium/SodiumLibHelper';
 import { telemetryHelper } from './telemetryHelper';
@@ -43,7 +43,7 @@ export class AssetHandler {
                                 let aadAppName = GraphHelper.generateAadApplicationName(inputs.organizationName, inputs.project.name);
                                 let aadApp = await GraphHelper.createSpnAndAssignRole(inputs.azureSession, aadAppName, scope);
                                 // Use param name for first azure resource param
-                                let serviceConnectionName = `${inputs.pipelineConfiguration.params[(inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${UniqueResourceNameSuffix}`;
+                                let serviceConnectionName = `${inputs.pipelineConfiguration.params[(inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters.find((parameter) => parameter.type === TemplateParameterType.GenericAzureResource).name]}-${Utilities.shortGuid()}`;
                                 return await createAsset(serviceConnectionName, asset.type, { "aadApp": aadApp, "scope": scope }, inputs);
                             }
                             catch (error) {
@@ -64,7 +64,7 @@ export class AssetHandler {
                                 // find LCS of all azure resource params
                                 let appServiceClient = new AppServiceClient(inputs.azureSession.credentials, inputs.azureSession.environment, inputs.azureSession.tenantId, inputs.subscriptionId);
                                 let publishProfile = await appServiceClient.getWebAppPublishProfileXml(inputs.targetResource.resource.id);
-                                let serviceConnectionName = `${targetWebAppResource.name}-${UniqueResourceNameSuffix}`;
+                                let serviceConnectionName = `${targetWebAppResource.name}-${Utilities.shortGuid()}`;
                                 return await createAsset(serviceConnectionName, asset.type, publishProfile, inputs);
                             }
                             catch (error) {
@@ -162,7 +162,7 @@ export class AssetHandler {
      * @returns sanitized asset name and makes it unique by appending 5 digit random alpha numeric string to asset name.
      */
     public static getSanitizedUniqueAssetName(assetName: string): string {
-        assetName = assetName + "_" + UniqueResourceNameSuffix;
+        assetName = assetName + "_" + Utilities.shortGuid();
         assetName = assetName.replace(/\W/g, '');
         return assetName;
     }

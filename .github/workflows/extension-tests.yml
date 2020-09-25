@@ -1,0 +1,44 @@
+name: "Extension Test analysis"
+
+on: [push]
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup node
+      uses: actions/setup-node@v2-beta
+      with:
+        node-version: '12'
+
+    - name: npm install
+      run: npm install
+
+    - name: Build extension
+      run: npm run compile
+
+    - name: Run tests
+      uses: GabrielBB/xvfb-action@v1.2
+      with:
+        run: npm test
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        Azure_UserName: ${{ secrets.Azure_UserName }}
+        Azure_PAT: ${{ secrets.Azure_PAT }}
+
+    - name: Create an issue
+      uses: JasonEtco/create-an-issue@v2.4.0
+      if: ${{ failure() && github.ref == 'refs/heads/master' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        filename: .github/ISSUE_TEMPLATE/test-failed-issue.md

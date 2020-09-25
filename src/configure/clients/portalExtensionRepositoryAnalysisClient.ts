@@ -7,7 +7,7 @@ export class PortalExtensionRepositoryAnalysisClient implements IRepositoryAnaly
     private restClient: RestClient;
     private url: string;
     constructor(url: string, credentials: ServiceClientCredentials) {
-        this.restClient = new RestClient(credentials);
+        this.restClient = new RestClient(credentials, { noRetryPolicy: true });
         this.url = url;
     }
 
