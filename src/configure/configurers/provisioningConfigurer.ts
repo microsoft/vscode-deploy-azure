@@ -108,7 +108,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         if (!!commitOrDiscard && commitOrDiscard.toLowerCase() === Messages.commitAndPush.toLowerCase()) {
             telemetryHelper.setCurrentStep('ConfiguringPreRequisiteParamsForCompleteMode');
             await this.createSPN(inputs);
-            provisioningServiceResponse = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.configuringPipelineAndDeployment },
+            provisioningServiceResponse = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.ConfiguringGithubWorkflowAndDeployment },
                 async () => {
                     try {
                         telemetryHelper.setCurrentStep('QueuedCompleteProvisioiningPipeline');
@@ -123,7 +123,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                         }
                     } catch (error) {
                         telemetryHelper.logError(Layer, TracePoints.RemotePipelineConfiguringFailed, error);
-                        vscode.window.showErrorMessage(utils.format(Messages.ConfiguringPipelineFailed, error.message));
+                        vscode.window.showErrorMessage(utils.format(Messages.ConfiguringGitubWorkflowFailed, error.message));
                         return null;
                     }
                 });
@@ -140,7 +140,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     }
 
     public async preSteps(provisioningConfiguration: ProvisioningConfiguration, inputs: WizardInputs): Promise<ProvisioningConfiguration> {
-        return await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.ConfiguringDraftPipeline }, async () => {
+        return await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.GeneratingWorkflowFiles }, async () => {
             try {
                 telemetryHelper.setCurrentStep('QueuedDraftProvisioningPipeline');
                 // Initially send the provisioning request in draft mode to get workflow files

@@ -104,11 +104,10 @@ class Orchestrator {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
         await this.getInputs(node);
         if (this.continueOrchestration) {
-            if (extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
-                this.inputs.targetResource.resource.type === TargetResourceType.AKS) {
-                return await this.configurePipelineRemotely();
+            if ( extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
+                this.inputs.targetResource.resource.type === TargetResourceType.AKS && !!this.inputs.sourceRepository.remoteUrl ) {
+               return await this.configurePipelineRemotely();
             }
-
             return this.ConfigurePipelineLocally();
         }
     }
@@ -128,7 +127,7 @@ class Orchestrator {
     private async selectTemplate(resource: GenericResource): Promise<void> {
         switch (resource.type) {
             case TargetResourceType.AKS:
-                if (extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+                if ( extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github && !!this.inputs.sourceRepository.remoteUrl) {
                     this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.REMOTE);
                 } else {
                     this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.LOCAL);
