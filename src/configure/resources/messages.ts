@@ -97,7 +97,7 @@ export class Messages {
     public static maxValueMessage = "The value should be less than or equals to %s";
     public static valueShouldBeNumber = "The value %s is not numberic";
     public static regexPatternNotMatchingMessage = "Value should match the following regex pattern: %s";
-    public static fetchingInputMessage = "Fetching inputs for %s";
+    public static fetchingInputMessage = "Fetching %s value(s)";
     public static GettingNodeVersion = "Getting Node version to install";
     public static gettingTemplateFileAsset = "Getting template file asset to commit";
     public static gettingWorkflowFile = "Getting workflow file";
@@ -113,6 +113,8 @@ export class Messages {
     public static AdoDifferentTenantError = " One potential reason can be the AAD tenant of your Azure DevOps repository is different than the one you have been logged-in to VSCode. Open 'Command Pallete' and select 'Azure: Sign Out' and then Sign-In to other tenant by invoking 'Deploy to Azure' extension";
     public static ConfiguringPipelineFailed = "Configuring provisioning pipeline failed due to %s";
     public static CreatingSPN = "Creating SPN";
-    public static ConfiguringDraftPipeline = "Configuring draft pipeline";
+    public static GeneratingWorkflowFiles = "Generating workflow files";
     public static CreatingResourceGroup = "Creating resource group";
+    public static ConfiguringGithubWorkflowAndDeployment = 'Configuring github workflow and proceeding to deployment...';
+    public static ConfiguringGitubWorkflowFailed = 'Configuring github workflow failed due to %s';
 }
