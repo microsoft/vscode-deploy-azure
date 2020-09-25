@@ -128,7 +128,7 @@ class Orchestrator {
     private async selectTemplate(resource: GenericResource): Promise<void> {
         switch (resource.type) {
             case TargetResourceType.AKS:
-                if ( extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github ) {
+                if (extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
                     this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.REMOTE);
                 } else {
                     this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.LOCAL);
@@ -176,6 +176,7 @@ class Orchestrator {
 
             try {
                 if (!resourceNode) {
+                    this.context['resourceId'] = '';
                     this.context['isResourceAlreadySelected'] = false;
                     await this.getAzureSubscription();
                     await this.getAzureResource(this.getSelectedPipelineTargetType());
