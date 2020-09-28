@@ -104,9 +104,9 @@ class Orchestrator {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
         await this.getInputs(node);
         if (this.continueOrchestration) {
-            if ( extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
-                this.inputs.targetResource.resource.type === TargetResourceType.AKS && !!this.inputs.sourceRepository.remoteUrl ) {
-               return await this.configurePipelineRemotely();
+            if (extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
+                this.inputs.targetResource.resource.type === TargetResourceType.AKS && !!this.inputs.sourceRepository.remoteUrl) {
+                return await this.configurePipelineRemotely();
             }
             return this.ConfigurePipelineLocally();
         }
@@ -127,7 +127,7 @@ class Orchestrator {
     private async selectTemplate(resource: GenericResource): Promise<void> {
         switch (resource.type) {
             case TargetResourceType.AKS:
-                if ( extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github && !!this.inputs.sourceRepository.remoteUrl) {
+                if (extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github && !!this.inputs.sourceRepository.remoteUrl) {
                     this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.REMOTE);
                 } else {
                     this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.LOCAL);
@@ -255,14 +255,12 @@ class Orchestrator {
     }
 
     private async analyzeNode(node: any): Promise<GenericResource> {
-        if (!!node) {
-            return await this.extractAzureResourceFromNode(node);
+        if (!!node && !await this.extractAzureResourceFromNode(node)) {
+            if (node.fsPath) {
+                this.workspacePath = node.fsPath;
+                telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
+            }
         }
-        else if (node && node.fsPath) {
-            this.workspacePath = node.fsPath;
-            telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
-        }
-
         return null;
     }
 
@@ -430,7 +428,7 @@ class Orchestrator {
         }
     }
 
-    private async extractAzureResourceFromNode(node: AzureTreeItem | any): Promise<GenericResource> {
+    private async extractAzureResourceFromNode(node: AzureTreeItem | any): Promise<boolean> {
         if (!!node.fullId) {
             this.inputs.subscriptionId = node.root.subscriptionId;
             this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
@@ -449,6 +447,7 @@ class Orchestrator {
                 }
 
                 this.inputs.targetResource.resource = azureResource;
+                return true;
             }
             catch (error) {
                 telemetryHelper.logError(Layer, TracePoints.ExtractAzureResourceFromNodeFailed, error);
@@ -465,9 +464,9 @@ class Orchestrator {
             AzureResourceClient.validateTargetResourceType(cluster);
             cluster["parsedResourceId"] = new ParsedAzureResourceId(cluster.id);
             this.inputs.targetResource.resource = cluster;
+            return true;
         }
-
-        return this.inputs.targetResource.resource;
+        return false;
     }
 
     private async getAzureSubscription(): Promise<void> {
