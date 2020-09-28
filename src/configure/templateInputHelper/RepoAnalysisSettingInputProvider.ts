@@ -99,10 +99,10 @@ export class RepoAnalysisSettingInputProvider {
 
                 const repoAnalysisValue = this._repoAnalysisSettings[settingIndexMap.get(selectedValue.data)[0]].settings[repoAnalysisSettingKey];
                 if (inputControl.getInputDataType() === InputDataType.String && Array.isArray(repoAnalysisValue)) {
-                    if (repoAnalysisValue.length === 1) {
-                        selectedValue = repoAnalysisValue[0];
+                    possibleValues = repoAnalysisValue.map((value) => ({ label: value, data: value }));
+                    if (possibleValues.length === 1) {
+                        selectedValue = possibleValues[0];
                     } else {
-                        possibleValues = repoAnalysisValue.map((value) => ({ label: value, data: value }));
                         selectedValue = await new ControlProvider().showQuickPick(repoAnalysisSettingKey, possibleValues, { placeHolder: inputControl.getInputDescriptor().name });
                     }
                 }

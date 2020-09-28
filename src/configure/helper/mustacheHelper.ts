@@ -1,4 +1,5 @@
 import * as Mustache from 'mustache';
+import * as Semver from 'semver';
 
 export class MustacheHelper {
     public static getHelperMethods(): any {
@@ -211,6 +212,29 @@ export class MustacheHelper {
                         return "";
                     }
                     return parts[0].replace(parts[1], parts[2]);
+                }
+            },
+
+            /*
+            * Evaluates if the semver condition is satified and return output accordingly
+            * Usage: {{#semverSatisfy}} 'given.version' 'condition' <on true value> <on false value>{{/semverSatisfy}}
+            */
+
+            "semverSatisfy": function () {
+                return function (text: string, render: any) {
+                    var renderedText: string = render(text);
+                    var parts = MustacheHelper.getParts(renderedText);
+                    if (parts.length != 4) {
+                        return "";
+                    }
+                    var givenVersion = parts[0].trim();
+                    var semverCondition = parts[1].trim();
+                    if (givenVersion.length == 0 || semverCondition.length == 0)
+                        return parts[3];
+                    givenVersion = Semver.minVersion(givenVersion);
+                    if (Semver.satisfies(givenVersion, semverCondition))
+                        return parts[2];
+                    return parts[3];
                 }
             }
         };
