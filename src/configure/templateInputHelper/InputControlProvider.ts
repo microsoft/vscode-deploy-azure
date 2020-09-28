@@ -192,7 +192,7 @@ export class InputControlProvider {
 
         for (var clientInput of uniqueDependentClientInputs) {
             var dependentInputControl = this._context[clientInput];
-            if (dependentInputControl) {
+            if (dependentInputControl !== undefined) {
                 dependentClientControlMap[clientInput] = dependentInputControl;
             } else {
                 throw new Error(`Dependent client input ${clientInput} specified is not present in client context.`);
