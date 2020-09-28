@@ -98,6 +98,8 @@ class Orchestrator {
         this.inputs = new WizardInputs();
         this.controlProvider = new ControlProvider();
         UniqueResourceNameSuffix = uuid().substr(0, 5);
+        this.context['isResourceAlreadySelected'] = false;
+        this.context['resourceId'] = '';
     }
 
     public async configure(node: any): Promise<void> {
@@ -163,7 +165,7 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseAzurePipelinesForGithub,
             vscode.workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub'));
 
-        let resourceNode = await this.analyzeNode(node);
+        const resourceNode = await this.analyzeNode(node);
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
@@ -175,17 +177,8 @@ class Orchestrator {
 
             try {
                 if (!resourceNode) {
-                    this.context['resourceId'] = '';
-                    this.context['isResourceAlreadySelected'] = false;
                     await this.getAzureSubscription();
                     await this.getAzureResource(this.getSelectedPipelineTargetType());
-                }
-                else {
-                    this.context['isResourceAlreadySelected'] = true;
-                }
-
-                if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
-                    this.context['resourceId'] = this.inputs.targetResource.resource.id;
                 }
 
                 this.selectTemplate(this.inputs.targetResource.resource);
@@ -255,10 +248,16 @@ class Orchestrator {
     }
 
     private async analyzeNode(node: any): Promise<GenericResource> {
-        if (!!node && !await this.extractAzureResourceFromNode(node)) {
-            if (node.fsPath) {
-                this.workspacePath = node.fsPath;
-                telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
+        if (!!node) {
+            if (await this.extractAzureResourceFromNode(node)) {
+                this.context['isResourceAlreadySelected'] = true;
+                this.context['resourceId'] = this.inputs.targetResource.resource.id;
+            } else {
+                if (node.fsPath) {
+                    //right click on a folder
+                    this.workspacePath = node.fsPath;
+                    telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
+                }
             }
         }
         return null;
