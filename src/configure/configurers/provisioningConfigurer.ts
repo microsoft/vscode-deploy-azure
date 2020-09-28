@@ -214,7 +214,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         if (inputDescriptor != undefined) {
             const createResourceGroup = InputControl.getInputDescriptorProperty(inputDescriptor, "resourceGroup", wizardInputs.pipelineConfiguration.params);
             const location = InputControl.getInputDescriptorProperty(inputDescriptor, "location", wizardInputs.pipelineConfiguration.params);
-            if (createResourceGroup && createResourceGroup && createResourceGroup.length > 0 && createResourceGroup[0] != "" && location && location.length > 0 && location[0] != "") {
+            if (createResourceGroup && createResourceGroup.length > 0 && createResourceGroup[0] != "" && location && location.length > 0 && location[0] != "") {
                 await vscode.window.withProgress(
                     { location: vscode.ProgressLocation.Notification, title: Messages.CreatingResourceGroup },
                     async () => {

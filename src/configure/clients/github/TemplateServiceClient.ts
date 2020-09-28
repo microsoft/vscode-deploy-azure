@@ -17,7 +17,7 @@ export class TemplateServiceClient implements ITemplateServiceClient {
 
     constructor(url: string, creds?: ServiceClientCredentials, headers?) {
         this.restClient = new RestClient(creds);
-        this.templateServiceUri = "http://localhost:5000/";
+        this.templateServiceUri = url;
         this.headers = headers;
     }
 
