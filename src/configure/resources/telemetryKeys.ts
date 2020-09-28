@@ -29,7 +29,8 @@ export class TelemetryKeys {
     public static WorkflowFileName = 'workflowFileName';
     public static GitHubRepoCreated = 'GitHubRepoCreated';
     public static IsErrorWhitelisted = 'IsErrorWhitelisted';
-
+    public static FF_UseGithubForCreatingNewRepository = 'FF_UseGithubForCreatingNewRepository';
+    public static FF_UseAzurePipelinesForGithub = 'FF_UseAzurePipelinesForGithub';
 
     public static resourceType = 'resourceType';
     public static resourceKind = 'resourceKind';
