@@ -208,13 +208,13 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         wizardInputs.pipelineConfiguration.params["armAuthToken"] = "Bearer " + await GraphHelper.getAccessToken(wizardInputs.azureSession);
     }
 
-    public async createSPN(wizardInputs: WizardInputs): Promise<void> {
+    public async createSPN( wizardInputs: WizardInputs): Promise<void> {
         // Create SPN and ACRResource group for reuseACR flow set to false
         const inputDescriptor = this.getInputDescriptor(wizardInputs, "azureAuth");
         if (inputDescriptor != undefined) {
             const createResourceGroup = InputControl.getInputDescriptorProperty(inputDescriptor, "resourceGroup", wizardInputs.pipelineConfiguration.params);
             const location = InputControl.getInputDescriptorProperty(inputDescriptor, "location", wizardInputs.pipelineConfiguration.params);
-            if (createResourceGroup && createResourceGroup && createResourceGroup.length > 0 && createResourceGroup[0] != "" && location && location.length > 0 && location[0] != "") {
+            if (createResourceGroup.length > 0 && createResourceGroup[0] != "" && location.length > 0 && location[0] != "") {
                 await vscode.window.withProgress(
                     { location: vscode.ProgressLocation.Notification, title: Messages.CreatingResourceGroup },
                     async () => {
@@ -229,7 +229,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
             }
 
             const scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", wizardInputs.pipelineConfiguration.params);
-            if (scope && scope.length > 0 && scope[0] != "") {
+            if (scope.length > 0 && scope[0] != "") {
                 wizardInputs.pipelineConfiguration.params["azureAuth"] = await vscode.window.withProgress(
                     { location: vscode.ProgressLocation.Notification, title: Messages.CreatingSPN },
                     async () => {
