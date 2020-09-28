@@ -36,6 +36,8 @@ export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
 export async function configurePipeline(node: AzureTreeItem) {
     vscode.window.showErrorMessage("inside configure pipeline");
+    throw Error("vhvh");
+
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
         try {
             if (!(await extensionVariables.azureAccountExtensionApi.waitForLogin())) {
