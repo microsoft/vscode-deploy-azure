@@ -13,7 +13,7 @@ export class ProvisioningServiceClientFactory {
         if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
             defaultHeaders["X-GITHUB-TOKEN"] = "token " + githubPatToken;
             serviceDefinition.serviceFramework = ServiceFramework.Moda;
-            this.client = new ProvisioningServiceClient(serviceDefinition, defaultHeaders, credentials); this.client = new ProvisioningServiceClient(serviceDefinition, defaultHeaders, new TokenCredentials(githubPatToken, "token"));
+            this.client = new ProvisioningServiceClient(serviceDefinition, defaultHeaders, credentials);
         } else {
             this.client = new ProvisioningServiceClient(serviceDefinition, defaultHeaders, new TokenCredentials(githubPatToken, "token"));
         }
