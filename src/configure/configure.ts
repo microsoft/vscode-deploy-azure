@@ -104,9 +104,9 @@ class Orchestrator {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
         await this.getInputs(node);
         if (this.continueOrchestration) {
-            if ( extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
-                this.inputs.targetResource.resource.type === TargetResourceType.AKS && !!this.inputs.sourceRepository.remoteUrl ) {
-               return await this.configurePipelineRemotely();
+            if (extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
+                (this.inputs.targetResource.resource.type === TargetResourceType.AKS || (this.inputs.pipelineConfiguration.template.language === "Node" && this.inputs.targetResource.resource.type === TargetResourceType.WebApp)) && !!this.inputs.sourceRepository.remoteUrl) {
+                return await this.configurePipelineRemotely();
             }
 
             return this.ConfigurePipelineLocally();
@@ -117,9 +117,9 @@ class Orchestrator {
         const azureResourceSelector = ResourceSelectorFactory.getAzureResourceSelector(targetType);
         this.inputs.targetResource.resource = await azureResourceSelector.getAzureResource(this.inputs);
         this.azureResourceClient = ResourceSelectorFactory.getAzureResourceClient(targetType, this.inputs.azureSession.credentials,
-        this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
+            this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceType, this.inputs.targetResource.resource.type);
-        if ( targetType === TargetResourceType.WebApp) {
+        if (targetType === TargetResourceType.WebApp) {
             telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, this.inputs.targetResource.resource.kind);
             telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash, Utilities.createSha256Hash(this.inputs.targetResource.resource.id));
         }
@@ -128,12 +128,12 @@ class Orchestrator {
     private async selectTemplate(resource: GenericResource): Promise<void> {
         switch (resource.type) {
             case TargetResourceType.AKS:
-                if ( extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github && !!this.inputs.sourceRepository.remoteUrl) {
+                if (extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github && !!this.inputs.sourceRepository.remoteUrl) {
                     this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.REMOTE);
                 } else {
                     this.inputs.pipelineConfiguration.template = this.inputs.potentialTemplates.find((template) => template.templateType === TemplateType.LOCAL);
                 }
-                if ( this.inputs.pipelineConfiguration.template  === undefined) {
+                if (this.inputs.pipelineConfiguration.template === undefined) {
                     telemetryHelper.logError(Layer, TracePoints.TemplateNotFound, new Error(Messages.TemplateNotFound + " RepoId: " + this.inputs.sourceRepository.repositoryId));
                     throw new Error(Messages.TemplateNotFound);
                 }
@@ -216,11 +216,11 @@ class Orchestrator {
             const controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this.context);
             this.inputs.pipelineConfiguration.params = await controlProvider.getAllPipelineTemplateInputs();
         }
-        else if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS && this.inputs.sourceRepository.repositoryId != RepositoryProvider.Github ) {
+        else if (this.inputs.pipelineConfiguration.template.targetType === TargetResourceType.AKS && this.inputs.sourceRepository.repositoryId != RepositoryProvider.Github) {
             const templateParameterHelper = await new TemplateParameterHelper();
             const template = this.inputs.pipelineConfiguration.template as LocalPipelineTemplate;
             await templateParameterHelper.setParameters(template.parameters, this.inputs);
-         }
+        }
     }
 
     private async getGithubPatToken(): Promise<void> {
@@ -383,7 +383,7 @@ class Orchestrator {
 
         if (remoteUrl) {
             if (AzureDevOpsHelper.isAzureReposUrl(remoteUrl)) {
-                return <GitRepositoryParameters> {
+                return <GitRepositoryParameters>{
                     repositoryProvider: RepositoryProvider.AzureRepos,
                     repositoryId: "",
                     repositoryName: AzureDevOpsHelper.getRepositoryDetailsFromRemoteUrl(remoteUrl).repositoryName,
@@ -396,7 +396,7 @@ class Orchestrator {
             }
             else if (GitHubProvider.isGitHubUrl(remoteUrl)) {
                 const repoId = GitHubProvider.getRepositoryIdFromUrl(remoteUrl);
-                return <GitRepositoryParameters> {
+                return <GitRepositoryParameters>{
                     repositoryProvider: RepositoryProvider.Github,
                     repositoryId: repoId,
                     repositoryName: repoId,
@@ -472,10 +472,10 @@ class Orchestrator {
     private async getAzureSubscription(): Promise<void> {
         // show available subscriptions and get the chosen one
         const subscriptionList = extensionVariables.azureAccountExtensionApi.filters.map((subscriptionObject) => {
-            return <QuickPickItemWithData> {
-                label: `${<string> subscriptionObject.subscription.displayName}`,
+            return <QuickPickItemWithData>{
+                label: `${<string>subscriptionObject.subscription.displayName}`,
                 data: subscriptionObject,
-                description: `${<string> subscriptionObject.subscription.subscriptionId}`
+                description: `${<string>subscriptionObject.subscription.subscriptionId}`
             };
         });
         const selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
@@ -646,15 +646,15 @@ class Orchestrator {
 
     private createProvisioningConfigurationObject(templateId: string, branch: string, pipeplineTemplateParameters: { [key: string]: string }, mode: provisioningMode): ProvisioningConfiguration {
         return {
-          id: null,
-          branch,
-          pipelineTemplateId: templateId,
-          pipelineTemplateParameters: pipeplineTemplateParameters,
-          provisioningMode: mode,
+            id: null,
+            branch,
+            pipelineTemplateId: templateId,
+            pipelineTemplateParameters: pipeplineTemplateParameters,
+            provisioningMode: mode,
         } as ProvisioningConfiguration;
-      }
+    }
 
-    private async configurePipelineRemotely(): Promise<void>{
+    private async configurePipelineRemotely(): Promise<void> {
         const provisioningConfigurer = new ProvisioningConfigurer(this.localGitRepoHelper);
         const template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
         try {
@@ -664,12 +664,12 @@ class Orchestrator {
 
             // Draft pipeline step
             telemetryHelper.setCurrentStep('ConfiguringDraftProvisioningPipeline');
-            const provisioningConfiguration =  this.createProvisioningConfigurationObject(template.id, this.inputs.sourceRepository.branch, this.inputs.pipelineConfiguration.params , provisioningMode.draft );
+            const provisioningConfiguration = this.createProvisioningConfigurationObject(template.id, this.inputs.sourceRepository.branch, this.inputs.pipelineConfiguration.params, provisioningMode.draft);
             const draftProvisioningPipeline: ProvisioningConfiguration = await provisioningConfigurer.preSteps(provisioningConfiguration, this.inputs);
 
             // After recieving the draft workflow files, show them to user and confirm to checkin
             telemetryHelper.setCurrentStep('ConfiguringCompleteProvisioningPipeline');
-            provisioningConfiguration.provisioningMode =  provisioningMode.complete;
+            provisioningConfiguration.provisioningMode = provisioningMode.complete;
             await provisioningConfigurer.postSteps(provisioningConfiguration, (draftProvisioningPipeline.result.pipelineConfiguration as DraftPipelineConfiguration), this.inputs);
 
             // All done, now browse the pipeline
@@ -678,10 +678,10 @@ class Orchestrator {
         } catch (error) {
             telemetryHelper.logError(Layer, TracePoints.RemotePipelineConfiguringFailed, error);
             throw error;
-       }
+        }
     }
 
-    private async ConfigurePipelineLocally(){
+    private async ConfigurePipelineLocally() {
         const pipelineConfigurer = ConfigurerFactory.GetConfigurer(this.inputs.sourceRepository, this.inputs.azureSession,
             this.inputs.pipelineConfiguration.template.templateType, this.localGitRepoHelper);
         const selectedCICDProvider = (pipelineConfigurer.constructor.name === "AzurePipelineConfigurer") ? constants.azurePipeline : constants.githubWorkflow;
@@ -692,10 +692,10 @@ class Orchestrator {
 
         telemetryHelper.setCurrentStep('CreateAssets');
         if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
-                await (pipelineConfigurer as RemoteGitHubWorkflowConfigurer).createAssets(ConfigurationStage.Pre);
-            } else {
-                await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => pipelineConfigurer.createAsset(name, assetType, data, inputs));
-            }
+            await (pipelineConfigurer as RemoteGitHubWorkflowConfigurer).createAssets(ConfigurationStage.Pre);
+        } else {
+            await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => pipelineConfigurer.createAsset(name, assetType, data, inputs));
+        }
 
         telemetryHelper.setCurrentStep('CheckInPipeline');
         await this.checkInPipelineFileToRepository(pipelineConfigurer);
