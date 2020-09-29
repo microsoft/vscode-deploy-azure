@@ -21,7 +21,7 @@ export class TemplateServiceClient implements ITemplateServiceClient {
         this.headers = headers;
     }
 
-    public async getResourceFilteredTemplates(language: string, deployTarget: string): Promise<TemplateInfo[]> {
+    public async getTemplatesInfoByFilter(language: string, deployTargetFilter?: string, buildTargetFilter?: string): Promise<TemplateInfo[]> {
         return this.restClient.sendRequest(
             {
                 url: this.templateServiceUri + this.templatesInfoResource,
@@ -30,7 +30,8 @@ export class TemplateServiceClient implements ITemplateServiceClient {
                 queryParameters: {
                     'api-version': this.apiVersion,
                     'languageFilter': language,
-                    'deployTargetFilter': deployTarget
+                    'deployTargetFilter': deployTargetFilter,
+                    'buildTargetFilter': buildTargetFilter
                 },
                 deserializationMapper: null,
                 serializationMapper: null

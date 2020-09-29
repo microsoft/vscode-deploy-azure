@@ -173,8 +173,8 @@ class Orchestrator {
                 this.inputs.azureSession = getAzureSession();
             }
             const repoAnalysisResult = await this.getRepositoryAnalysis();
-            if (resourceNode && resourceNode.type === TargetResourceType.AKS) {
-                this.getSelectedPipeline(null, "docker", "Azure:AKS");
+            if (this.context['isResourceAlreadySelected'] && resourceNode.type === TargetResourceType.AKS) {
+                await this.getFilteredTemplates("docker", "Azure:AKS");
             } else {
                 await this.getSelectedPipeline(repoAnalysisResult);
             }
@@ -256,6 +256,7 @@ class Orchestrator {
             if (await this.extractAzureResourceFromNode(node)) {
                 this.context['isResourceAlreadySelected'] = true;
                 this.context['resourceId'] = this.inputs.targetResource.resource.id;
+                return this.inputs.targetResource.resource;
             } else {
                 if (node.fsPath) {
                     //right click on a folder
@@ -488,7 +489,21 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
-    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysis, languageFilter?: string, deployTarget?: string): Promise<void> {
+    private async getFilteredTemplates(languageFilter: string, deployTarget?: string, buildTarget?: string) {
+        const remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
+            { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
+            () => templateHelper.listResourceFilteredPipelines(
+                this.inputs.azureSession,
+                languageFilter,
+                deployTarget,
+                buildTarget,
+                this.inputs.githubPATToken
+            )
+        );
+        this.inputs.potentialTemplates = remotePipelines;
+    }
+
+    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysis): Promise<void> {
         extensionVariables.templateServiceEnabled = true;
         let appropriatePipelines: PipelineTemplate[] = [];
 
@@ -503,29 +518,17 @@ class Orchestrator {
             );
             appropriatePipelines = localPipelines;
         } else {
-            if (this.inputs.targetResource.resource) {
-                const remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-                    { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
-                    () => templateHelper.listResourceFilteredPipelines(
-                        this.inputs.azureSession,
-                        languageFilter,
-                        deployTarget,
-                        this.inputs.githubPATToken
-                    )
-                );
-                appropriatePipelines = remotePipelines;
-            } else {
-                const remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-                    { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
-                    () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
-                        this.inputs.azureSession,
-                        this.inputs.sourceRepository.localPath,
-                        this.inputs.sourceRepository.repositoryProvider,
-                        repoAnalysisResult,
-                        this.inputs.githubPATToken)
-                );
-                appropriatePipelines = remotePipelines;
-            }
+            const remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
+                () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
+                    this.inputs.azureSession,
+                    this.inputs.sourceRepository.localPath,
+                    this.inputs.sourceRepository.repositoryProvider,
+                    repoAnalysisResult,
+                    this.inputs.githubPATToken)
+            );
+            appropriatePipelines = remotePipelines;
+
             const pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
             const pipelineLabels = Array.from(pipelineMap.keys());
             if (pipelineLabels.length === 0) {

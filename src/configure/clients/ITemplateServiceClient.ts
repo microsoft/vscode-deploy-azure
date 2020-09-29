@@ -8,5 +8,5 @@ export interface ITemplateServiceClient {
     getTemplateParameters(templateId: string): Promise<ExtendedPipelineTemplate>;
     getTemplateConfiguration(templateId: string, inputs: StringMap<string>): Promise<ExtendedPipelineTemplate>;
     getTemplateFile(templateId: string, fileName: string): Promise<{ id: string, content: string }[]>;
-    getResourceFilteredTemplates(language: string, deployTarget: string): Promise<TemplateInfo[]>;
+    getTemplatesInfoByFilter(language: string, deployTargetFilter?: string, buildTargetFilter?: string): Promise<TemplateInfo[]>;
 }

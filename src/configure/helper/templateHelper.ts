@@ -151,43 +151,48 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     return templateResult;
 }
 
-export async function listResourceFilteredPipelines(azureSession: AzureSession, language: string, deployTarget: string, githubPatToken?: string): Promise<PipelineTemplate[]> {
+async function convertToPipelineTemplate(remoteTemplates: TemplateInfo[]): Promise<PipelineTemplate[]> {
+    const pipelineTemplates: PipelineTemplate[] = [];
+    remoteTemplates.forEach((templateInfo: TemplateInfo) => {
+        const remoteTemplate: RemotePipelineTemplate = {
+            label: templateInfo.templateLabel,
+            targetType: getTargetType(templateInfo),
+            targetKind: getTargetKind(templateInfo),
+            templateType: TemplateType.REMOTE,
+            language: templateInfo.attributes.language,
+            id: templateInfo.templateId,
+            templateWeight: templateInfo.templateWeight,
+            workingDirectory: templateInfo.workingDirectory,
+            description: templateInfo.templateDescription,
+        };
+        pipelineTemplates.push(remoteTemplate);
+    });
+    return pipelineTemplates;
+}
+
+export async function listResourceFilteredPipelines(azureSession: AzureSession, language: string, deployTarget?: string, buildTarget?: string, githubPatToken?: string): Promise<PipelineTemplate[]> {
 
     let pipelineTemplates: PipelineTemplate[] = [];
     let remoteTemplates: TemplateInfo[] = [];
     try {
         const client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
         await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
-            remoteTemplates = await client.getResourceFilteredTemplates(language, deployTarget);
+            remoteTemplates = await client.getTemplatesInfoByFilter(language, deployTarget, buildTarget);
         }, TelemetryKeys.ResourceFilterTemplateServiceDuration);
-        remoteTemplates.forEach((templateInfo: TemplateInfo) => {
-            const remoteTemplate: RemotePipelineTemplate = {
-                label: templateInfo.templateLabel,
-                targetType: getTargetType(templateInfo),
-                targetKind: getTargetKind(templateInfo),
-                templateType: TemplateType.REMOTE,
-                language: templateInfo.attributes.language,
-                id: templateInfo.templateId,
-                templateWeight: templateInfo.templateWeight,
-                workingDirectory: templateInfo.workingDirectory,
-                description: templateInfo.templateDescription,
-            };
-            pipelineTemplates.push(remoteTemplate);
-        });
+        pipelineTemplates = await convertToPipelineTemplate(remoteTemplates);
     }
     catch (err) {
         pipelineTemplates = [];
         telemetryHelper.logError(Layer, TracePoints.TemplateServiceCallFailed, err);
     }
     return pipelineTemplates;
-
 }
 
 export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, githubPatToken?: string): Promise<PipelineTemplate[]> {
 
-    var pipelineTemplates: PipelineTemplate[] = [];
-    var remoteTemplates: TemplateInfo[] = [];
-    var localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
+    let pipelineTemplates: PipelineTemplate[] = [];
+    let remoteTemplates: TemplateInfo[] = [];
+    let localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
 
     if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
         try {
@@ -196,20 +201,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
             await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
                 remoteTemplates = await client.getTemplates(repoAnalysisParameters);
             }, TelemetryKeys.TemplateServiceDuration);
-            remoteTemplates.forEach((templateInfo: TemplateInfo) => {
-                var remoteTemplate: RemotePipelineTemplate = {
-                    label: templateInfo.templateLabel,
-                    targetType: getTargetType(templateInfo),
-                    targetKind: getTargetKind(templateInfo),
-                    templateType: TemplateType.REMOTE,
-                    language: templateInfo.attributes.language,
-                    id: templateInfo.templateId,
-                    templateWeight: templateInfo.templateWeight,
-                    workingDirectory: templateInfo.workingDirectory,
-                    description: templateInfo.templateDescription,
-                };
-                pipelineTemplates.push(remoteTemplate);
-            });
+            pipelineTemplates = await convertToPipelineTemplate(remoteTemplates);
         }
         catch (err) {
             pipelineTemplates = [];
