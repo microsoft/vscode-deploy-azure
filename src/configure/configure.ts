@@ -173,7 +173,11 @@ class Orchestrator {
                 this.inputs.azureSession = getAzureSession();
             }
             const repoAnalysisResult = await this.getRepositoryAnalysis();
-            await this.getSelectedPipeline(repoAnalysisResult);
+            if (resourceNode && resourceNode.type === TargetResourceType.AKS) {
+                this.getSelectedPipeline(null, "docker", "Azure:AKS");
+            } else {
+                await this.getSelectedPipeline(repoAnalysisResult);
+            }
 
             try {
                 if (!resourceNode) {
@@ -484,7 +488,7 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
-    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysis): Promise<void> {
+    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysis, languageFilter?: string, deployTarget?: string): Promise<void> {
         extensionVariables.templateServiceEnabled = true;
         let appropriatePipelines: PipelineTemplate[] = [];
 
@@ -499,47 +503,50 @@ class Orchestrator {
             );
             appropriatePipelines = localPipelines;
         } else {
-            const remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
-                () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
-                    this.inputs.azureSession,
-                    this.inputs.sourceRepository.localPath,
-                    this.inputs.sourceRepository.repositoryProvider,
-                    repoAnalysisResult,
-                    this.inputs.githubPATToken)
-            );
-            appropriatePipelines = remotePipelines;
-        }
-        const pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
-        this.filterPipelinesByResourceType(pipelineMap);
-        const pipelineLabels = Array.from(pipelineMap.keys());
-        if (pipelineLabels.length === 0) {
-            telemetryHelper.setTelemetry(TelemetryKeys.UnsupportedLanguage, Messages.languageNotSupported);
-            throw new Error(Messages.languageNotSupported);
+            if (this.inputs.targetResource.resource) {
+                const remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
+                    { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
+                    () => templateHelper.listResourceFilteredPipelines(
+                        this.inputs.azureSession,
+                        languageFilter,
+                        deployTarget,
+                        this.inputs.githubPATToken
+                    )
+                );
+                appropriatePipelines = remotePipelines;
+            } else {
+                const remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
+                    { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
+                    () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
+                        this.inputs.azureSession,
+                        this.inputs.sourceRepository.localPath,
+                        this.inputs.sourceRepository.repositoryProvider,
+                        repoAnalysisResult,
+                        this.inputs.githubPATToken)
+                );
+                appropriatePipelines = remotePipelines;
+            }
+            const pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
+            const pipelineLabels = Array.from(pipelineMap.keys());
+            if (pipelineLabels.length === 0) {
+                telemetryHelper.setTelemetry(TelemetryKeys.UnsupportedLanguage, Messages.languageNotSupported);
+                throw new Error(Messages.languageNotSupported);
+            }
+
+            if (pipelineLabels.length > 1) {
+                const selectedOption = await this.controlProvider.showQuickPick(
+                    constants.SelectPipelineTemplate,
+                    pipelineLabels.map((pipeline) => ({ label: pipeline })),
+                    { placeHolder: Messages.selectPipelineTemplate },
+                    TelemetryKeys.PipelineTempateListCount);
+                // only label gets finalized, template isn't final yet
+                this.inputs.potentialTemplates = pipelineMap.get(selectedOption.label);
+            }
+            else {
+                this.inputs.potentialTemplates = pipelineMap.get(pipelineLabels[0]);
+            }
         }
 
-        if (pipelineLabels.length > 1) {
-            const selectedOption = await this.controlProvider.showQuickPick(
-                constants.SelectPipelineTemplate,
-                pipelineLabels.map((pipeline) => ({ label: pipeline })),
-                { placeHolder: Messages.selectPipelineTemplate },
-                TelemetryKeys.PipelineTempateListCount);
-            // only label gets finalized, template isn't final yet
-            this.inputs.potentialTemplates = pipelineMap.get(selectedOption.label);
-        }
-        else {
-            this.inputs.potentialTemplates = pipelineMap.get(pipelineLabels[0]);
-        }
-    }
-
-    private filterPipelinesByResourceType(pipelineMap: Map<string, PipelineTemplate[]>) {
-        if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
-            pipelineMap.forEach((element) => {
-                if (element[0].targetType !== this.inputs.targetResource.resource.type) {
-                    pipelineMap.delete(element[0].label);
-                }
-            });
-        }
     }
 
     private getMapOfUniqueLabels(pipelines: PipelineTemplate[]): Map<string, PipelineTemplate[]> {

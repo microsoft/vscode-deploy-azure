@@ -21,6 +21,22 @@ export class TemplateServiceClient implements ITemplateServiceClient {
         this.headers = headers;
     }
 
+    public async getResourceFilteredTemplates(language: string, deployTarget: string): Promise<TemplateInfo[]> {
+        return this.restClient.sendRequest(
+            {
+                url: this.templateServiceUri + this.templatesInfoResource,
+                method: 'GET',
+                headers: this.headers,
+                queryParameters: {
+                    'api-version': this.apiVersion,
+                    'languageFilter': language,
+                    'deployTargetFilter': deployTarget
+                },
+                deserializationMapper: null,
+                serializationMapper: null
+            });
+    }
+
     public async getTemplates(body: RepositoryAnalysis): Promise<TemplateInfo[]> {
         return this.restClient.sendRequest(
             {
