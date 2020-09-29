@@ -64,7 +64,7 @@ export class Messages {
     public static cannotFindPipelineUrlInMetaDataException = 'We were unable to find pipeline associated with the Azure Web App. Please click on "Browse Pipeline" to explore.';
     public static cannotFindOrganizationWithName = 'Unable to find organization with name: %s';
     public static browseNotAvailableConfigurePipeline = 'No pipeline is configured for this Azure Web App. Please click on "Deploy to Azure" to setup.';
-    public static didNotRecieveAzureResourceNodeToProcess = 'Unable to browse the pipeline for you. Please raise an issue in the [repo](https://github.com/Microsoft/azure-pipelines-vscode/issues).';
+    public static didNotRecieveAzureResourceNodeToProcess = 'Unable to browse the pipeline for you. Please raise an issue in the [repo](https://github.com/microsoft/vscode-deploy-azure/issues).';
     public static copyAndOpenLabel: string = 'Copy & Open';
     public static nextLabel: string = 'Next';
     public static githubWorkflowSetupSuccessfully: string = 'GitHub workflow set up successfully !';
