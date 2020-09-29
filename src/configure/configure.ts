@@ -98,6 +98,8 @@ class Orchestrator {
         this.inputs = new WizardInputs();
         this.controlProvider = new ControlProvider();
         UniqueResourceNameSuffix = uuid().substr(0, 5);
+        this.context['isResourceAlreadySelected'] = false;
+        this.context['resourceId'] = '';
     }
 
     public async configure(node: any): Promise<void> {
@@ -108,7 +110,6 @@ class Orchestrator {
                 (this.inputs.targetResource.resource.type === TargetResourceType.AKS || (this.inputs.pipelineConfiguration.template.language === "Node" && this.inputs.targetResource.resource.type === TargetResourceType.WebApp)) && !!this.inputs.sourceRepository.remoteUrl) {
                 return await this.configurePipelineRemotely();
             }
-
             return this.ConfigurePipelineLocally();
         }
     }
@@ -164,7 +165,7 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseAzurePipelinesForGithub,
             vscode.workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub'));
 
-        let resourceNode = await this.analyzeNode(node);
+        const resourceNode = await this.analyzeNode(node);
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
@@ -176,17 +177,10 @@ class Orchestrator {
 
             try {
                 if (!resourceNode) {
-                    this.context['rightClickScenario'] = false;
                     await this.getAzureSubscription();
                     await this.getAzureResource(this.getSelectedPipelineTargetType());
                 }
-                else {
-                    this.context['rightClickScenario'] = true;
-                }
 
-                if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
-                    this.context['resourceId'] = this.inputs.targetResource.resource.id;
-                }
                 this.selectTemplate(this.inputs.targetResource.resource);
                 telemetryHelper.setTelemetry(TelemetryKeys.SelectedTemplate, this.inputs.pipelineConfiguration.template.label);
                 telemetryHelper.setTelemetry(TelemetryKeys.SelectedTemplateType, (this.inputs.pipelineConfiguration.template.templateType).toString());
@@ -254,14 +248,18 @@ class Orchestrator {
     }
 
     private async analyzeNode(node: any): Promise<GenericResource> {
-        if (!!node && !!node.fullId) {
-            return await this.extractAzureResourceFromNode(node);
+        if (!!node) {
+            if (await this.extractAzureResourceFromNode(node)) {
+                this.context['isResourceAlreadySelected'] = true;
+                this.context['resourceId'] = this.inputs.targetResource.resource.id;
+            } else {
+                if (node.fsPath) {
+                    //right click on a folder
+                    this.workspacePath = node.fsPath;
+                    telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
+                }
+            }
         }
-        else if (node && node.fsPath) {
-            this.workspacePath = node.fsPath;
-            telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
-        }
-
         return null;
     }
 
@@ -429,8 +427,7 @@ class Orchestrator {
         }
     }
 
-    private async extractAzureResourceFromNode(node: AzureTreeItem | any): Promise<GenericResource> {
-        const resource: GenericResource = null;
+    private async extractAzureResourceFromNode(node: AzureTreeItem | any): Promise<boolean> {
         if (!!node.fullId) {
             this.inputs.subscriptionId = node.root.subscriptionId;
             this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
@@ -449,24 +446,26 @@ class Orchestrator {
                 }
 
                 this.inputs.targetResource.resource = azureResource;
+                return true;
             }
             catch (error) {
                 telemetryHelper.logError(Layer, TracePoints.ExtractAzureResourceFromNodeFailed, error);
                 throw error;
             }
         }
-        else if (!!node.value && node.value.nodeType === 'cluster') {
-            this.inputs.subscriptionId = node.value.subscription.subscriptionId;
+        else if (!!node.cloudResource && node.cloudResource.nodeType === 'cluster') {
+            this.inputs.subscriptionId = node.cloudResource.subscription.subscriptionId;
+            this.context['subscriptionId'] = this.inputs.subscriptionId;
             this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
             this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.subscriptionId);
-            const cluster = await this.azureResourceClient.getResource(node.value.armId, '2019-08-01');
+            const cluster = await this.azureResourceClient.getResource(node.cloudResource.id, '2019-08-01');
             telemetryHelper.setTelemetry(TelemetryKeys.resourceType, cluster.type);
-            telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, cluster.kind);
             AzureResourceClient.validateTargetResourceType(cluster);
             cluster["parsedResourceId"] = new ParsedAzureResourceId(cluster.id);
+            this.inputs.targetResource.resource = cluster;
+            return true;
         }
-
-        return resource;
+        return false;
     }
 
     private async getAzureSubscription(): Promise<void> {
@@ -512,13 +511,13 @@ class Orchestrator {
             appropriatePipelines = remotePipelines;
         }
         const pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
+        this.filterPipelinesByResourceType(pipelineMap);
         const pipelineLabels = Array.from(pipelineMap.keys());
         if (pipelineLabels.length === 0) {
             telemetryHelper.setTelemetry(TelemetryKeys.UnsupportedLanguage, Messages.languageNotSupported);
             throw new Error(Messages.languageNotSupported);
         }
 
-        // TO:DO- Get applicable pipelines for the repo type and azure target type if target already selected
         if (pipelineLabels.length > 1) {
             const selectedOption = await this.controlProvider.showQuickPick(
                 constants.SelectPipelineTemplate,
@@ -530,6 +529,16 @@ class Orchestrator {
         }
         else {
             this.inputs.potentialTemplates = pipelineMap.get(pipelineLabels[0]);
+        }
+    }
+
+    private filterPipelinesByResourceType(pipelineMap: Map<string, PipelineTemplate[]>) {
+        if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
+            pipelineMap.forEach((element) => {
+                if (element[0].targetType !== this.inputs.targetResource.resource.type) {
+                    pipelineMap.delete(element[0].label);
+                }
+            });
         }
     }
 
