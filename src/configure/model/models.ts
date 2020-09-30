@@ -285,3 +285,9 @@ export interface IVisibilityRule {
     predicateRules: IPredicate[];
     operator: string;
 }
+
+export enum PipelineType {
+    Unsupported,
+    AzurePipeline,
+    GitHubPipeline
+}

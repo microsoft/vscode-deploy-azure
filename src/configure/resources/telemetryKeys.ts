@@ -42,7 +42,6 @@ export class TelemetryKeys {
     public static GitHubPatDuration = 'gitHubPatDuration';
     public static RepositoryAnalysisDuration = 'repositoryAnalysisDuration';
     public static TemplateServiceDuration = 'templateServiceDuration';
-    public static ResourceFilterTemplateServiceDuration = 'resourceFilterTemplateServiceDuration';
 
     // Count of drop down items
     public static OrganizationListCount = 'OrganizationListCount';
