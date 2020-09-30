@@ -1,12 +1,11 @@
 
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
-import { ApplicationSettings, RepositoryAnalysis } from 'azureintegration-repoanalysis-client-internal';
+import { ApplicationSettings } from 'azureintegration-repoanalysis-client-internal';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
-import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
 import { ProvisioningConfigurer } from './configurers/provisioningConfigurer';
 import { RemoteGitHubWorkflowConfigurer } from './configurers/remoteGitHubWorkflowConfigurer';
@@ -22,7 +21,7 @@ import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
 import { ConfigurationStage } from './model/Contracts';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, PipelineType, QuickPickItemWithData, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, PipelineType, QuickPickItemWithData, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
 import { DraftPipelineConfiguration, ProvisioningConfiguration, provisioningMode } from './model/provisioningConfiguration';
 import { LocalPipelineTemplate, PipelineTemplate, RemotePipelineTemplate, TemplateAssetType, TemplateType } from './model/templateModels';
 import * as constants from './resources/constants';
@@ -168,13 +167,17 @@ class Orchestrator {
         }
     }
 
+    private async isResourceAlreadySelected(): Promise<boolean> {
+        return this.context['isResourceAlreadySelected'];
+    }
+
     private async getInputs(node: any): Promise<void> {
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseGithubForCreatingNewRepository,
             vscode.workspace.getConfiguration().get('deployToAzure.UseGithubForCreatingNewRepository'));
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseAzurePipelinesForGithub,
             vscode.workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub'));
 
-        const resourceNode = await this.analyzeNode(node);
+        await this.analyzeNode(node);
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
@@ -184,12 +187,12 @@ class Orchestrator {
             const repoAnalysisResult = await this.getRepositoryAnalysis();
             await this.setPipelineType();
             // Right click on not resource not supported for Azure pipeline
-            if (resourceNode && this.pipelineType === PipelineType.AzurePipeline) {
+            if (this.isResourceAlreadySelected() && this.pipelineType === PipelineType.AzurePipeline) {
                 throw Error("Scenario not supported for Azure pipelines.");
             }
             await this.getTemplatesByRepoAnalysis(repoAnalysisResult);
             try {
-                if (!resourceNode) {
+                if (!this.isResourceAlreadySelected()) {
                     await this.getAzureSubscription();
                     await this.getAzureResource(this.getSelectedPipelineTargetType());
                 }
@@ -260,12 +263,11 @@ class Orchestrator {
         return this.inputs.potentialTemplates[0].targetType;
     }
 
-    private async analyzeNode(node: any): Promise<GenericResource> {
+    private async analyzeNode(node: any): Promise<void> {
         if (!!node) {
             if (await this.extractAzureResourceFromNode(node)) {
                 this.context['isResourceAlreadySelected'] = true;
                 this.context['resourceId'] = this.inputs.targetResource.resource.id;
-                return this.inputs.targetResource.resource;
             } else {
                 if (node.fsPath) {
                     //right click on a folder
@@ -274,7 +276,6 @@ class Orchestrator {
                 }
             }
         }
-        return null;
     }
 
     private async getSourceRepositoryDetails(): Promise<void> {
