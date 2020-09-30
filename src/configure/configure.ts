@@ -160,7 +160,7 @@ class Orchestrator {
         }
     }
 
-    private async setPipelineType() {
+    private setPipelineType() {
         if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github && extensionVariables.enableGitHubWorkflow) {
             this.pipelineType = PipelineType.GitHubPipeline;
         } else {
@@ -186,7 +186,7 @@ class Orchestrator {
                 this.inputs.azureSession = getAzureSession();
             }
             const repoAnalysisResult = await this.getRepositoryAnalysis();
-            await this.setPipelineType();
+            this.setPipelineType();
             // Right click on not resource not supported for Azure pipeline
             if (this.isResourceAlreadySelected() && this.pipelineType === PipelineType.AzurePipeline) {
                 throw Error("Scenario not supported for Azure pipelines.");
