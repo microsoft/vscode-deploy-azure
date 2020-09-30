@@ -1,7 +1,7 @@
 import { RepositoryAnalysis } from "azureintegration-repoanalysis-client-internal";
 import { ServiceClientCredentials } from "ms-rest";
 import { ExtendedPipelineTemplate } from "../../model/Contracts";
-import { StringMap, TargetResourceType } from "../../model/models";
+import { StringMap } from "../../model/models";
 import { TemplateInfo } from "../../model/templateModels";
 import { ITemplateServiceClient } from "../ITemplateServiceClient";
 import { RestClient } from "../restClient";
@@ -21,20 +21,7 @@ export class TemplateServiceClient implements ITemplateServiceClient {
         this.headers = headers;
     }
 
-    public async getTemplatesInfoByFilter(resourceType: string): Promise<TemplateInfo[]> {
-        let language = '';
-        let buildTargetFilter = '';
-        let deployTargetFilter = '';
-
-        switch (resourceType) {
-            case TargetResourceType.AKS:
-                language = "docker";
-                deployTargetFilter = "Azure:AKS";
-                break;
-            default:
-                break;
-        }
-
+    public async getTemplatesInfoByFilter(language: string, deployTarget: string, buildTarget: string): Promise<TemplateInfo[]> {
         return this.restClient.sendRequest(
             {
                 url: this.templateServiceUri + this.templatesInfoResource,
@@ -43,8 +30,8 @@ export class TemplateServiceClient implements ITemplateServiceClient {
                 queryParameters: {
                     'api-version': this.apiVersion,
                     'languageFilter': language,
-                    'deployTargetFilter': deployTargetFilter,
-                    'buildTargetFilter': buildTargetFilter
+                    'deployTargetFilter': deployTarget,
+                    'buildTargetFilter': buildTarget
                 },
                 deserializationMapper: null,
                 serializationMapper: null

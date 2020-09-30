@@ -170,6 +170,19 @@ async function convertToPipelineTemplate(remoteTemplates: TemplateInfo[]): Promi
     return pipelineTemplates;
 }
 
+export async function getFilteredTemplates(azureSession: AzureSession, resourceType: string, githubPatToken?: string): Promise<TemplateInfo[]> {
+
+    const client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
+    let filteredTemplates: TemplateInfo[];
+    switch (resourceType) {
+        case TargetResourceType.AKS:
+            filteredTemplates = await client.getTemplatesInfoByFilter("docker", "Azure:AKS");
+            return filteredTemplates;
+        default:
+            return null;
+    }
+}
+
 export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, sourceRepository: GitRepositoryParameters, pipelineType: PipelineType, repoAnalysisParameters: RepositoryAnalysis, githubPatToken?: string, resource?: GenericResource): Promise<PipelineTemplate[]> {
 
     let pipelineTemplates: PipelineTemplate[] = [];
@@ -184,7 +197,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
                 if (!!resource) {
                     // If resource is already selected, getting templates accordingly
                     localPipelineTemplates = [];
-                    remoteTemplates = await client.getTemplatesInfoByFilter(resource.type);
+                    remoteTemplates = await getFilteredTemplates(azureSession, resource.type, githubPatToken);
                 } else {
                     remoteTemplates = await client.getTemplates(repoAnalysisParameters);
                 }
