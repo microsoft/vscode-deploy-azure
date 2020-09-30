@@ -168,7 +168,7 @@ class Orchestrator {
         }
     }
 
-    private async isResourceAlreadySelected(): Promise<boolean> {
+    private isResourceAlreadySelected(): boolean {
         return this.context['isResourceAlreadySelected'];
     }
 
