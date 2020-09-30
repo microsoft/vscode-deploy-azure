@@ -287,7 +287,6 @@ export interface IVisibilityRule {
 }
 
 export enum PipelineType {
-    Unsupported,
     AzurePipeline,
     GitHubPipeline
 }

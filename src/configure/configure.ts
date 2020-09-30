@@ -163,10 +163,8 @@ class Orchestrator {
     private async setPipelineType() {
         if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github && extensionVariables.enableGitHubWorkflow) {
             this.pipelineType = PipelineType.GitHubPipeline;
-        } else if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.AzureRepos) {
-            this.pipelineType = PipelineType.AzurePipeline;
         } else {
-            this.pipelineType = PipelineType.Unsupported;
+            this.pipelineType = PipelineType.AzurePipeline;
         }
     }
 
