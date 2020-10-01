@@ -22,7 +22,7 @@ import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
 import { ConfigurationStage } from './model/Contracts';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, QuickPickItemWithData, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, PipelineType, QuickPickItemWithData, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
 import { DraftPipelineConfiguration, ProvisioningConfiguration, provisioningMode } from './model/provisioningConfiguration';
 import { LocalPipelineTemplate, PipelineTemplate, RemotePipelineTemplate, TemplateAssetType, TemplateType } from './model/templateModels';
 import * as constants from './resources/constants';
@@ -93,6 +93,7 @@ class Orchestrator {
     private controlProvider: ControlProvider;
     private continueOrchestration: boolean = true;
     private context: StringMap<any> = {};
+    private pipelineType: PipelineType;
 
     public constructor() {
         this.inputs = new WizardInputs();
@@ -159,13 +160,25 @@ class Orchestrator {
         }
     }
 
+    private setPipelineType() {
+        if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github && extensionVariables.enableGitHubWorkflow) {
+            this.pipelineType = PipelineType.GitHubPipeline;
+        } else {
+            this.pipelineType = PipelineType.AzurePipeline;
+        }
+    }
+
+    private isResourceAlreadySelected(): boolean {
+        return this.context['isResourceAlreadySelected'];
+    }
+
     private async getInputs(node: any): Promise<void> {
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseGithubForCreatingNewRepository,
             vscode.workspace.getConfiguration().get('deployToAzure.UseGithubForCreatingNewRepository'));
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseAzurePipelinesForGithub,
             vscode.workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub'));
 
-        const resourceNode = await this.analyzeNode(node);
+        await this.analyzeNode(node);
 
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
@@ -173,10 +186,14 @@ class Orchestrator {
                 this.inputs.azureSession = getAzureSession();
             }
             const repoAnalysisResult = await this.getRepositoryAnalysis();
-            await this.getSelectedPipeline(repoAnalysisResult);
-
+            this.setPipelineType();
+            // Right click on not resource not supported for Azure pipeline
+            if (this.isResourceAlreadySelected() && this.pipelineType === PipelineType.AzurePipeline) {
+                throw Error("Scenario not supported for Azure pipelines.");
+            }
+            await this.getTemplatesByRepoAnalysis(repoAnalysisResult);
             try {
-                if (!resourceNode) {
+                if (!this.isResourceAlreadySelected()) {
                     await this.getAzureSubscription();
                     await this.getAzureResource(this.getSelectedPipelineTargetType());
                 }
@@ -247,7 +264,7 @@ class Orchestrator {
         return this.inputs.potentialTemplates[0].targetType;
     }
 
-    private async analyzeNode(node: any): Promise<GenericResource> {
+    private async analyzeNode(node: any): Promise<void> {
         if (!!node) {
             if (await this.extractAzureResourceFromNode(node)) {
                 this.context['isResourceAlreadySelected'] = true;
@@ -260,7 +277,6 @@ class Orchestrator {
                 }
             }
         }
-        return null;
     }
 
     private async getSourceRepositoryDetails(): Promise<void> {
@@ -484,34 +500,22 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
-    private async getSelectedPipeline(repoAnalysisResult: RepositoryAnalysis): Promise<void> {
-        extensionVariables.templateServiceEnabled = true;
-        let appropriatePipelines: PipelineTemplate[] = [];
+    private async getTemplatesByRepoAnalysis(repoAnalysisResult: RepositoryAnalysis): Promise<void> {
 
-        if (!extensionVariables.templateServiceEnabled) {
-            const localPipelines = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
-                () => templateHelper.analyzeRepoAndListAppropriatePipeline(
-                    this.inputs.sourceRepository.localPath,
-                    this.inputs.sourceRepository.repositoryProvider,
-                    repoAnalysisResult,
-                    this.inputs.pipelineConfiguration.params[constants.TargetResource])
-            );
-            appropriatePipelines = localPipelines;
-        } else {
-            const remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
-                { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
-                () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
-                    this.inputs.azureSession,
-                    this.inputs.sourceRepository.localPath,
-                    this.inputs.sourceRepository.repositoryProvider,
-                    repoAnalysisResult,
-                    this.inputs.githubPATToken)
-            );
-            appropriatePipelines = remotePipelines;
-        }
+        let appropriatePipelines: PipelineTemplate[] = [];
+        const remotePipelines: PipelineTemplate[] = await vscode.window.withProgress(
+            { location: vscode.ProgressLocation.Notification, title: Messages.fetchingTemplates },
+            () => templateHelper.analyzeRepoAndListAppropriatePipeline2(
+                this.inputs.azureSession,
+                this.inputs.sourceRepository,
+                this.pipelineType,
+                repoAnalysisResult,
+                this.inputs.githubPATToken,
+                this.inputs.targetResource.resource)
+        );
+        appropriatePipelines = remotePipelines;
+
         const pipelineMap = this.getMapOfUniqueLabels(appropriatePipelines);
-        this.filterPipelinesByResourceType(pipelineMap);
         const pipelineLabels = Array.from(pipelineMap.keys());
         if (pipelineLabels.length === 0) {
             telemetryHelper.setTelemetry(TelemetryKeys.UnsupportedLanguage, Messages.languageNotSupported);
@@ -529,16 +533,6 @@ class Orchestrator {
         }
         else {
             this.inputs.potentialTemplates = pipelineMap.get(pipelineLabels[0]);
-        }
-    }
-
-    private filterPipelinesByResourceType(pipelineMap: Map<string, PipelineTemplate[]>) {
-        if (this.inputs.targetResource.resource && this.inputs.targetResource.resource.id) {
-            pipelineMap.forEach((element) => {
-                if (element[0].targetType !== this.inputs.targetResource.resource.type) {
-                    pipelineMap.delete(element[0].label);
-                }
-            });
         }
     }
 
