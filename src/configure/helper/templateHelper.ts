@@ -6,7 +6,7 @@ import * as path from 'path';
 import * as Q from 'q';
 import { TemplateServiceClientFactory } from '../clients/TemplateServiceClientFactory';
 import { ExtendedPipelineTemplate } from '../model/Contracts';
-import { AzureConnectionType, AzureSession, extensionVariables, MustacheContext, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
+import { AzureConnectionType, AzureSession, extensionVariables, GitRepositoryParameters, MustacheContext, PipelineType, RepositoryProvider, SupportedLanguage, TargetKind, TargetResourceType } from '../model/models';
 import { LocalPipelineTemplate, PipelineTemplate, PreDefinedDataSourceIds, RemotePipelineTemplate, TemplateAssetType, TemplateInfo, TemplateParameterType, TemplateType } from '../model/templateModels';
 import { PipelineTemplateLabels, RepoAnalysisConstants } from '../resources/constants';
 import { Messages } from '../resources/messages';
@@ -16,12 +16,12 @@ import { MustacheHelper } from './mustacheHelper';
 import { telemetryHelper } from './telemetryHelper';
 
 const Layer: string = 'templateHelper';
-export async function mergingRepoAnalysisResults(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis): Promise<AnalysisResult> {
-    let localRepoAnalysisResult = await analyzeRepo(repoPath);
+export async function mergingRepoAnalysisResults(sourceRepository: GitRepositoryParameters, repoAnalysisParameters: RepositoryAnalysis): Promise<AnalysisResult> {
+    let localRepoAnalysisResult = await analyzeRepo(sourceRepository.localPath);
     let analysisResult = localRepoAnalysisResult;
 
     //If Repo analysis fails then we'll go with the basic existing analysis
-    if (repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.applicationSettingsList) {
+    if (sourceRepository.repositoryProvider === RepositoryProvider.Github && !!repoAnalysisParameters && !!repoAnalysisParameters.applicationSettingsList) {
         analysisResult = new AnalysisResult();
         repoAnalysisParameters.applicationSettingsList.forEach((settings) => {
             analysisResult.languages.push(settings.language as SupportedLanguage);
@@ -75,12 +75,12 @@ export function uniqueValues(value, index, self) {
     return self.indexOf(value) === index;
 }
 
-export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, targetResource?: GenericResource): Promise<LocalPipelineTemplate[]> {
+export async function analyzeRepoAndListAppropriatePipeline(sourceRepository: GitRepositoryParameters, repoAnalysisParameters: RepositoryAnalysis, targetResource?: GenericResource): Promise<LocalPipelineTemplate[]> {
 
-    let analysisResult = await mergingRepoAnalysisResults(repoPath, repositoryProvider, repoAnalysisParameters);
+    let analysisResult = await mergingRepoAnalysisResults(sourceRepository, repoAnalysisParameters);
 
     let templateList: { [key: string]: LocalPipelineTemplate[] } = {};
-    switch (repositoryProvider) {
+    switch (sourceRepository.repositoryProvider) {
         case RepositoryProvider.AzureRepos:
             templateList = azurePipelineTemplates;
             break;
@@ -132,7 +132,7 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     }
 
     if (analysisResult.isFunctionApp) {
-        switch (repositoryProvider) {
+        switch (sourceRepository.repositoryProvider) {
             case RepositoryProvider.AzureRepos:
                 templateResult = azurePipelineTargetBasedTemplates[AzureTarget.FunctionApp].concat(templateResult);
                 break;
@@ -151,33 +151,58 @@ export async function analyzeRepoAndListAppropriatePipeline(repoPath: string, re
     return templateResult;
 }
 
-export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, repoPath: string, repositoryProvider: RepositoryProvider, repoAnalysisParameters: RepositoryAnalysis, githubPatToken?: string): Promise<PipelineTemplate[]> {
+async function convertToPipelineTemplate(remoteTemplates: TemplateInfo[]): Promise<PipelineTemplate[]> {
+    const pipelineTemplates: PipelineTemplate[] = [];
+    remoteTemplates.forEach((templateInfo: TemplateInfo) => {
+        const remoteTemplate: RemotePipelineTemplate = {
+            label: templateInfo.templateLabel,
+            targetType: getTargetType(templateInfo),
+            targetKind: getTargetKind(templateInfo),
+            templateType: TemplateType.REMOTE,
+            language: templateInfo.attributes.language,
+            id: templateInfo.templateId,
+            templateWeight: templateInfo.templateWeight,
+            workingDirectory: templateInfo.workingDirectory,
+            description: templateInfo.templateDescription,
+        };
+        pipelineTemplates.push(remoteTemplate);
+    });
+    return pipelineTemplates;
+}
 
-    var pipelineTemplates: PipelineTemplate[] = [];
-    var remoteTemplates: TemplateInfo[] = [];
-    var localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(repoPath, repositoryProvider, repoAnalysisParameters);
+export async function getFilteredTemplates(azureSession: AzureSession, resourceType: string, githubPatToken?: string): Promise<TemplateInfo[]> {
 
-    if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList && repositoryProvider === RepositoryProvider.Github) {
+    const client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
+    let filteredTemplates: TemplateInfo[];
+    switch (resourceType) {
+        case TargetResourceType.AKS:
+            filteredTemplates = await client.getTemplatesInfoByFilter("docker", "Azure:AKS");
+            return filteredTemplates;
+        default:
+            return null;
+    }
+}
+
+export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, sourceRepository: GitRepositoryParameters, pipelineType: PipelineType, repoAnalysisParameters: RepositoryAnalysis, githubPatToken?: string, resource?: GenericResource): Promise<PipelineTemplate[]> {
+
+    let pipelineTemplates: PipelineTemplate[] = [];
+    let remoteTemplates: TemplateInfo[] = [];
+    let localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(sourceRepository, repoAnalysisParameters);
+
+    if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList && pipelineType === PipelineType.GitHubPipeline) {
         try {
-            let client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
+            const client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
 
             await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
-                remoteTemplates = await client.getTemplates(repoAnalysisParameters);
+                if (!!resource) {
+                    // If resource is already selected, getting templates accordingly
+                    localPipelineTemplates = [];
+                    remoteTemplates = await getFilteredTemplates(azureSession, resource.type, githubPatToken);
+                } else {
+                    remoteTemplates = await client.getTemplates(repoAnalysisParameters);
+                }
             }, TelemetryKeys.TemplateServiceDuration);
-            remoteTemplates.forEach((templateInfo: TemplateInfo) => {
-                var remoteTemplate: RemotePipelineTemplate = {
-                    label: templateInfo.templateLabel,
-                    targetType: getTargetType(templateInfo),
-                    targetKind: getTargetKind(templateInfo),
-                    templateType: TemplateType.REMOTE,
-                    language: templateInfo.attributes.language,
-                    id: templateInfo.templateId,
-                    templateWeight: templateInfo.templateWeight,
-                    workingDirectory: templateInfo.workingDirectory,
-                    description: templateInfo.templateDescription,
-                };
-                pipelineTemplates.push(remoteTemplate);
-            });
+            pipelineTemplates = await convertToPipelineTemplate(remoteTemplates);
         }
         catch (err) {
             pipelineTemplates = [];
