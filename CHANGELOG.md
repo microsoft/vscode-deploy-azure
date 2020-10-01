@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). Versionin
 
 ## 1.1.4
 ### Added
+- Integrated with aks extension to support configure ci/cd on right click of a cluster
+
+## 1.1.4
+### Added
 - Added remote configurer for Github AKS workflow
 
 ## 1.1.3
