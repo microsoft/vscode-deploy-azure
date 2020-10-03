@@ -562,7 +562,7 @@ class Orchestrator {
             const workingDirectories = Array.from(new Set(this.inputs.potentialTemplates
                 .filter((template) => template.templateType === TemplateType.REMOTE)
                 .map((template: RemotePipelineTemplate) => template.workingDirectory.toLowerCase())));
-            const applicationSettings = repoAnalysisResult.applicationSettingsList.filter((applicationSetting) => {
+            applicationSettings = repoAnalysisResult.applicationSettingsList.filter((applicationSetting) => {
                 if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
                     return workingDirectories.indexOf(applicationSetting.settings.workingDirectory.toLowerCase()) >= 0;
                 }
