@@ -556,17 +556,20 @@ class Orchestrator {
         if (!repoAnalysisResult || !repoAnalysisResult.applicationSettingsList) {
             return;
         }
-        const workingDirectories = Array.from(new Set(this.inputs.potentialTemplates
-            .filter((template) => template.templateType === TemplateType.REMOTE)
-            .map((template: RemotePipelineTemplate) => template.workingDirectory.toLowerCase())));
-        const applicationSettings = repoAnalysisResult.applicationSettingsList.filter((applicationSetting) => {
-            if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
-                return workingDirectories.indexOf(applicationSetting.settings.workingDirectory.toLowerCase()) >= 0;
-            }
-            return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
 
-        });
+        let applicationSettings: ApplicationSettings[] = repoAnalysisResult.applicationSettingsList;
+        if (!this.isResourceAlreadySelected()) {
+            const workingDirectories = Array.from(new Set(this.inputs.potentialTemplates
+                .filter((template) => template.templateType === TemplateType.REMOTE)
+                .map((template: RemotePipelineTemplate) => template.workingDirectory.toLowerCase())));
+            const applicationSettings = repoAnalysisResult.applicationSettingsList.filter((applicationSetting) => {
+                if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
+                    return workingDirectories.indexOf(applicationSetting.settings.workingDirectory.toLowerCase()) >= 0;
+                }
+                return applicationSetting.language === this.inputs.pipelineConfiguration.template.language;
 
+            });
+        }
         this.context['repoAnalysisSettings'] = applicationSettings;
 
         if (!applicationSettings || applicationSettings.length === 0 ||
