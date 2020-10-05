@@ -544,14 +544,16 @@ class Orchestrator {
 
     private getMapOfUniqueLabels(pipelines: PipelineTemplate[]): Map<string, PipelineTemplate[]> {
         const pipelineMap: Map<string, PipelineTemplate[]> = new Map();
-        pipelines.forEach((element) => {
-            if (pipelineMap.has(element.label)) {
-                pipelineMap.get(element.label).push(element);
-            }
-            else {
-                pipelineMap.set(element.label, [element]);
-            }
-        });
+        if (!!pipelines) {
+            pipelines.forEach((element) => {
+                if (pipelineMap.has(element.label)) {
+                    pipelineMap.get(element.label).push(element);
+                }
+                else {
+                    pipelineMap.set(element.label, [element]);
+                }
+            });
+        }
         return pipelineMap;
     }
 
