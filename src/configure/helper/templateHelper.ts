@@ -153,20 +153,22 @@ export async function analyzeRepoAndListAppropriatePipeline(sourceRepository: Gi
 
 async function convertToPipelineTemplate(remoteTemplates: TemplateInfo[]): Promise<PipelineTemplate[]> {
     const pipelineTemplates: PipelineTemplate[] = [];
-    remoteTemplates.forEach((templateInfo: TemplateInfo) => {
-        const remoteTemplate: RemotePipelineTemplate = {
-            label: templateInfo.templateLabel,
-            targetType: getTargetType(templateInfo),
-            targetKind: getTargetKind(templateInfo),
-            templateType: TemplateType.REMOTE,
-            language: templateInfo.attributes.language,
-            id: templateInfo.templateId,
-            templateWeight: templateInfo.templateWeight,
-            workingDirectory: templateInfo.workingDirectory,
-            description: templateInfo.templateDescription,
-        };
-        pipelineTemplates.push(remoteTemplate);
-    });
+    if (!!remoteTemplates) {
+        remoteTemplates.forEach((templateInfo: TemplateInfo) => {
+            const remoteTemplate: RemotePipelineTemplate = {
+                label: templateInfo.templateLabel,
+                targetType: getTargetType(templateInfo),
+                targetKind: getTargetKind(templateInfo),
+                templateType: TemplateType.REMOTE,
+                language: templateInfo.attributes.language,
+                id: templateInfo.templateId,
+                templateWeight: templateInfo.templateWeight,
+                workingDirectory: templateInfo.workingDirectory,
+                description: templateInfo.templateDescription,
+            };
+            pipelineTemplates.push(remoteTemplate);
+        });
+    }
     return pipelineTemplates;
 }
 
