@@ -122,6 +122,7 @@ class Orchestrator {
             this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceType, this.inputs.targetResource.resource.type);
         if (targetType === TargetResourceType.WebApp) {
+            this.context['resourceId'] = this.inputs.targetResource.resource.id;
             telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, this.inputs.targetResource.resource.kind);
             telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash, Utilities.createSha256Hash(this.inputs.targetResource.resource.id));
         }
@@ -187,10 +188,15 @@ class Orchestrator {
             }
             const repoAnalysisResult = await this.getRepositoryAnalysis();
             this.setPipelineType();
-            // Right click on not resource not supported for Azure pipeline
-            if (this.isResourceAlreadySelected() && this.pipelineType === PipelineType.AzurePipeline) {
-                throw Error("Scenario not supported for Azure pipelines.");
+            // Right click on not resource not supported for Azure pipeline and local repo
+            if (this.isResourceAlreadySelected()) {
+                if (this.pipelineType === PipelineType.AzurePipeline) {
+                    throw Error("Scenario not supported for Azure pipelines.");
+                } else if (!repoAnalysisResult) {
+                    throw Error("Scenario not supported for local repositories. Ensure your repository is hosted on Github/Azure.");
+                }
             }
+
             await this.getTemplatesByRepoAnalysis(repoAnalysisResult);
             try {
                 if (!this.isResourceAlreadySelected()) {
