@@ -243,7 +243,6 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                     }
                 });
         }
-
     }
 
     private getInputDescriptor(wizardInputs: WizardInputs, inputId: string): ExtendedInputDescriptor {
