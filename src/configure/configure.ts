@@ -186,17 +186,26 @@ class Orchestrator {
             if (!this.inputs.azureSession) {
                 this.inputs.azureSession = getAzureSession();
             }
-            const repoAnalysisResult = await this.getRepositoryAnalysis();
-            this.setPipelineType();
-            // Right click on not resource not supported for Azure pipeline and local repo
+
+            // Right click scenario not supported for Azure repo
             if (this.isResourceAlreadySelected()) {
-                if (this.pipelineType === PipelineType.AzurePipeline) {
-                    throw Error("Scenario not supported for Azure pipelines.");
-                } else if (!repoAnalysisResult) {
-                    throw Error("Scenario not supported for local repositories. Ensure your repository is hosted on Github/Azure.");
+                if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.AzureRepos) {
+                    throw Error(Messages.GithubRepoRequired);
+                } else if (!extensionVariables.enableGitHubWorkflow) {
+                    // For github repo, we create a github pipeline
+                    extensionVariables.enableGitHubWorkflow = true;
+                    vscode.window.showInformationMessage("Creating github pipeline.");
                 }
             }
 
+            const repoAnalysisResult = await this.getRepositoryAnalysis();
+
+            // Right click on not resource not supported for local repo
+            if (this.isResourceAlreadySelected() && !repoAnalysisResult) {
+                throw Error(Messages.GithubRepoRequired);
+            }
+
+            this.setPipelineType();
             await this.getTemplatesByRepoAnalysis(repoAnalysisResult);
             try {
                 if (!this.isResourceAlreadySelected()) {

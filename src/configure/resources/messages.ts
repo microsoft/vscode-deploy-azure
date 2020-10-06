@@ -117,4 +117,5 @@ export class Messages {
     public static CreatingResourceGroup = "Creating resource group";
     public static ConfiguringGithubWorkflowAndDeployment = 'Configuring github workflow and proceeding to deployment...';
     public static ConfiguringGitubWorkflowFailed = 'Configuring github workflow failed due to %s';
+    public static GithubRepoRequired = "The selected folder is not a GitHub repository.Please ensure your repository is hosted on GitHub and try again.";
 }

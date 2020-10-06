@@ -215,8 +215,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
             pipelineTemplates = pipelineTemplates.concat(localPipelineTemplates);
             // sorted by weight
             pipelineTemplates = pipelineTemplates.sort((a, b) => {
-                if (a.templateWeight < b.templateWeight) { return 1; }
-                else { return -1; }
+                return b.templateWeight - a.templateWeight;
             });
             return pipelineTemplates;
         }
