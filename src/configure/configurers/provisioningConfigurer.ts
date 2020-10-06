@@ -163,7 +163,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     public async showPipelineFiles(): Promise<void> {
         this.filesToCommit.forEach(async (file) => {
             await this.localGitRepoHelper.addContentToFile(file.content, file.absPath);
-            await vscode.window.showTextDocument(vscode.Uri.file(file.absPath));
+            await vscode.window.showTextDocument(vscode.Uri.file(file.absPath), { preview: false });
         });
     }
 

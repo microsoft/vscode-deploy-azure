@@ -767,7 +767,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
     ],
     'docker': [
         {
-            label: 'Containerized application to AKS',
+            label: 'Containerized application to Azure Kubernetes Service (AKS)',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/azurePipelineTemplates/AksWithReuseACR.yml'),
             language: SupportedLanguage.DOCKER,
             targetType: TargetResourceType.AKS,
@@ -814,7 +814,7 @@ let azurePipelineTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[
 let githubWorklowTemplates: { [key in SupportedLanguage]: LocalPipelineTemplate[] } = {
     'docker': [
         {
-            label: 'Containerized application to AKS',
+            label: 'Containerized application to Azure Kubernetes Service (AKS)',
             path: path.join(path.dirname(path.dirname(__dirname)), 'configure/templates/githubWorkflowTemplates/AksWithReuseACR.yml'),
             language: SupportedLanguage.DOCKER,
             targetType: TargetResourceType.AKS,
