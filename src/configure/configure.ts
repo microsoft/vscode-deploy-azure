@@ -94,6 +94,7 @@ class Orchestrator {
     private continueOrchestration: boolean = true;
     private context: StringMap<any> = {};
     private pipelineType: PipelineType;
+    private isLocalRepo: boolean;
 
     public constructor() {
         this.inputs = new WizardInputs();
@@ -187,9 +188,9 @@ class Orchestrator {
                 this.inputs.azureSession = getAzureSession();
             }
 
-            // Right click scenario not supported for Azure repo
+            // Right click scenario not supported for Azure and local repo
             if (this.isResourceAlreadySelected()) {
-                if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.AzureRepos) {
+                if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.AzureRepos || this.isLocalRepo) {
                     throw Error(Messages.GithubRepoRequired);
                 } else if (!extensionVariables.enableGitHubWorkflow) {
                     // For github repo, we create a github pipeline
@@ -199,11 +200,6 @@ class Orchestrator {
             }
 
             const repoAnalysisResult = await this.getRepositoryAnalysis();
-
-            // Right click on not resource not supported for local repo
-            if (this.isResourceAlreadySelected() && !repoAnalysisResult) {
-                throw Error(Messages.GithubRepoRequired);
-            }
 
             this.setPipelineType();
             await this.getTemplatesByRepoAnalysis(repoAnalysisResult);
@@ -299,7 +295,6 @@ class Orchestrator {
             if (!this.workspacePath) { // This is to handle when we have already identified the repository details.
                 await this.setWorkspace();
             }
-
             await this.getGitDetailsFromRepository();
         }
         catch (error) {
@@ -394,6 +389,7 @@ class Orchestrator {
     }
 
     private setDefaultRepositoryDetails(): void {
+        this.isLocalRepo = true;
         this.inputs.pipelineConfiguration.workingDirectory = '.';
         this.inputs.sourceRepository = {
             branch: 'master',
