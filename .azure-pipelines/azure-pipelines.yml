@@ -1,4 +1,4 @@
-# CI and PR build script 
+# CI and PR build scripts
 #
 # There should be no deep magic here. The developer experience and CI experience
 # must remain as close to one another as possible.
