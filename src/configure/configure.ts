@@ -183,7 +183,7 @@ class Orchestrator {
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
             if (!this.inputs.azureSession) {
-                this.inputs.azureSession = getAzureSession();
+                this.inputs.azureSession = await getAzureSession();
             }
             const repoAnalysisResult = await this.getRepositoryAnalysis();
             this.setPipelineType();
@@ -446,7 +446,7 @@ class Orchestrator {
     private async extractAzureResourceFromNode(node: AzureTreeItem | any): Promise<boolean> {
         if (!!node.fullId) {
             this.inputs.subscriptionId = node.root.subscriptionId;
-            this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+            this.inputs.azureSession = await getSubscriptionSession(this.inputs.subscriptionId);
             this.azureResourceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
 
             try {
@@ -472,7 +472,7 @@ class Orchestrator {
         else if (!!node.cloudResource && node.cloudResource.nodeType === 'cluster') {
             this.inputs.subscriptionId = node.cloudResource.subscription.subscriptionId;
             this.context['subscriptionId'] = this.inputs.subscriptionId;
-            this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+            this.inputs.azureSession = await getSubscriptionSession(this.inputs.subscriptionId);
             this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.subscriptionId);
             const cluster = await this.azureResourceClient.getResource(node.cloudResource.id, '2019-08-01');
             telemetryHelper.setTelemetry(TelemetryKeys.resourceType, cluster.type);
@@ -496,7 +496,7 @@ class Orchestrator {
         const selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
         this.inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
         this.context['subscriptionId'] = this.inputs.subscriptionId;
-        this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+        this.inputs.azureSession = await getSubscriptionSession(this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
