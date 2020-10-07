@@ -22,7 +22,6 @@ export function convertExpression(expression: string): string {
         helperName = expression.substring(openingHelperFunc.length + 1, expression.indexOf(' '));
         parts.push(expression.substring(0, expression.indexOf(' ')) + closingHelperFunc);
         let part = expression.substring(expression.indexOf(' '), expression.indexOf(closingHelperFunc)).trim();
-        //let inputs = part.match(parametersRegex) || [];
         let input = parametersRegex.exec(part);
         while (input) {
             part = replaceAtIndex(part, input[0], "{{{" + input[0] + "}}}", input.index);
