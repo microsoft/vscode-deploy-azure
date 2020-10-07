@@ -469,12 +469,12 @@ class Orchestrator {
                 throw error;
             }
         }
-        else if (node.nodeType === "cluster") {
+        else if (node.resource.nodeType === "cluster") {
             this.inputs.subscriptionId = node.subscriptionId;
             this.context['subscriptionId'] = this.inputs.subscriptionId;
             this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
             this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.subscriptionId);
-            const cluster = await this.azureResourceClient.getResource(node.resourceId, '2019-08-01');
+            const cluster = await this.azureResourceClient.getResource(node.resource.id, '2019-08-01');
             telemetryHelper.setTelemetry(TelemetryKeys.resourceType, cluster.type);
             AzureResourceClient.validateTargetResourceType(cluster);
             cluster["parsedResourceId"] = new ParsedAzureResourceId(cluster.id);
