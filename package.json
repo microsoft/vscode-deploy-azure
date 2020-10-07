@@ -97,7 +97,7 @@
                 "deployToAzure.UseAzurePipelinesForGithub": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Setup CI/CD in Azure Pipelines for Github Repository"
+                    "description": "Setup CI/CD in Azure Pipelines for GitHub Repositories. Please note that this setting is ignored while configuring the CI/CD workflows in Azure Kubernetes Service extension for Visual Studio Code."
                 },
                 "deployToAzure.UseGithubForCreatingNewRepository": {
                     "type": "boolean",
