@@ -30,7 +30,7 @@ jobs:
       working-directory: {{{ workingDirectory }}}
       run: |
         npm install
-        grunt --gruntfile {{{repositoryAnalysisApplicationSettings.settings.nodeGruntFilePath}}}
+        grunt --gruntfile {{{repositoryAnalysisApplicationSettings.settings.gruntFilePath}}}
 
     - uses: azure/appservice-settings@v1
       with:
