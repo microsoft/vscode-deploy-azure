@@ -191,7 +191,7 @@ class Orchestrator {
             // Right click scenario not supported for Azure and local repo
             if (this.isResourceAlreadySelected()) {
                 if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.AzureRepos || this.isLocalRepo) {
-                    throw Error(Messages.GithubRepoRequired);
+                    throw new WhiteListedError(Messages.GithubRepoRequired);
                 } else if (!extensionVariables.enableGitHubWorkflow) {
                     // For github repo, we create a github pipeline
                     extensionVariables.enableGitHubWorkflow = true;
