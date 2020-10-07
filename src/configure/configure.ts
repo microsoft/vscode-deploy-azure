@@ -94,7 +94,6 @@ class Orchestrator {
     private continueOrchestration: boolean = true;
     private context: StringMap<any> = {};
     private pipelineType: PipelineType;
-    private isLocalRepo: boolean;
 
     public constructor() {
         this.inputs = new WizardInputs();
@@ -190,12 +189,11 @@ class Orchestrator {
 
             // Right click scenario not supported for Azure and local repo
             if (this.isResourceAlreadySelected()) {
-                if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.AzureRepos || this.isLocalRepo) {
+                if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.AzureRepos || extensionVariables.isLocalRepo) {
                     throw new WhiteListedError(Messages.GithubRepoRequired);
                 } else if (!extensionVariables.enableGitHubWorkflow) {
                     // For github repo, we create a github pipeline
                     extensionVariables.enableGitHubWorkflow = true;
-                    vscode.window.showInformationMessage("Creating github pipeline.");
                 }
             }
 
@@ -389,7 +387,7 @@ class Orchestrator {
     }
 
     private setDefaultRepositoryDetails(): void {
-        this.isLocalRepo = true;
+        extensionVariables.isLocalRepo = true;
         this.inputs.pipelineConfiguration.workingDirectory = '.';
         this.inputs.sourceRepository = {
             branch: 'master',
