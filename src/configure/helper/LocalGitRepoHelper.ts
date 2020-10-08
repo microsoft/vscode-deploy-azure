@@ -111,6 +111,7 @@ export class LocalGitRepoHelper {
      */
     public async addContentToFile(content: string, pathToFile: string): Promise<string> {
         fs.writeFileSync(pathToFile, content);
+        await vscode.workspace.saveAll(true);
         return pathToFile;
     }
 
