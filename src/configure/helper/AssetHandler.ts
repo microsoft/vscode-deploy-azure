@@ -17,7 +17,7 @@ const Layer = "AssetCreationHandler";
 export class AssetHandler {
     // tslint:disable-next-line:no-reserved-keywords
     public async createAssets(assets: TemplateAsset[], inputs: WizardInputs, createAsset: (name: string, type: TemplateAssetType, data: any, inputs: WizardInputs) => Promise<string>): Promise<void> {
-        if (inputs.pipelineConfiguration.template.label === "Containerized application to Azure Kubernetes Service (AKS)") {
+        if (inputs.pipelineConfiguration.template.label === "Containerized application to AKS") {
             if (!!assets && assets.length > 0) {
                 for (let asset of assets) {
                     await this.createAssetInternal(asset, inputs, createAsset);
