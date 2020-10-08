@@ -153,20 +153,22 @@ export async function analyzeRepoAndListAppropriatePipeline(sourceRepository: Gi
 
 async function convertToPipelineTemplate(remoteTemplates: TemplateInfo[]): Promise<PipelineTemplate[]> {
     const pipelineTemplates: PipelineTemplate[] = [];
-    remoteTemplates.forEach((templateInfo: TemplateInfo) => {
-        const remoteTemplate: RemotePipelineTemplate = {
-            label: templateInfo.templateLabel,
-            targetType: getTargetType(templateInfo),
-            targetKind: getTargetKind(templateInfo),
-            templateType: TemplateType.REMOTE,
-            language: templateInfo.attributes.language,
-            id: templateInfo.templateId,
-            templateWeight: templateInfo.templateWeight,
-            workingDirectory: templateInfo.workingDirectory,
-            description: templateInfo.templateDescription,
-        };
-        pipelineTemplates.push(remoteTemplate);
-    });
+    if (!!remoteTemplates) {
+        remoteTemplates.forEach((templateInfo: TemplateInfo) => {
+            const remoteTemplate: RemotePipelineTemplate = {
+                label: templateInfo.templateLabel,
+                targetType: getTargetType(templateInfo),
+                targetKind: getTargetKind(templateInfo),
+                templateType: TemplateType.REMOTE,
+                language: templateInfo.attributes.language,
+                id: templateInfo.templateId,
+                templateWeight: templateInfo.templateWeight,
+                workingDirectory: templateInfo.workingDirectory,
+                description: templateInfo.templateDescription,
+            };
+            pipelineTemplates.push(remoteTemplate);
+        });
+    }
     return pipelineTemplates;
 }
 
@@ -176,11 +178,22 @@ export async function getFilteredTemplates(azureSession: AzureSession, resourceT
     let filteredTemplates: TemplateInfo[];
     switch (resourceType) {
         case TargetResourceType.AKS:
-            filteredTemplates = await client.getTemplatesInfoByFilter("docker", "Azure:AKS");
+            await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+                filteredTemplates = await client.getTemplatesInfoByFilter("docker", "Azure:AKS");
+            }, TelemetryKeys.TemplateServiceDuration);
             return filteredTemplates;
         default:
             return null;
     }
+}
+
+export async function getTemplates(azureSession: AzureSession, repoAnalysisParameters: RepositoryAnalysis, githubPatToken?: string) {
+    const client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
+    let templates: TemplateInfo[];
+    await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
+        templates = await client.getTemplates(repoAnalysisParameters);
+    }, TelemetryKeys.TemplateServiceDuration);
+    return templates;
 }
 
 export async function analyzeRepoAndListAppropriatePipeline2(azureSession: AzureSession, sourceRepository: GitRepositoryParameters, pipelineType: PipelineType, repoAnalysisParameters: RepositoryAnalysis, githubPatToken?: string, resource?: GenericResource): Promise<PipelineTemplate[]> {
@@ -189,32 +202,28 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
     let remoteTemplates: TemplateInfo[] = [];
     let localPipelineTemplates: LocalPipelineTemplate[] = await this.analyzeRepoAndListAppropriatePipeline(sourceRepository, repoAnalysisParameters);
 
-    if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList && pipelineType === PipelineType.GitHubPipeline) {
+    if (pipelineType === PipelineType.GitHubPipeline) {
         try {
-            const client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
-
-            await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
-                if (!!resource) {
-                    // If resource is already selected, getting templates accordingly
-                    localPipelineTemplates = [];
-                    remoteTemplates = await getFilteredTemplates(azureSession, resource.type, githubPatToken);
-                } else {
-                    remoteTemplates = await client.getTemplates(repoAnalysisParameters);
-                }
-            }, TelemetryKeys.TemplateServiceDuration);
+            if (!!resource) {
+                localPipelineTemplates = [];
+                remoteTemplates = await getFilteredTemplates(azureSession, resource.type, githubPatToken);
+            }
+            else if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList) {
+                remoteTemplates = await getTemplates(azureSession, repoAnalysisParameters, githubPatToken);
+            }
             pipelineTemplates = await convertToPipelineTemplate(remoteTemplates);
+            pipelineTemplates = pipelineTemplates.concat(localPipelineTemplates);
+            // sorted by weight
+            pipelineTemplates = pipelineTemplates.sort((a, b) => {
+                return b.templateWeight - a.templateWeight;
+            });
+            return pipelineTemplates;
         }
         catch (err) {
             pipelineTemplates = [];
             telemetryHelper.logError(Layer, TracePoints.TemplateServiceCallFailed, err);
+            return null;
         }
-        pipelineTemplates = pipelineTemplates.concat(localPipelineTemplates);
-        // sorted by weight
-        pipelineTemplates = pipelineTemplates.sort((a, b) => {
-            if (a.templateWeight < b.templateWeight) { return 1; }
-            else { return -1; }
-        });
-        return pipelineTemplates;
     }
     else {
         return localPipelineTemplates;
