@@ -122,6 +122,7 @@ class Orchestrator {
             this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.resourceType, this.inputs.targetResource.resource.type);
         if (targetType === TargetResourceType.WebApp) {
+            this.context['resourceId'] = this.inputs.targetResource.resource.id;
             telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, this.inputs.targetResource.resource.kind);
             telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash, Utilities.createSha256Hash(this.inputs.targetResource.resource.id));
         }
@@ -185,12 +186,20 @@ class Orchestrator {
             if (!this.inputs.azureSession) {
                 this.inputs.azureSession = getAzureSession();
             }
-            const repoAnalysisResult = await this.getRepositoryAnalysis();
-            this.setPipelineType();
-            // Right click on not resource not supported for Azure pipeline
-            if (this.isResourceAlreadySelected() && this.pipelineType === PipelineType.AzurePipeline) {
-                throw Error("Scenario not supported for Azure pipelines.");
+
+            // Right click scenario not supported for Azure and local repo
+            if (this.isResourceAlreadySelected()) {
+                if (this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.AzureRepos || extensionVariables.isLocalRepo) {
+                    throw new WhiteListedError(Messages.GithubRepoRequired);
+                } else if (!extensionVariables.enableGitHubWorkflow) {
+                    // For github repo, we create a github pipeline
+                    extensionVariables.enableGitHubWorkflow = true;
+                }
             }
+
+            const repoAnalysisResult = await this.getRepositoryAnalysis();
+
+            this.setPipelineType();
             await this.getTemplatesByRepoAnalysis(repoAnalysisResult);
             try {
                 if (!this.isResourceAlreadySelected()) {
@@ -284,7 +293,6 @@ class Orchestrator {
             if (!this.workspacePath) { // This is to handle when we have already identified the repository details.
                 await this.setWorkspace();
             }
-
             await this.getGitDetailsFromRepository();
         }
         catch (error) {
@@ -379,6 +387,7 @@ class Orchestrator {
     }
 
     private setDefaultRepositoryDetails(): void {
+        extensionVariables.isLocalRepo = true;
         this.inputs.pipelineConfiguration.workingDirectory = '.';
         this.inputs.sourceRepository = {
             branch: 'master',
@@ -538,14 +547,16 @@ class Orchestrator {
 
     private getMapOfUniqueLabels(pipelines: PipelineTemplate[]): Map<string, PipelineTemplate[]> {
         const pipelineMap: Map<string, PipelineTemplate[]> = new Map();
-        pipelines.forEach((element) => {
-            if (pipelineMap.has(element.label)) {
-                pipelineMap.get(element.label).push(element);
-            }
-            else {
-                pipelineMap.set(element.label, [element]);
-            }
-        });
+        if (!!pipelines) {
+            pipelines.forEach((element) => {
+                if (pipelineMap.has(element.label)) {
+                    pipelineMap.get(element.label).push(element);
+                }
+                else {
+                    pipelineMap.set(element.label, [element]);
+                }
+            });
+        }
         return pipelineMap;
     }
 
