@@ -184,7 +184,7 @@ class Orchestrator {
         if (this.continueOrchestration) {
             await this.getSourceRepositoryDetails();
             if (!this.inputs.azureSession) {
-                this.inputs.azureSession = getAzureSession();
+                this.inputs.azureSession = await getAzureSession();
             }
 
             // Right click scenario not supported for Azure and local repo
@@ -455,7 +455,7 @@ class Orchestrator {
     private async extractAzureResourceFromNode(node: AzureTreeItem | any): Promise<boolean> {
         if (!!node.fullId) {
             this.inputs.subscriptionId = node.root.subscriptionId;
-            this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+            this.inputs.azureSession = await getSubscriptionSession(this.inputs.subscriptionId);
             this.azureResourceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
 
             try {
@@ -481,7 +481,7 @@ class Orchestrator {
         else if (node.resource.nodeType === "cluster") {
             this.inputs.subscriptionId = node.subscriptionId;
             this.context['subscriptionId'] = this.inputs.subscriptionId;
-            this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+            this.inputs.azureSession = await getSubscriptionSession(this.inputs.subscriptionId);
             this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.subscriptionId);
             const cluster = await this.azureResourceClient.getResource(node.resource.id, '2019-08-01');
             telemetryHelper.setTelemetry(TelemetryKeys.resourceType, cluster.type);
@@ -505,7 +505,7 @@ class Orchestrator {
         const selectedSubscription: QuickPickItemWithData = await this.controlProvider.showQuickPick(constants.SelectSubscription, subscriptionList, { placeHolder: Messages.selectSubscription }, TelemetryKeys.SubscriptionListCount);
         this.inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
         this.context['subscriptionId'] = this.inputs.subscriptionId;
-        this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+        this.inputs.azureSession = await getSubscriptionSession(this.inputs.subscriptionId);
         telemetryHelper.setTelemetry(TelemetryKeys.SubscriptionId, this.inputs.subscriptionId);
     }
 
@@ -708,7 +708,7 @@ class Orchestrator {
         await pipelineConfigurer.createPreRequisites(this.inputs, !!this.azureResourceClient ? this.azureResourceClient : new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId));
 
         telemetryHelper.setCurrentStep('CreateAssets');
-        if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github) {
+        if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github && extensionVariables.enableGitHubWorkflow) {
             await (pipelineConfigurer as RemoteGitHubWorkflowConfigurer).createAssets(ConfigurationStage.Pre);
         } else {
             await new AssetHandler().createAssets((this.inputs.pipelineConfiguration.template as LocalPipelineTemplate).assets, this.inputs, (name: string, assetType: TemplateAssetType, data: any, inputs: WizardInputs) => pipelineConfigurer.createAsset(name, assetType, data, inputs));
