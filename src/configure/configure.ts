@@ -13,6 +13,7 @@ import { RemoteGitHubWorkflowConfigurer } from './configurers/remoteGitHubWorkfl
 import { ResourceSelectorFactory } from './configurers/ResourceSelectorFactory';
 import { AssetHandler } from './helper/AssetHandler';
 import { getAzureSession, getSubscriptionSession } from './helper/azureSessionHelper';
+import { Cache } from './helper/Cache';
 import { ControlProvider } from './helper/controlProvider';
 import { AzureDevOpsHelper } from './helper/devOps/azureDevOpsHelper';
 import { GitHubProvider } from './helper/gitHubHelper';
@@ -96,6 +97,7 @@ class Orchestrator {
     private pipelineType: PipelineType;
 
     public constructor() {
+        Cache.getCache().clearCache();
         this.inputs = new WizardInputs();
         this.controlProvider = new ControlProvider();
         UniqueResourceNameSuffix = uuid().substr(0, 5);
@@ -123,6 +125,7 @@ class Orchestrator {
         telemetryHelper.setTelemetry(TelemetryKeys.resourceType, this.inputs.targetResource.resource.type);
         if (targetType === TargetResourceType.WebApp) {
             this.context['resourceId'] = this.inputs.targetResource.resource.id;
+            Cache.getCache().put(this.inputs.targetResource.resource.id, this.inputs.targetResource.resource);
             telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, this.inputs.targetResource.resource.kind);
             telemetryHelper.setTelemetry(TelemetryKeys.resourceIdHash, Utilities.createSha256Hash(this.inputs.targetResource.resource.id));
         }
@@ -277,10 +280,11 @@ class Orchestrator {
         if (!!node) {
             if (await this.extractAzureResourceFromNode(node)) {
                 this.context['isResourceAlreadySelected'] = true;
+                Cache.getCache().put(this.inputs.targetResource.resource.id, this.inputs.targetResource.resource);
                 this.context['resourceId'] = this.inputs.targetResource.resource.id;
             } else {
                 if (node.fsPath) {
-                    //right click on a folder
+                    // right click on a folder
                     this.workspacePath = node.fsPath;
                     telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
                 }
