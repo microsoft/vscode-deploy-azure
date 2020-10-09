@@ -10,9 +10,11 @@ import { Messages } from './resources/messages';
 import { TelemetryKeys } from './resources/telemetryKeys';
 import { TracePoints } from './resources/tracePoints';
 
+
 const Layer = 'browsePipeline';
 
 export async function browsePipeline(node: AzureTreeItem): Promise<void> {
+    vscode.window.showErrorMessage("inside brpwse pipeline func");
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
         try {
             if (!!node && !!node.fullId) {

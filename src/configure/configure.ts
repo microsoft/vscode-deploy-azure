@@ -38,6 +38,9 @@ const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
 export async function configurePipeline(node: AzureTreeItem) {
+    vscode.window.showErrorMessage("inside configure pipeline");
+    throw Error("vhvh");
+
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
         try {
             if (!(await extensionVariables.azureAccountExtensionApi.waitForLogin())) {
@@ -105,6 +108,7 @@ class Orchestrator {
 
     public async configure(node: any): Promise<void> {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
+        vscode.window.showErrorMessage(node.id);
         await this.getInputs(node);
         if (this.continueOrchestration) {
             if (extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
@@ -174,6 +178,8 @@ class Orchestrator {
     }
 
     private async getInputs(node: any): Promise<void> {
+
+        vscode.window.showErrorMessage("inside get inputs" + node);
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseGithubForCreatingNewRepository,
             vscode.workspace.getConfiguration().get('deployToAzure.UseGithubForCreatingNewRepository'));
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseAzurePipelinesForGithub,
