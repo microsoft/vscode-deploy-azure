@@ -258,8 +258,6 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                         metadata["properties"]["configName"] = `${doc["name"]}`;
                     }
                     metadata["properties"]["configPath"] = `${configPath}`;
-                    metadata["properties"]["repoUrl"] = `https://github.com/${inputs.sourceRepository.repositoryId}`;
-                    metadata["properties"]["branch"] = inputs.sourceRepository.branch;
 
                     await (azureResourceClient as AppServiceClient).updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
                     resolve();
