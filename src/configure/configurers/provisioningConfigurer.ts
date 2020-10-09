@@ -107,7 +107,9 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         let provisioningServiceResponse: ProvisioningConfiguration;
         if (!!commitOrDiscard && commitOrDiscard.toLowerCase() === Messages.commitAndPush.toLowerCase()) {
             telemetryHelper.setCurrentStep('ConfiguringPreRequisiteParamsForCompleteMode');
-            await this.createSPN(inputs);
+            if (this.getInputDescriptor(inputs, "azureAuth")) {
+                await this.createSPN(inputs);
+            }
             provisioningServiceResponse = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: Messages.ConfiguringGithubWorkflowAndDeployment },
                 async () => {
                     try {
@@ -163,7 +165,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     public async showPipelineFiles(): Promise<void> {
         this.filesToCommit.forEach(async (file) => {
             await this.localGitRepoHelper.addContentToFile(file.content, file.absPath);
-            await vscode.window.showTextDocument(vscode.Uri.file(file.absPath));
+            await vscode.window.showTextDocument(vscode.Uri.file(file.absPath), { preview: false });
         });
     }
 
@@ -211,39 +213,35 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     public async createSPN(wizardInputs: WizardInputs): Promise<void> {
         // Create SPN and ACRResource group for reuseACR flow set to false
         const inputDescriptor = this.getInputDescriptor(wizardInputs, "azureAuth");
-        if (inputDescriptor != undefined) {
-            const createResourceGroup = InputControl.getInputDescriptorProperty(inputDescriptor, "resourceGroup", wizardInputs.pipelineConfiguration.params);
-            const location = InputControl.getInputDescriptorProperty(inputDescriptor, "location", wizardInputs.pipelineConfiguration.params);
-            if (createResourceGroup && createResourceGroup.length > 0 && createResourceGroup[0] != "" && location && location.length > 0 && location[0] != "") {
-                await vscode.window.withProgress(
-                    { location: vscode.ProgressLocation.Notification, title: Messages.CreatingResourceGroup },
-                    async () => {
-                        try {
-                            // TODO: Add support for multiple resource group
-                            return await new ArmRestClient(wizardInputs.azureSession).createResourceGroup(wizardInputs.subscriptionId, createResourceGroup[0], location[0]);
-                        } catch (error) {
-                            telemetryHelper.logError(Layer, TracePoints.ResourceGroupCreationFailed, error);
-                            throw error;
-                        }
-                    });
-            }
+        const createResourceGroup = InputControl.getInputDescriptorProperty(inputDescriptor, "resourceGroup", wizardInputs.pipelineConfiguration.params);
+        const location = InputControl.getInputDescriptorProperty(inputDescriptor, "location", wizardInputs.pipelineConfiguration.params);
+        if (createResourceGroup && createResourceGroup.length > 0 && createResourceGroup[0] != "" && location && location.length > 0 && location[0] != "") {
+            await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.CreatingResourceGroup },
+                async () => {
+                    try {
+                        // TODO: Add support for multiple resource group
+                        return await new ArmRestClient(wizardInputs.azureSession).createResourceGroup(wizardInputs.subscriptionId, createResourceGroup[0], location[0]);
+                    } catch (error) {
+                        telemetryHelper.logError(Layer, TracePoints.ResourceGroupCreationFailed, error);
+                        throw error;
+                    }
+                });
+        }
 
-            const scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", wizardInputs.pipelineConfiguration.params);
-            if (scope && scope.length > 0 && scope[0] != "") {
-                wizardInputs.pipelineConfiguration.params["azureAuth"] = await vscode.window.withProgress(
-                    { location: vscode.ProgressLocation.Notification, title: Messages.CreatingSPN },
-                    async () => {
-                        try {
-                            // TODO: Need to add support for array of scope
-                            return await this.getAzureSPNSecret(wizardInputs, scope[0]);
-                        } catch (error) {
-                            telemetryHelper.logError(Layer, TracePoints.SPNCreationFailed, error);
-                            throw error;
-                        }
-                    });
-            }
-        } else {
-            throw new Error("Input descriptor undefined");
+        const scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", wizardInputs.pipelineConfiguration.params);
+        if (scope && scope.length > 0 && scope[0] != "") {
+            wizardInputs.pipelineConfiguration.params["azureAuth"] = await vscode.window.withProgress(
+                { location: vscode.ProgressLocation.Notification, title: Messages.CreatingSPN },
+                async () => {
+                    try {
+                        // TODO: Need to add support for array of scope
+                        return await this.getAzureSPNSecret(wizardInputs, scope[0]);
+                    } catch (error) {
+                        telemetryHelper.logError(Layer, TracePoints.SPNCreationFailed, error);
+                        throw error;
+                    }
+                });
         }
     }
 
