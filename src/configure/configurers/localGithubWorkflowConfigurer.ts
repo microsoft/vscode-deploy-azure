@@ -2,6 +2,7 @@ import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as fs from 'fs';
 import * as ymlconfig from 'js-yaml';
 import * as path from 'path';
+import * as Q from 'q';
 import * as utils from 'util';
 import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
@@ -262,7 +263,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                     "repoUrl": `https://github.com/${inputs.sourceRepository.repositoryId}`,
                     "branch": inputs.sourceRepository.branch,
                 };
-                await (azureResourceClient as AppServiceClient).setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
+                let sourceControlPromise = (azureResourceClient as AppServiceClient).setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
 
                 // send a deployment log with information about the setup pipeline and links.
                 let deploymentMessage = JSON.stringify(<DeploymentMessage>{
@@ -272,9 +273,12 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
 
                 let authorName = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getUsername();
                 let deployerName = 'GITHUBACTION';
-                await (azureResourceClient as AppServiceClient).publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage, authorName, deployerName);
-
-                telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
+                let updateDeploymentLogPromise = (azureResourceClient as AppServiceClient).publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage, authorName, deployerName);
+                Q.all([sourceControlPromise, updateDeploymentLogPromise])
+                    .then(() => {
+                        telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
+                        telemetryHelper.setTelemetry(TelemetryKeys.UpdateWepAppSourceControl, 'true');
+                    });
             }
             else if (TemplateParameterHelper.getParameterForTargetResourceType((inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters, TargetResourceType.AKS)) {
                 let aksResource: GenericResource = inputs.pipelineConfiguration.params[TemplateParameterHelper.getParameterForTargetResourceType((inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters, TargetResourceType.AKS).name];
