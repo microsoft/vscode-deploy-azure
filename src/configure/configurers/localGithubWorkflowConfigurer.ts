@@ -277,7 +277,6 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                 Q.all([sourceControlPromise, updateDeploymentLogPromise])
                     .then(() => {
                         telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
-                        telemetryHelper.setTelemetry(TelemetryKeys.UpdateWepAppSourceControl, 'true');
                     });
             }
             else if (TemplateParameterHelper.getParameterForTargetResourceType((inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters, TargetResourceType.AKS)) {

@@ -15,7 +15,6 @@ export class TelemetryKeys {
     public static BrowsedExistingPipeline = 'browsedExistingPipeline';
     public static ClickedConfigurePipeline = 'clickedConfigurePipeline';
     public static UpdatedWebAppMetadata = 'updatedWebAppMetadata';
-    public static UpdateWepAppSourceControl = 'updateWebAppSourceControl';
     public static NewDevOpsRepository = 'newDevOpsRepository';
     public static AzureLoginOption = 'azureLoginOption';
     public static PipelineAlreadyConfigured = 'pipelineAlreadyConfigured';
