@@ -2,7 +2,6 @@ import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import * as fs from 'fs';
 import * as ymlconfig from 'js-yaml';
 import * as path from 'path';
-import * as Q from 'q';
 import * as utils from 'util';
 import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
@@ -237,16 +236,8 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
     public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
         try {
             if (inputs.targetResource && inputs.targetResource.resource && inputs.targetResource.resource.type === TargetResourceType.WebApp) {
-                // Update web app sourceControls as GitHubAction
-                let sourceControlProperties = {
-                    "isGitHubAction": true,
-                    "repoUrl": `https://github.com/${inputs.sourceRepository.repositoryId}`,
-                    "branch": inputs.sourceRepository.branch,
-                };
-                await (azureResourceClient as AppServiceClient).setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
-
                 // Update web app metadata
-                let updateMetadataPromise = new Promise<void>(async (resolve) => {
+                await new Promise<void>(async (resolve) => {
                     let metadata = await (azureResourceClient as AppServiceClient).getAppServiceMetadata(inputs.targetResource.resource.id);
                     metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
 
@@ -258,10 +249,20 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                         metadata["properties"]["configName"] = `${doc["name"]}`;
                     }
                     metadata["properties"]["configPath"] = `${configPath}`;
+                    metadata["properties"]["repoUrl"] = `https://github.com/${inputs.sourceRepository.repositoryId}`;
+                    metadata["properties"]["branch"] = inputs.sourceRepository.branch;
 
                     await (azureResourceClient as AppServiceClient).updateAppServiceMetadata(inputs.targetResource.resource.id, metadata);
                     resolve();
                 });
+
+                // Update web app sourceControls as GitHubAction
+                const sourceControlProperties = {
+                    "isGitHubAction": true,
+                    "repoUrl": `https://github.com/${inputs.sourceRepository.repositoryId}`,
+                    "branch": inputs.sourceRepository.branch,
+                };
+                await (azureResourceClient as AppServiceClient).setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
 
                 // send a deployment log with information about the setup pipeline and links.
                 let deploymentMessage = JSON.stringify(<DeploymentMessage>{
@@ -271,12 +272,9 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
 
                 let authorName = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getUsername();
                 let deployerName = 'GITHUBACTION';
-                let updateDeploymentLogPromise = (azureResourceClient as AppServiceClient).publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage, authorName, deployerName);
+                await (azureResourceClient as AppServiceClient).publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage, authorName, deployerName);
 
-                Q.all([updateMetadataPromise, updateDeploymentLogPromise])
-                    .then(() => {
-                        telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
-                    });
+                telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
             }
             else if (TemplateParameterHelper.getParameterForTargetResourceType((inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters, TargetResourceType.AKS)) {
                 let aksResource: GenericResource = inputs.pipelineConfiguration.params[TemplateParameterHelper.getParameterForTargetResourceType((inputs.pipelineConfiguration.template as LocalPipelineTemplate).parameters, TargetResourceType.AKS).name];
