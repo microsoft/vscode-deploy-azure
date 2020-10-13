@@ -237,16 +237,8 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
     public async executePostPipelineCreationSteps(inputs: WizardInputs, azureResourceClient: AzureResourceClient): Promise<void> {
         try {
             if (inputs.targetResource && inputs.targetResource.resource && inputs.targetResource.resource.type === TargetResourceType.WebApp) {
-                // Update web app sourceControls as GitHubAction
-                let sourceControlProperties = {
-                    "isGitHubAction": true,
-                    "repoUrl": `https://github.com/${inputs.sourceRepository.repositoryId}`,
-                    "branch": inputs.sourceRepository.branch,
-                };
-                await (azureResourceClient as AppServiceClient).setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
-
                 // Update web app metadata
-                let updateMetadataPromise = new Promise<void>(async (resolve) => {
+                await new Promise<void>(async (resolve) => {
                     let metadata = await (azureResourceClient as AppServiceClient).getAppServiceMetadata(inputs.targetResource.resource.id);
                     metadata["properties"] = metadata["properties"] ? metadata["properties"] : {};
 
@@ -265,6 +257,14 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                     resolve();
                 });
 
+                // Update web app sourceControls as GitHubAction
+                const sourceControlProperties = {
+                    "isGitHubAction": true,
+                    "repoUrl": `https://github.com/${inputs.sourceRepository.repositoryId}`,
+                    "branch": inputs.sourceRepository.branch,
+                };
+                let sourceControlPromise = (azureResourceClient as AppServiceClient).setSourceControl(inputs.targetResource.resource.id, sourceControlProperties);
+
                 // send a deployment log with information about the setup pipeline and links.
                 let deploymentMessage = JSON.stringify(<DeploymentMessage>{
                     type: constants.DeploymentMessageType,
@@ -274,8 +274,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                 let authorName = await LocalGitRepoHelper.GetHelperInstance(inputs.sourceRepository.localPath).getUsername();
                 let deployerName = 'GITHUBACTION';
                 let updateDeploymentLogPromise = (azureResourceClient as AppServiceClient).publishDeploymentToAppService(inputs.targetResource.resource.id, deploymentMessage, authorName, deployerName);
-
-                Q.all([updateMetadataPromise, updateDeploymentLogPromise])
+                Q.all([sourceControlPromise, updateDeploymentLogPromise])
                     .then(() => {
                         telemetryHelper.setTelemetry(TelemetryKeys.UpdatedWebAppMetadata, 'true');
                     });
