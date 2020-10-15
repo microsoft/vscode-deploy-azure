@@ -1,6 +1,7 @@
 import { JSONPath } from 'jsonpath-plus';
 import { isNullOrUndefined } from 'util';
 import { ArmRestClient } from "../../clients/azure/armRestClient";
+import { Cache } from '../../helper/Cache';
 import { MustacheHelper } from "../../helper/mustacheHelper";
 import { DataSource } from "../../model/Contracts";
 import { AzureSession, QuickPickItemWithData, StringMap } from "../../model/models";
@@ -38,17 +39,23 @@ export class DataSourceUtility {
         var view = { inputs: inputs };
         var armUri = MustacheHelper.render(dataSource.endpointUrlStem, view);
         var httpMethod = dataSource.httpMethod || "GET";
-        var requestBody = !!dataSource.requestBody ? MustacheHelper.render(dataSource.requestBody, view) : null;
-        let amrClient = new ArmRestClient(azureSession);
-        return amrClient.fetchArmData(armUri, httpMethod, JSON.parse(requestBody))
-            .then((response: any) => {
-                return this.evaluateDataSourceResponse(dataSource, response, view);
-            });
+        const requestBody = !!dataSource.requestBody ? MustacheHelper.render(dataSource.requestBody, view) : null;
+        const armClient = new ArmRestClient(azureSession);
+        let result: any;
+        if (httpMethod == "GET" && Cache.getCache().getValue(armUri)) {
+            result = Cache.getCache().getValue(armUri);
+        } else {
+            result = await armClient.fetchArmData(armUri, httpMethod, JSON.parse(requestBody));
+            if (httpMethod == "GET") {
+                Cache.getCache().put(armUri, result);
+            }
+        }
+        return this.evaluateDataSourceResponse(dataSource, result, view);
     }
 
     private static evaluateDataSourceResponse(dataSource: DataSource, response: any, view: { inputs: StringMap<any> }): any {
         if (!!dataSource.resultSelector) {
-            var resultSelector = MustacheHelper.render(dataSource.resultSelector, view);
+            const resultSelector = MustacheHelper.render(dataSource.resultSelector, view);
             response = JSONPath({ json: response, path: resultSelector, wrap: false, flatten: true });
             if (response === "" || response === isNullOrUndefined) {
                 return null;
