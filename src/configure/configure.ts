@@ -276,7 +276,7 @@ class Orchestrator {
     private async analyzeNode(node: any): Promise<void> {
         if (!!node) {
             if (node.fsPath) {
-                //right click on a folder
+                // right click on a folder
                 this.workspacePath = node.fsPath;
                 telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
             } else if (await this.extractAzureResourceFromNode(node)) {
@@ -477,7 +477,7 @@ class Orchestrator {
                 throw error;
             }
         }
-        else if (node.resource.type === "cluster") {
+        else if (!!node.resource.id && node.resource.type === "cluster") {
             this.inputs.subscriptionId = node.subscriptionId;
             this.context['subscriptionId'] = this.inputs.subscriptionId;
             this.inputs.azureSession = await getSubscriptionSession(this.inputs.subscriptionId);
