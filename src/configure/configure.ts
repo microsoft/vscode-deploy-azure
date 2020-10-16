@@ -275,16 +275,14 @@ class Orchestrator {
 
     private async analyzeNode(node: any): Promise<void> {
         if (!!node) {
-            if (await this.extractAzureResourceFromNode(node)) {
+            if (node.fsPath) {
+                //right click on a folder
+                this.workspacePath = node.fsPath;
+                telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
+            } else if (await this.extractAzureResourceFromNode(node)) {
                 // right click on a resource
                 this.context['isResourceAlreadySelected'] = true;
                 this.context['resourceId'] = this.inputs.targetResource.resource.id;
-            } else {
-                if (node.fsPath) {
-                    //right click on a folder
-                    this.workspacePath = node.fsPath;
-                    telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
-                }
             }
         }
     }
@@ -456,7 +454,7 @@ class Orchestrator {
     private async extractAzureResourceFromNode(node: IResourceNode): Promise<boolean> {
         if (!!node.resource.id && node.resource.type != 'cluster') {
             this.inputs.subscriptionId = node.subscriptionId;
-            this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
+            this.inputs.azureSession = await getSubscriptionSession(this.inputs.subscriptionId);
             this.azureResourceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
 
             try {
