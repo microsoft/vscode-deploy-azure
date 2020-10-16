@@ -208,7 +208,7 @@ export class TemplateParameterHelper {
             { placeHolder: Messages.selectSubscription },
             TelemetryKeys.SubscriptionListCount);
         inputs.subscriptionId = selectedSubscription.data.subscription.subscriptionId;
-        inputs.azureSession = getSubscriptionSession(inputs.subscriptionId);
+        inputs.azureSession = await getSubscriptionSession(inputs.subscriptionId);
     }
 
     private async tryGetSelectedResourceById(selectedResourceId: string, azureResourceClient: AzureResourceClient, getResourceApiVersion?: string): Promise<GenericResource> {
