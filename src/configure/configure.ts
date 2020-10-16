@@ -3,7 +3,7 @@ import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { ApplicationSettings, RepositoryAnalysis } from 'azureintegration-repoanalysis-client-internal';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
+import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
 import { Configurer } from './configurers/configurerBase';
@@ -22,7 +22,7 @@ import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
 import { ConfigurationStage } from './model/Contracts';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, PipelineType, QuickPickItemWithData, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, IResourceNode, MustacheContext, ParsedAzureResourceId, PipelineType, QuickPickItemWithData, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
 import { DraftPipelineConfiguration, ProvisioningConfiguration, provisioningMode } from './model/provisioningConfiguration';
 import { LocalPipelineTemplate, PipelineTemplate, RemotePipelineTemplate, TemplateAssetType, TemplateType } from './model/templateModels';
 import * as constants from './resources/constants';
@@ -37,7 +37,7 @@ const uuid = require('uuid/v4');
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
-export async function configurePipeline(node: AzureTreeItem) {
+export async function configurePipeline(node: any) {
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
         try {
             if (!(await extensionVariables.azureAccountExtensionApi.waitForLogin())) {
@@ -276,6 +276,7 @@ class Orchestrator {
     private async analyzeNode(node: any): Promise<void> {
         if (!!node) {
             if (await this.extractAzureResourceFromNode(node)) {
+                // right click on a resource
                 this.context['isResourceAlreadySelected'] = true;
                 this.context['resourceId'] = this.inputs.targetResource.resource.id;
             } else {
@@ -452,21 +453,21 @@ class Orchestrator {
         }
     }
 
-    private async extractAzureResourceFromNode(node: AzureTreeItem | any): Promise<boolean> {
-        if (!!node.fullId) {
-            this.inputs.subscriptionId = node.root.subscriptionId;
+    private async extractAzureResourceFromNode(node: IResourceNode): Promise<boolean> {
+        if (!!node.resource.id && node.resource.type != 'cluster') {
+            this.inputs.subscriptionId = node.subscriptionId;
             this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
             this.azureResourceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
 
             try {
-                const azureResource: GenericResource = await (this.azureResourceClient as AppServiceClient).getAppServiceResource(node.fullId);
+                const azureResource: GenericResource = await (this.azureResourceClient as AppServiceClient).getAppServiceResource(node.resource.id);
                 telemetryHelper.setTelemetry(TelemetryKeys.resourceType, azureResource.type);
                 telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, azureResource.kind);
                 AzureResourceClient.validateTargetResourceType(azureResource);
                 if (azureResource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
-                    if (await (this.azureResourceClient as AppServiceClient).isScmTypeSet(node.fullId)) {
+                    if (await (this.azureResourceClient as AppServiceClient).isScmTypeSet(node.resource.id)) {
                         this.continueOrchestration = false;
-                        await openBrowseExperience(node.fullId);
+                        await openBrowseExperience(node.resource.id);
                     }
                 }
 
@@ -478,7 +479,7 @@ class Orchestrator {
                 throw error;
             }
         }
-        else if (node.resource.nodeType === "cluster") {
+        else if (node.resource.type === "cluster") {
             this.inputs.subscriptionId = node.subscriptionId;
             this.context['subscriptionId'] = this.inputs.subscriptionId;
             this.inputs.azureSession = getSubscriptionSession(this.inputs.subscriptionId);
