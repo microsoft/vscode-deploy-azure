@@ -37,7 +37,7 @@ const uuid = require('uuid/v4');
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
-export async function configurePipeline(node: any) {
+export async function configurePipeline(node: IResourceNode | vscode.Uri) {
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
         try {
             if (!(await extensionVariables.azureAccountExtensionApi.waitForLogin())) {
@@ -103,7 +103,7 @@ class Orchestrator {
         this.context['resourceId'] = '';
     }
 
-    public async configure(node: any): Promise<void> {
+    public async configure(node: IResourceNode | vscode.Uri): Promise<void> {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
         await this.getInputs(node);
         if (this.continueOrchestration) {
@@ -173,7 +173,7 @@ class Orchestrator {
         return this.context['isResourceAlreadySelected'];
     }
 
-    private async getInputs(node: any): Promise<void> {
+    private async getInputs(node: IResourceNode | vscode.Uri): Promise<void> {
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseGithubForCreatingNewRepository,
             vscode.workspace.getConfiguration().get('deployToAzure.UseGithubForCreatingNewRepository'));
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseAzurePipelinesForGithub,
@@ -273,13 +273,14 @@ class Orchestrator {
         return this.inputs.potentialTemplates[0].targetType;
     }
 
-    private async analyzeNode(node: any): Promise<void> {
+    private async analyzeNode(node: IResourceNode | vscode.Uri): Promise<void> {
         if (!!node) {
-            if (node.fsPath) {
+            const folderNode = node as vscode.Uri;
+            if (folderNode && folderNode.fsPath) {
                 // right click on a folder
-                this.workspacePath = node.fsPath;
+                this.workspacePath = folderNode.fsPath;
                 telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
-            } else if (await this.extractAzureResourceFromNode(node)) {
+            } else if (await this.extractAzureResourceFromNode(node as IResourceNode)) {
                 // right click on a resource
                 this.context['isResourceAlreadySelected'] = true;
                 this.context['resourceId'] = this.inputs.targetResource.resource.id;
