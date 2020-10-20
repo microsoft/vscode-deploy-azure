@@ -281,7 +281,7 @@ class Orchestrator {
     private async analyzeNode(node: IResourceNode | vscode.Uri): Promise<void> {
         if (!!node) {
             const folderNode = node as vscode.Uri;
-            if (folderNode && folderNode.fsPath) {
+            if (!!(folderNode.fsPath)) {
                 // right click on a folder
                 this.workspacePath = folderNode.fsPath;
                 telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
