@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as os from 'os';
 import * as Path from 'path';
 import * as utils from 'util';
 import * as vscode from 'vscode';
@@ -186,7 +187,9 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     public async getPathToFile(fileName: string, directory: string) {
         const dirList = directory.split("/"); // Hardcoded as provisioning service is running on linux and we cannot use Path.sep as it is machine dependent
         let directoryPath: string = "";
-        directoryPath = await this.localGitRepoHelper.getGitRootDirectory();
+        //  directoryPath = await this.localGitRepoHelper.getGitRootDirectory();
+        directoryPath = fs.mkdtempSync(os.tmpdir());
+        console.log(directoryPath);
         dirList.forEach((dir) => {
             try {
                 directoryPath = Path.join(directoryPath, dir);
@@ -228,7 +231,6 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                     }
                 });
         }
-
         const scope = InputControl.getInputDescriptorProperty(inputDescriptor, "scope", wizardInputs.pipelineConfiguration.params);
         if (scope && scope.length > 0 && scope[0] != "") {
             wizardInputs.pipelineConfiguration.params["azureAuth"] = await vscode.window.withProgress(
