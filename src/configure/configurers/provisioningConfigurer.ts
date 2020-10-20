@@ -153,8 +153,8 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
             throw new UserCancelledError(Messages.operationCancelled);
         }
 
+        fse.removeSync(this.tmpDirectoryPath);
         if (provisioningServiceResponse != undefined) {
-            fse.removeSync(this.tmpDirectoryPath);
             this.setQueuedPipelineUrl(provisioningServiceResponse, inputs);
         } else {
             throw new Error("Failed to configure provisoining pipeline");
