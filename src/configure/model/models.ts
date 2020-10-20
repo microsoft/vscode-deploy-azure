@@ -291,3 +291,8 @@ export enum PipelineType {
     AzurePipeline,
     GitHubPipeline
 }
+
+export interface IResourceNode {
+    resource: GenericResource;
+    subscriptionId: string;
+}
