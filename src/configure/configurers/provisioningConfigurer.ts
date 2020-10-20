@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fse from 'fs-extra';
 import * as os from 'os';
 import * as Path from 'path';
 import * as utils from 'util';
@@ -37,6 +37,8 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     private maxNonStatusRetry: number = 60; // retries for max 5 min
     private localGitRepoHelper: LocalGitRepoHelper;
     private filesToCommit: DraftFile[] = [];
+    private committedWorkflow: string;
+    private tmpDirectoryPath: string;
 
     constructor(localGitRepoHelper: LocalGitRepoHelper) {
         this.localGitRepoHelper = localGitRepoHelper;
@@ -86,12 +88,27 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         }
     }
 
-    public async browseQueuedPipeline(): Promise<void> {
-        new ControlProvider().showInformationBox("Browse queued pipeline", Messages.githubWorkflowSetupSuccessfully, Messages.browseWorkflow)
+    public async browseQueuedWorkflow(): Promise<void> {
+        new ControlProvider().showInformationBox("Browse queued workflow", Messages.githubWorkflowSetupSuccessfully, Messages.browseWorkflow)
             .then((action: string) => {
                 if (action && action.toLowerCase() === Messages.browseWorkflow.toLowerCase()) {
                     telemetryHelper.setTelemetry(TelemetryKeys.BrowsePipelineClicked, 'true');
                     vscode.env.openExternal(vscode.Uri.parse(this.queuedPipelineUrl));
+                }
+            });
+    }
+
+    public async browseCommittedWorkflow(): Promise<void> {
+        let displayMessage: string = Messages.BrowseCommittedWorkflowFile;
+        if (this.filesToCommit.length > 1) {
+            displayMessage = Messages.BrowseCommittedWorkflowFiles;
+        }
+
+        new ControlProvider().showInformationBox("Browse Committed workflow files", Messages.GithubWorkflowCommittedSuccessfully, displayMessage)
+            .then((action: string) => {
+                if (action && action.toLowerCase() === displayMessage.toLowerCase()) {
+                    telemetryHelper.setTelemetry(TelemetryKeys.BrowsePipelineClicked, 'true');
+                    vscode.env.openExternal(vscode.Uri.parse(this.committedWorkflow));
                 }
             });
     }
@@ -132,10 +149,12 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                 });
         } else {
             telemetryHelper.setTelemetry(TelemetryKeys.PipelineDiscarded, 'true');
+            await this.moveWorkflowFilesToRepoLocally();
             throw new UserCancelledError(Messages.operationCancelled);
         }
 
         if (provisioningServiceResponse != undefined) {
+            fse.removeSync(this.tmpDirectoryPath);
             this.setQueuedPipelineUrl(provisioningServiceResponse, inputs);
         } else {
             throw new Error("Failed to configure provisoining pipeline");
@@ -165,7 +184,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
 
     public async showPipelineFiles(): Promise<void> {
         this.filesToCommit.forEach(async (file) => {
-            await this.localGitRepoHelper.addContentToFile(file.content, file.absPath);
+            await this.localGitRepoHelper.addContentToFile2(file.content, file.absPath);
             await vscode.window.showTextDocument(vscode.Uri.file(file.absPath), { preview: false });
         });
     }
@@ -173,10 +192,12 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     public setQueuedPipelineUrl(provisioningConfiguration: ProvisioningConfiguration, inputs: WizardInputs) {
         const commitId = (provisioningConfiguration.result.pipelineConfiguration as CompletePipelineConfiguration).commitId;
         this.queuedPipelineUrl = `https://github.com/${inputs.sourceRepository.repositoryId}/commit/${commitId}/checks`;
+        this.committedWorkflow = `https://github.com/${inputs.sourceRepository.repositoryId}/commit/${commitId}`;
     }
 
     public async getFileToCommit(draftPipelineConfiguration: DraftPipelineConfiguration): Promise<void> {
         let destination: string;
+        this.tmpDirectoryPath = fse.mkdtempSync(os.tmpdir());
         for (const file of draftPipelineConfiguration.files) {
             destination = await this.getPathToFile(Path.basename(file.path), Path.dirname(file.path));
             const decodedData = new Buffer(file.content, 'base64').toString('utf-8');
@@ -187,16 +208,13 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     public async getPathToFile(fileName: string, directory: string) {
         const dirList = directory.split("/"); // Hardcoded as provisioning service is running on linux and we cannot use Path.sep as it is machine dependent
         let directoryPath: string = "";
-        //  directoryPath = await this.localGitRepoHelper.getGitRootDirectory();
-        directoryPath = fs.mkdtempSync(os.tmpdir());
-        console.log(directoryPath);
         dirList.forEach((dir) => {
             try {
-                directoryPath = Path.join(directoryPath, dir);
+                directoryPath = Path.join(this.tmpDirectoryPath, dir);
                 // tslint:disable-next-line:non-literal-fs-path
-                if (!fs.existsSync(directoryPath)) {
+                if (!fse.existsSync(directoryPath)) {
                     // tslint:disable-next-line:non-literal-fs-path
-                    fs.mkdirSync(directoryPath);
+                    fse.mkdirSync(directoryPath);
                 }
             }
             catch (error) {
@@ -289,5 +307,14 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
             type,
             files,
         } as DraftPipelineConfiguration;
+    }
+
+    private async moveWorkflowFilesToRepoLocally(): Promise<void> {
+        const directoryPath: string = await this.localGitRepoHelper.getGitRootDirectory();
+        for (const file of this.filesToCommit) {
+            fse.moveSync(file.absPath, Path.join(directoryPath, file.path));
+            await vscode.window.showTextDocument(vscode.Uri.file(Path.join(directoryPath, file.path)), { preview: false });
+        }
+        fse.removeSync(this.tmpDirectoryPath);
     }
 }

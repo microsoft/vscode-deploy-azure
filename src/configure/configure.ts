@@ -694,9 +694,12 @@ class Orchestrator {
             provisioningConfiguration.provisioningMode = provisioningMode.complete;
             await provisioningConfigurer.postSteps(provisioningConfiguration, (draftProvisioningPipeline.result.pipelineConfiguration as DraftPipelineConfiguration), this.inputs);
 
+            telemetryHelper.setCurrentStep('BrowseCommittedWorkflow');
+            await provisioningConfigurer.browseCommittedWorkflow();
+
             // All done, now browse the pipeline
-            telemetryHelper.setCurrentStep('BrowsingPipeline');
-            await provisioningConfigurer.browseQueuedPipeline();
+            telemetryHelper.setCurrentStep('BrowseQueuedWorkflow');
+            await provisioningConfigurer.browseQueuedWorkflow();
         } catch (error) {
             telemetryHelper.logError(Layer, TracePoints.RemotePipelineConfiguringFailed, error);
             throw error;
