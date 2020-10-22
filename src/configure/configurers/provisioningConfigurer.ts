@@ -192,10 +192,10 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
 
     public async getPathToFile(fileName: string, directory: string) {
         const dirList = directory.split("/"); // Hardcoded as provisioning service is running on linux and we cannot use Path.sep as it is machine dependent
-        let directoryPath: string = "";
+        let directoryPath: string = this.tmpDirectoryPath;
         dirList.forEach((dir) => {
             try {
-                directoryPath = Path.join(this.tmpDirectoryPath, dir);
+                directoryPath = Path.join(directoryPath, dir);
                 // tslint:disable-next-line:non-literal-fs-path
                 if (!fse.existsSync(directoryPath)) {
                     // tslint:disable-next-line:non-literal-fs-path
