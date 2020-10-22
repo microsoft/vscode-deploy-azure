@@ -3,6 +3,10 @@ All notable changes to the Deploy to Azure extension will be documented in this 
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/). Versioning follows an internal Azure DevOps format that is not compatible with SemVer.
 
+## 1.2.0
+### Added
+- Integrated with  [Azure Kubernetes Service extension](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-aks-tools) to support configure ci/cd on right click of a cluster
+
 ## 1.1.5
 ### Added
 - Added remote configurer for Github Node WebApp
