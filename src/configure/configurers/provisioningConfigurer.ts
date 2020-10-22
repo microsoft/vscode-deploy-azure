@@ -297,7 +297,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     private async moveWorkflowFilesToRepoLocally(): Promise<void> {
         const directoryPath: string = await this.localGitRepoHelper.getGitRootDirectory();
         for (const file of this.filesToCommit) {
-            fse.renameSync(file.absPath, Path.join(directoryPath, file.path));
+            fse.moveSync(file.absPath, Path.join(directoryPath, file.path));
             await vscode.window.showTextDocument(vscode.Uri.file(Path.join(directoryPath, file.path)), { preview: false });
         }
         fse.removeSync(this.tmpDirectoryPath);
