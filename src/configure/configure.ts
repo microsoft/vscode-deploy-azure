@@ -3,7 +3,7 @@ import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { ApplicationSettings, RepositoryAnalysis } from 'azureintegration-repoanalysis-client-internal';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { AzureTreeItem, UserCancelledError } from 'vscode-azureextensionui';
+import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
 import { Configurer } from './configurers/configurerBase';
@@ -22,7 +22,7 @@ import { Result, telemetryHelper } from './helper/telemetryHelper';
 import * as templateHelper from './helper/templateHelper';
 import { TemplateParameterHelper } from './helper/templateParameterHelper';
 import { ConfigurationStage } from './model/Contracts';
-import { extensionVariables, GitBranchDetails, GitRepositoryParameters, MustacheContext, ParsedAzureResourceId, PipelineType, QuickPickItemWithData, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
+import { extensionVariables, GitBranchDetails, GitRepositoryParameters, IResourceNode, MustacheContext, ParsedAzureResourceId, PipelineType, QuickPickItemWithData, RepositoryProvider, SourceOptions, StringMap, TargetResourceType, WizardInputs } from './model/models';
 import { DraftPipelineConfiguration, ProvisioningConfiguration, provisioningMode } from './model/provisioningConfiguration';
 import { LocalPipelineTemplate, PipelineTemplate, RemotePipelineTemplate, TemplateAssetType, TemplateType } from './model/templateModels';
 import * as constants from './resources/constants';
@@ -37,7 +37,7 @@ const uuid = require('uuid/v4');
 const Layer: string = 'configure';
 export let UniqueResourceNameSuffix: string = uuid().substr(0, 5);
 
-export async function configurePipeline(node: AzureTreeItem) {
+export async function configurePipeline(node: IResourceNode | vscode.Uri) {
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
         try {
             if (!(await extensionVariables.azureAccountExtensionApi.waitForLogin())) {
@@ -103,7 +103,7 @@ class Orchestrator {
         this.context['resourceId'] = '';
     }
 
-    public async configure(node: any): Promise<void> {
+    public async configure(node: IResourceNode | vscode.Uri): Promise<void> {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
         await this.getInputs(node);
         if (this.continueOrchestration) {
@@ -178,7 +178,7 @@ class Orchestrator {
         return this.context['isResourceAlreadySelected'];
     }
 
-    private async getInputs(node: any): Promise<void> {
+    private async getInputs(node: IResourceNode | vscode.Uri): Promise<void> {
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseGithubForCreatingNewRepository,
             vscode.workspace.getConfiguration().get('deployToAzure.UseGithubForCreatingNewRepository'));
         telemetryHelper.setTelemetry(TelemetryKeys.FF_UseAzurePipelinesForGithub,
@@ -278,17 +278,17 @@ class Orchestrator {
         return this.inputs.potentialTemplates[0].targetType;
     }
 
-    private async analyzeNode(node: any): Promise<void> {
+    private async analyzeNode(node: IResourceNode | vscode.Uri): Promise<void> {
         if (!!node) {
-            if (await this.extractAzureResourceFromNode(node)) {
+            const folderNode = node as vscode.Uri;
+            if (!!(folderNode.fsPath)) {
+                // right click on a folder
+                this.workspacePath = folderNode.fsPath;
+                telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
+            } else if (await this.extractAzureResourceFromNode(node as IResourceNode)) {
+                // right click on a resource
                 this.context['isResourceAlreadySelected'] = true;
                 this.context['resourceId'] = this.inputs.targetResource.resource.id;
-            } else {
-                if (node.fsPath) {
-                    //right click on a folder
-                    this.workspacePath = node.fsPath;
-                    telemetryHelper.setTelemetry(TelemetryKeys.SourceRepoLocation, SourceOptions.CurrentWorkspace);
-                }
             }
         }
     }
@@ -457,21 +457,21 @@ class Orchestrator {
         }
     }
 
-    private async extractAzureResourceFromNode(node: AzureTreeItem | any): Promise<boolean> {
-        if (!!node.fullId) {
-            this.inputs.subscriptionId = node.root.subscriptionId;
+    private async extractAzureResourceFromNode(node: IResourceNode): Promise<boolean> {
+        if (!!node.resource.id && node.resource.type != 'cluster') {
+            this.inputs.subscriptionId = node.subscriptionId;
             this.inputs.azureSession = await getSubscriptionSession(this.inputs.subscriptionId);
             this.azureResourceClient = new AppServiceClient(this.inputs.azureSession.credentials, this.inputs.azureSession.environment, this.inputs.azureSession.tenantId, this.inputs.subscriptionId);
 
             try {
-                const azureResource: GenericResource = await (this.azureResourceClient as AppServiceClient).getAppServiceResource(node.fullId);
+                const azureResource: GenericResource = await (this.azureResourceClient as AppServiceClient).getAppServiceResource(node.resource.id);
                 telemetryHelper.setTelemetry(TelemetryKeys.resourceType, azureResource.type);
                 telemetryHelper.setTelemetry(TelemetryKeys.resourceKind, azureResource.kind);
                 AzureResourceClient.validateTargetResourceType(azureResource);
                 if (azureResource.type.toLowerCase() === TargetResourceType.WebApp.toLowerCase()) {
-                    if (await (this.azureResourceClient as AppServiceClient).isScmTypeSet(node.fullId)) {
+                    if (await (this.azureResourceClient as AppServiceClient).isScmTypeSet(node.resource.id)) {
                         this.continueOrchestration = false;
-                        await openBrowseExperience(node.fullId);
+                        await openBrowseExperience(node.resource.id);
                     }
                 }
 
@@ -483,12 +483,12 @@ class Orchestrator {
                 throw error;
             }
         }
-        else if (!!node.cloudResource && node.cloudResource.nodeType === 'cluster') {
-            this.inputs.subscriptionId = node.cloudResource.subscription.subscriptionId;
+        else if (!!node.resource.id && node.resource.type === "cluster") {
+            this.inputs.subscriptionId = node.subscriptionId;
             this.context['subscriptionId'] = this.inputs.subscriptionId;
             this.inputs.azureSession = await getSubscriptionSession(this.inputs.subscriptionId);
             this.azureResourceClient = new AzureResourceClient(this.inputs.azureSession.credentials, this.inputs.subscriptionId);
-            const cluster = await this.azureResourceClient.getResource(node.cloudResource.id, '2019-08-01');
+            const cluster = await this.azureResourceClient.getResource(node.resource.id, '2019-08-01');
             telemetryHelper.setTelemetry(TelemetryKeys.resourceType, cluster.type);
             AzureResourceClient.validateTargetResourceType(cluster);
             cluster["parsedResourceId"] = new ParsedAzureResourceId(cluster.id);
