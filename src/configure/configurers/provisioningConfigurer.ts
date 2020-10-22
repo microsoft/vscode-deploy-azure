@@ -89,26 +89,11 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     }
 
     public async browseQueuedWorkflow(): Promise<void> {
-        new ControlProvider().showInformationBox("Browse queued workflow", Messages.githubWorkflowSetupSuccessfully, Messages.browseWorkflow)
+        new ControlProvider().showInformationBox("Browse queued workflow", utils.format(Messages.GithubWorkflowSetupWithLink, this.committedWorkflow), Messages.browseWorkflow)
             .then((action: string) => {
                 if (action && action.toLowerCase() === Messages.browseWorkflow.toLowerCase()) {
                     telemetryHelper.setTelemetry(TelemetryKeys.BrowsePipelineClicked, 'true');
                     vscode.env.openExternal(vscode.Uri.parse(this.queuedPipelineUrl));
-                }
-            });
-    }
-
-    public async browseCommittedWorkflow(): Promise<void> {
-        let displayMessage: string = Messages.BrowseCommittedWorkflowFile;
-        if (this.filesToCommit.length > 1) {
-            displayMessage = Messages.BrowseCommittedWorkflowFiles;
-        }
-
-        new ControlProvider().showInformationBox("Browse Committed workflow files", Messages.GithubWorkflowCommittedSuccessfully, displayMessage)
-            .then((action: string) => {
-                if (action && action.toLowerCase() === displayMessage.toLowerCase()) {
-                    telemetryHelper.setTelemetry(TelemetryKeys.BrowsePipelineClicked, 'true');
-                    vscode.env.openExternal(vscode.Uri.parse(this.committedWorkflow));
                 }
             });
     }
@@ -312,7 +297,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     private async moveWorkflowFilesToRepoLocally(): Promise<void> {
         const directoryPath: string = await this.localGitRepoHelper.getGitRootDirectory();
         for (const file of this.filesToCommit) {
-            fse.moveSync(file.absPath, Path.join(directoryPath, file.path));
+            fse.renameSync(file.absPath, Path.join(directoryPath, file.path));
             await vscode.window.showTextDocument(vscode.Uri.file(Path.join(directoryPath, file.path)), { preview: false });
         }
         fse.removeSync(this.tmpDirectoryPath);

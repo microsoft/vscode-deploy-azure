@@ -119,7 +119,5 @@ export class Messages {
     public static ConfiguringGitubWorkflowFailed = 'Configuring github workflow failed due to %s';
     public static NoAzureSubscriptionFound = 'No Azure Subscription Found.';
     public static GithubRepoRequired = "The selected folder is not a GitHub repository.Please ensure your repository is hosted on GitHub and try again.";
-    public static BrowseCommittedWorkflowFile = "Browse workflow file";
-    public static BrowseCommittedWorkflowFiles = "Browse workflow files";
-    public static GithubWorkflowCommittedSuccessfully = "Github workflow committed successfully";
+    public static GithubWorkflowSetupWithLink: string = 'GitHub [workflow](%s) set up successfully !';
 }

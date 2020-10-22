@@ -7,5 +7,4 @@ export interface IProvisioningConfigurer {
     postSteps(provisioningConfiguration: ProvisioningConfiguration, draftPipelineConfiguration: DraftPipelineConfiguration, inputs: WizardInputs): Promise<void>;
     preSteps(provisioningConfiguration: ProvisioningConfiguration, inputs: WizardInputs): Promise<ProvisioningConfiguration>;
     browseQueuedWorkflow(): Promise<void>;
-    browseCommittedWorkflow(): Promise<void>;
 }
