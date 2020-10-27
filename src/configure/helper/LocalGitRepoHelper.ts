@@ -199,7 +199,7 @@ export class LocalGitRepoHelper {
         return buf.toString();
     }
 
-    public async addContentToFile2(content: string, pathToFile: string): Promise<string> {
+    public async writeFileContent(content: string, pathToFile: string): Promise<string> {
         fs.writeFileSync(pathToFile, content);
         return pathToFile;
     }

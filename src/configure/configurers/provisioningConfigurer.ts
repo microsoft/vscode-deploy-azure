@@ -38,7 +38,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     private localGitRepoHelper: LocalGitRepoHelper;
     private filesToCommit: DraftFile[] = [];
     private committedWorkflow: string;
-    private tmpDirectoryPath: string;
+    private tempWorkflowDirPath: string;
 
     constructor(localGitRepoHelper: LocalGitRepoHelper) {
         this.localGitRepoHelper = localGitRepoHelper;
@@ -89,7 +89,14 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     }
 
     public async browseQueuedWorkflow(): Promise<void> {
-        new ControlProvider().showInformationBox("Browse queued workflow", utils.format(Messages.GithubWorkflowSetupWithLink, this.committedWorkflow), Messages.browseWorkflow)
+        let displayMessage: string ;
+        if (this.committedWorkflow.length > 1){
+            displayMessage = Messages.GithubWorkflowSetupMultiFile;
+        } else {
+            displayMessage = Messages.GithubWorkflowSetup;
+        }
+
+        new ControlProvider().showInformationBox("Browse queued workflow", utils.format(displayMessage, this.committedWorkflow), Messages.browseWorkflow)
             .then((action: string) => {
                 if (action && action.toLowerCase() === Messages.browseWorkflow.toLowerCase()) {
                     telemetryHelper.setTelemetry(TelemetryKeys.BrowsePipelineClicked, 'true');
@@ -99,7 +106,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     }
 
     public async postSteps(provisioningConfiguration: ProvisioningConfiguration, draftPipelineConfiguration: DraftPipelineConfiguration, inputs: WizardInputs): Promise<void> {
-        await this.getFileToCommit(draftPipelineConfiguration);
+        await this.populateFilesToCommit(draftPipelineConfiguration);
         await this.showPipelineFiles();
         const displayMessage = (this.filesToCommit.length > 1) ? Messages.modifyAndCommitMultipleFiles : Messages.modifyAndCommitFile;
         const commitOrDiscard = await new ControlProvider().showInformationBox(
@@ -134,11 +141,11 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
                 });
         } else {
             telemetryHelper.setTelemetry(TelemetryKeys.PipelineDiscarded, 'true');
-            await this.moveWorkflowFilesToRepoLocally();
+            await this.moveWorkflowFilesToLocalRepo();
             throw new UserCancelledError(Messages.operationCancelled);
         }
 
-        fse.removeSync(this.tmpDirectoryPath);
+        fse.removeSync(this.tempWorkflowDirPath);
         if (provisioningServiceResponse != undefined) {
             this.setQueuedPipelineUrl(provisioningServiceResponse, inputs);
         } else {
@@ -169,7 +176,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
 
     public async showPipelineFiles(): Promise<void> {
         this.filesToCommit.forEach(async (file) => {
-            await this.localGitRepoHelper.addContentToFile2(file.content, file.absPath);
+            await this.localGitRepoHelper.writeFileContent(file.content, file.absPath);
             await vscode.window.showTextDocument(vscode.Uri.file(file.absPath), { preview: false });
         });
     }
@@ -180,35 +187,14 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         this.committedWorkflow = `https://github.com/${inputs.sourceRepository.repositoryId}/commit/${commitId}`;
     }
 
-    public async getFileToCommit(draftPipelineConfiguration: DraftPipelineConfiguration): Promise<void> {
+    public async populateFilesToCommit(draftPipelineConfiguration: DraftPipelineConfiguration): Promise<void> {
         let destination: string;
-        this.tmpDirectoryPath = fse.mkdtempSync(os.tmpdir());
+        this.tempWorkflowDirPath = fse.mkdtempSync(os.tmpdir().concat(Path.sep));
         for (const file of draftPipelineConfiguration.files) {
             destination = await this.getPathToFile(Path.basename(file.path), Path.dirname(file.path));
             const decodedData = new Buffer(file.content, 'base64').toString('utf-8');
             this.filesToCommit.push({ absPath: destination, content: decodedData, path: file.path } as DraftFile);
         }
-    }
-
-    public async getPathToFile(fileName: string, directory: string) {
-        const dirList = directory.split("/"); // Hardcoded as provisioning service is running on linux and we cannot use Path.sep as it is machine dependent
-        let directoryPath: string = this.tmpDirectoryPath;
-        dirList.forEach((dir) => {
-            try {
-                directoryPath = Path.join(directoryPath, dir);
-                // tslint:disable-next-line:non-literal-fs-path
-                if (!fse.existsSync(directoryPath)) {
-                    // tslint:disable-next-line:non-literal-fs-path
-                    fse.mkdirSync(directoryPath);
-                }
-            }
-            catch (error) {
-                telemetryHelper.logError(Layer, TracePoints.GetPathToWorkFlowFileFailed, error);
-                throw error;
-            }
-        });
-        telemetryHelper.setTelemetry(TelemetryKeys.WorkflowFileName, fileName);
-        return Path.join(directoryPath, fileName);
     }
 
     public async createPreRequisiteParams(wizardInputs: WizardInputs): Promise<void> {
@@ -294,12 +280,32 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         } as DraftPipelineConfiguration;
     }
 
-    private async moveWorkflowFilesToRepoLocally(): Promise<void> {
-        const directoryPath: string = await this.localGitRepoHelper.getGitRootDirectory();
+    private async moveWorkflowFilesToLocalRepo(): Promise<void> {
+        const gitRootDirectory: string = await this.localGitRepoHelper.getGitRootDirectory();
         for (const file of this.filesToCommit) {
-            fse.moveSync(file.absPath, Path.join(directoryPath, file.path));
-            await vscode.window.showTextDocument(vscode.Uri.file(Path.join(directoryPath, file.path)), { preview: false });
+            const filePathToLocalRepo: string = Path.join(gitRootDirectory, file.path);
+            fse.moveSync(file.absPath, filePathToLocalRepo);
+            await vscode.window.showTextDocument(vscode.Uri.file(filePathToLocalRepo), { preview: false });
         }
-        fse.removeSync(this.tmpDirectoryPath);
+        fse.removeSync(this.tempWorkflowDirPath);
+    }
+
+    private async getPathToFile(fileName: string, directory: string) {
+        const dirList = directory.split("/"); // Hardcoded as provisioning service is running on linux and we cannot use Path.sep as it is machine dependent
+        let directoryPath: string = this.tempWorkflowDirPath;
+        dirList.forEach((dir) => {
+            try {
+                directoryPath = Path.join(directoryPath, dir);
+                if (!fse.existsSync(directoryPath)) {
+                    fse.mkdirSync(directoryPath);
+                }
+            }
+            catch (error) {
+                telemetryHelper.logError(Layer, TracePoints.GetPathToWorkFlowFileFailed, error);
+                throw error;
+            }
+        });
+        telemetryHelper.setTelemetry(TelemetryKeys.WorkflowFileName, fileName);
+        return Path.join(directoryPath, fileName);
     }
 }
