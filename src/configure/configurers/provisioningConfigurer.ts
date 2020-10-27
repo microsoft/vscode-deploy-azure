@@ -294,17 +294,9 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         const dirList = directory.split("/"); // Hardcoded as provisioning service is running on linux and we cannot use Path.sep as it is machine dependent
         let directoryPath: string = this.tempWorkflowDirPath;
         dirList.forEach((dir) => {
-            try {
                 directoryPath = Path.join(directoryPath, dir);
-                if (!fse.existsSync(directoryPath)) {
-                    fse.mkdirSync(directoryPath);
-                }
-            }
-            catch (error) {
-                telemetryHelper.logError(Layer, TracePoints.GetPathToWorkFlowFileFailed, error);
-                throw error;
-            }
-        });
+         });
+        fse.mkdirpSync(directoryPath);
         telemetryHelper.setTelemetry(TelemetryKeys.WorkflowFileName, fileName);
         return Path.join(directoryPath, fileName);
     }
