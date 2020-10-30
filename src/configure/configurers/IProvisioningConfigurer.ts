@@ -6,5 +6,5 @@ export interface IProvisioningConfigurer {
     getProvisioningPipeline(jobId: string, githubOrg: string, repository: string, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration>;
     postSteps(provisioningConfiguration: ProvisioningConfiguration, draftPipelineConfiguration: DraftPipelineConfiguration, inputs: WizardInputs): Promise<void>;
     preSteps(provisioningConfiguration: ProvisioningConfiguration, inputs: WizardInputs): Promise<ProvisioningConfiguration>;
-    browseQueuedPipeline(): Promise<void>;
+    browseQueuedWorkflow(): Promise<void>;
 }
