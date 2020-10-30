@@ -25,8 +25,8 @@ import { IProvisioningConfigurer } from './IProvisioningConfigurer';
 // tslint:disable-next-line:interface-name
 interface DraftFile {
     content: string;
-    path: string;
-    absPath: string;
+    path: string; // This path will be one returned by provisioning service and it will based on linux
+    absPath: string; // This is absolute path of file for native OS
 }
 
 const Layer: string = "ProvisioningConfigurer";
@@ -89,8 +89,8 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     }
 
     public async browseQueuedWorkflow(): Promise<void> {
-        let displayMessage: string ;
-        if (this.committedWorkflow.length > 1){
+        let displayMessage: string;
+        if (this.committedWorkflow.length > 1) {
             displayMessage = Messages.GithubWorkflowSetupMultiFile;
         } else {
             displayMessage = Messages.GithubWorkflowSetup;
@@ -191,7 +191,9 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
         let destination: string;
         this.tempWorkflowDirPath = fse.mkdtempSync(os.tmpdir().concat(Path.sep));
         for (const file of draftPipelineConfiguration.files) {
-            destination = await this.getPathToFile(Path.basename(file.path), Path.dirname(file.path));
+            const pathList = file.path.split("/");
+            const filePath: string = pathList.join(Path.sep);
+            destination = await this.getPathToFile(Path.basename(filePath), Path.dirname(filePath));
             const decodedData = new Buffer(file.content, 'base64').toString('utf-8');
             this.filesToCommit.push({ absPath: destination, content: decodedData, path: file.path } as DraftFile);
         }
@@ -283,7 +285,9 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
     private async moveWorkflowFilesToLocalRepo(): Promise<void> {
         const gitRootDirectory: string = await this.localGitRepoHelper.getGitRootDirectory();
         for (const file of this.filesToCommit) {
-            const filePathToLocalRepo: string = Path.join(gitRootDirectory, file.path);
+            const filePathList = file.path.split("/");
+            const filePath: string = filePathList.join(Path.sep);
+            const filePathToLocalRepo: string = Path.join(gitRootDirectory, filePath);
             fse.moveSync(file.absPath, filePathToLocalRepo);
             await vscode.window.showTextDocument(vscode.Uri.file(filePathToLocalRepo), { preview: false });
         }
@@ -292,10 +296,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
 
     private async getPathToFile(fileName: string, directory: string) {
         const dirList = directory.split("/"); // Hardcoded as provisioning service is running on linux and we cannot use Path.sep as it is machine dependent
-        let directoryPath: string = this.tempWorkflowDirPath;
-        dirList.forEach((dir) => {
-                directoryPath = Path.join(directoryPath, dir);
-         });
+        const directoryPath: string = Path.join(this.tempWorkflowDirPath, dirList.join(Path.sep));
         fse.mkdirpSync(directoryPath);
         telemetryHelper.setTelemetry(TelemetryKeys.WorkflowFileName, fileName);
         return Path.join(directoryPath, fileName);
