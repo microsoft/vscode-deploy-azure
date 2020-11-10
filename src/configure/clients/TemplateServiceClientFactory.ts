@@ -6,7 +6,6 @@ const UserAgent = "deploy-to-azure-vscode";
 
 export class TemplateServiceClientFactory {
 
-    private static client: ITemplateServiceClient;
     public static async getClient(credentials?: ServiceClientCredentials, githubPatToken?: string): Promise<ITemplateServiceClient> {
         if (!!this.client) {
             return this.client;
@@ -24,4 +23,6 @@ export class TemplateServiceClientFactory {
         }
         return this.client;
     }
+
+    private static client: ITemplateServiceClient;
 }

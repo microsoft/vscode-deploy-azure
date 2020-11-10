@@ -16,8 +16,15 @@ export class RemoteServiceUrlHelper {
     public static repoAnalysisRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2127646";
     public static templateServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2133849";
     public static provisioningServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2142042";
+    public static localTemplateServiceUrl: string = "https://go.microsoft.com/fwlink/?linkid=2148500";
+    public static localProvisioningServiceUrl: string = "https://go.microsoft.com/fwlink/?linkid=2148613";
 
     public static async getTemplateServiceDefinition(): Promise<IServiceUrlDefinition> {
+        const check = process.env["VS_CODE_DEPLOYMENT"];
+        if (check != undefined && check === "test") {
+            return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com", this.localTemplateServiceUrl);
+        }
+
         return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com", this.templateServiceRedirectUrl);
     }
 
@@ -26,6 +33,11 @@ export class RemoteServiceUrlHelper {
     }
 
     public static async getProvisioningServiceDefinition(): Promise<IServiceUrlDefinition> {
+        const check = process.env["VS_CODE_DEPLOYMENT"];
+        if (check != undefined && check === "test") {
+            return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/ProvisioningService/", this.localProvisioningServiceUrl);
+        }
+
         return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/ProvisioningService/", this.provisioningServiceRedirectUrl);
     }
 
