@@ -20,8 +20,8 @@ export class RemoteServiceUrlHelper {
     public static localProvisioningServiceUrl: string = "https://go.microsoft.com/fwlink/?linkid=2148613";
 
     public static async getTemplateServiceDefinition(): Promise<IServiceUrlDefinition> {
-        const check = process.env["VS_CODE_DEPLOYMENT"];
-        if (check != undefined && check === "test") {
+        const deployment = process.env["VS_CODE_DEPLOYMENT"];
+        if (deployment != undefined && deployment === "test") {
             return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com", this.localTemplateServiceUrl);
         }
 
@@ -33,8 +33,8 @@ export class RemoteServiceUrlHelper {
     }
 
     public static async getProvisioningServiceDefinition(): Promise<IServiceUrlDefinition> {
-        const check = process.env["VS_CODE_DEPLOYMENT"];
-        if (check != undefined && check === "test") {
+        const deployment = process.env["VS_CODE_DEPLOYMENT"];
+        if (deployment != undefined && deployment === "test") {
             return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/ProvisioningService/", this.localProvisioningServiceUrl);
         }
 
