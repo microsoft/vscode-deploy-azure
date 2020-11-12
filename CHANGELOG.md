@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). Versionin
 
 ## 1.2.1
 ### Updated
-- Configuring pipeline remotely for DotNet and DotNetCore WebApps.
+- Configured pipeline remotely for DotNet and DotNetCore WebApps.
 
 ## 1.2.0
 ### Added
