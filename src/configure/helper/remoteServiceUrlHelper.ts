@@ -16,13 +16,14 @@ export class RemoteServiceUrlHelper {
     public static repoAnalysisRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2127646";
     public static templateServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2133849";
     public static provisioningServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2142042";
-    public static localTemplateServiceUrl: string = "https://go.microsoft.com/fwlink/?linkid=2148500";
-    public static localProvisioningServiceUrl: string = "https://go.microsoft.com/fwlink/?linkid=2148613";
 
     public static async getTemplateServiceDefinition(): Promise<IServiceUrlDefinition> {
-        const deployment = process.env["VS_CODE_DEPLOY_TO_AZURE_DEPLOYMENT"];
-        if (deployment != undefined && deployment === "test") {
-            return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com", this.localTemplateServiceUrl);
+        const deployment = process.env["DEPLOY_TO_AZURE_DEPLOYMENT_ENV"];
+        if (deployment != undefined && deployment === "development") {
+            return {
+                serviceFramework: ServiceFramework.Moda,
+                serviceUrl: "http://localhost:12345/"
+            } as IServiceUrlDefinition;
         }
 
         return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com", this.templateServiceRedirectUrl);
@@ -33,9 +34,12 @@ export class RemoteServiceUrlHelper {
     }
 
     public static async getProvisioningServiceDefinition(): Promise<IServiceUrlDefinition> {
-        const deployment = process.env["VS_CODE_DEPLOY_TO_AZURE_DEPLOYMENT"];
-        if (deployment != undefined && deployment === "test") {
-            return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/ProvisioningService/", this.localProvisioningServiceUrl);
+        const deployment = process.env["DEPLOY_TO_AZURE_DEPLOYMENT_ENV"];
+        if (deployment != undefined && deployment === "development") {
+            return {
+                serviceFramework: ServiceFramework.Moda,
+                serviceUrl: "http://localhost:12345/repos/"
+            } as IServiceUrlDefinition;
         }
 
         return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/ProvisioningService/", this.provisioningServiceRedirectUrl);
