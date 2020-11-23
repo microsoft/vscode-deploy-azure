@@ -18,7 +18,7 @@ export class RemoteServiceUrlHelper {
     public static provisioningServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2142042";
 
     public static async getTemplateServiceDefinition(): Promise<IServiceUrlDefinition> {
-        const deployment = process.env["DEPLOY_TO_AZURE_DEPLOYMENT_ENV"];
+        const deployment = process.env["DEPLOY_TO_AZURE_ENVIRONMENT"];
         if (deployment != undefined && deployment === "development") {
             return {
                 serviceFramework: ServiceFramework.Moda,
@@ -34,7 +34,7 @@ export class RemoteServiceUrlHelper {
     }
 
     public static async getProvisioningServiceDefinition(): Promise<IServiceUrlDefinition> {
-        const deployment = process.env["DEPLOY_TO_AZURE_DEPLOYMENT_ENV"];
+        const deployment = process.env["DEPLOY_TO_AZURE_ENVIRONMENT"];
         if (deployment != undefined && deployment === "development") {
             return {
                 serviceFramework: ServiceFramework.Moda,
