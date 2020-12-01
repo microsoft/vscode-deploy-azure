@@ -3,54 +3,58 @@ All notable changes to the Deploy to Azure extension will be documented in this 
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/). Versioning follows an internal Azure DevOps format that is not compatible with SemVer.
 
+## 1.2.1
+### Updated
+- Added support for configuring Pipeline remotely in case of .Net and .Net Core deployments to Web Apps.
+
 ## 1.2.0
 ### Added
-- Integrated with  [Azure Kubernetes Service extension](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-aks-tools) to support configure ci/cd on right click of a cluster
+- Integrated with  [Azure Kubernetes Service extension](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-aks-tools) to support configure ci/cd on right click of a cluster.
 
 ## 1.1.5
 ### Added
-- Added remote configurer for Github Node WebApp
+- Added remote configurer for Github Node WebApp.
 
 ## 1.1.4
 ### Added
-- Added remote configurer for Github AKS workflow
+- Added remote configurer for Github AKS workflow.
 
 ## 1.1.3
 ### Added
-- Fixed bugs
+- Fixed bugs.
 
 ## 1.1.2
 ### Added
-- Fixed session undefined bug
+- Fixed session undefined bug.
 
 ## 1.1.1
 ### Added
-- Improved telemetry for better insights
+- Improved telemetry for better insights.
 
 ## 1.1.0
 ### Added
-- If not a remote repo, have a provision of creating github repo
-- Added support for selecting the working directory if multiple applications are there to deploy
+- If not a remote repo, have a provision of creating github repo.
+- Added support for selecting the working directory if multiple applications are there to deploy.
 
 ## 1.0.6
 ### Added
-- Added telemetry for better insights
+- Added telemetry for better insights.
 
 ## 1.0.5
 ### Added
-- Added validations on auto generated GitHub secret names
+- Added validations on auto generated GitHub secret names.
 
 ## 1.0.4
 ### Added
-- Added support for Repository Analysis for GitHub repositories
+- Added support for Repository Analysis for GitHub repositories.
 
 ## 1.0.3
 ### Added
-- Update README.md
+- Update README.md.
 
 ## 1.0.2
 ### Added
-- Configure CI/CD for Github Workflow for Github Repositories
+- Configure CI/CD for Github Workflow for Github Repositories.
 
 ## 1.0.1
 ### Added
