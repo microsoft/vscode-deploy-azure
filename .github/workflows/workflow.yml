@@ -1,0 +1,32 @@
+# Simple Application on Linux Web App
+# Package and deploy a simple web application and deploy it to Azure as Linux web app.
+
+on:
+  push:
+    branches:
+      - master
+
+name: Package and deploy simple web app
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    # checkout the repo
+    - uses: actions/checkout@master
+
+    # login using azure credentials
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS_GITHUB_SECRET_8e67 }}
+
+    # deploy web app
+    - uses: azure/webapps-deploy@v1
+      with:
+        app-name: aaaatiwarishub-webapp-linux
+        package: .azure-pipelines/github-release
+
+    # Azure logout
+    - name: logout
+      run: |
+        az logout
