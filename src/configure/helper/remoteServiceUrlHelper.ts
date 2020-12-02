@@ -35,7 +35,7 @@ export class RemoteServiceUrlHelper {
 
     public static async getProvisioningServiceDefinition(): Promise<IServiceUrlDefinition> {
         const deployment = process.env["DEPLOY_TO_AZURE_EXT_ENVIRONMENT"];
-        if (deployment != undefined && deployment === "development") {
+        if (deployment != undefined && deployment === "development1") {
             return {
                 serviceFramework: ServiceFramework.Moda,
                 serviceUrl: process.env["PROXY_URL"] + "/repos/"
