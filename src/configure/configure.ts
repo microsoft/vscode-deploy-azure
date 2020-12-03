@@ -1,4 +1,3 @@
-
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { ApplicationSettings, RepositoryAnalysis } from 'azureintegration-repoanalysis-client-internal';
 import * as path from 'path';
