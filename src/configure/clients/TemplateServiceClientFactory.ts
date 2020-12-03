@@ -24,5 +24,5 @@ export class TemplateServiceClientFactory {
         return this.client;
     }
 
-    private static client: ITemplateServiceClient; 
+    private static client: ITemplateServiceClient;
 }
