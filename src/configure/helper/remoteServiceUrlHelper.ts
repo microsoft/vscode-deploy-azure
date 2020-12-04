@@ -38,7 +38,7 @@ export class RemoteServiceUrlHelper {
         if (deployment != undefined && deployment === "development") {
             return {
                 serviceFramework: ServiceFramework.Moda,
-                serviceUrl: process.env["PROXY_URL"] + "/repos/"
+                serviceUrl: process.env["PROXY_URL"] + "repos/"
             } as IServiceUrlDefinition;
         }
 
