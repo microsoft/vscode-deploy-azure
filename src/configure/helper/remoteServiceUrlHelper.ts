@@ -18,6 +18,14 @@ export class RemoteServiceUrlHelper {
     public static provisioningServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2142042";
 
     public static async getTemplateServiceDefinition(): Promise<IServiceUrlDefinition> {
+        const deployment = process.env["DEPLOY_TO_AZURE_EXT_ENVIRONMENT"];
+        if (deployment != undefined && deployment === "development") {
+            return {
+                serviceFramework: ServiceFramework.Moda,
+                serviceUrl: process.env["PROXY_URL"]
+            } as IServiceUrlDefinition;
+        }
+
         return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com", this.templateServiceRedirectUrl);
     }
 
@@ -26,6 +34,14 @@ export class RemoteServiceUrlHelper {
     }
 
     public static async getProvisioningServiceDefinition(): Promise<IServiceUrlDefinition> {
+        const deployment = process.env["DEPLOY_TO_AZURE_EXT_ENVIRONMENT"];
+        if (deployment != undefined && deployment === "development") {
+            return {
+                serviceFramework: ServiceFramework.Moda,
+                serviceUrl: process.env["PROXY_URL"] + "/repos/"
+            } as IServiceUrlDefinition;
+        }
+
         return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/ProvisioningService/", this.provisioningServiceRedirectUrl);
     }
 
