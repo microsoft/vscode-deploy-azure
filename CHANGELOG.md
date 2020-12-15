@@ -3,6 +3,10 @@ All notable changes to the Deploy to Azure extension will be documented in this 
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/). Versioning follows an internal Azure DevOps format that is not compatible with SemVer.
 
+## 1.2.2
+### Updated
+- Fixed azure pipeline support for Github repository.
+
 ## 1.2.1
 ### Updated
 - Added support for configuring Pipeline remotely in case of .Net and .Net Core deployments to Web Apps.
