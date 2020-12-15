@@ -17,10 +17,6 @@ import * as templateHelper from './templateHelper';
 const Layer = 'LocalGitRepoHelper';
 
 export class LocalGitRepoHelper {
-    private gitReference: git.SimpleGit;
-
-    private constructor() {
-    }
 
     public static GetHelperInstance(repositoryPath: string): LocalGitRepoHelper {
         var repoService = new LocalGitRepoHelper();
@@ -30,15 +26,6 @@ export class LocalGitRepoHelper {
         telemetryHelper.setTelemetry(TelemetryKeys.GitFolderExists, gitFolderExists.toString());
 
         return repoService;
-    }
-
-    public async getUsername(): Promise<string> {
-        let username = await this.gitReference.raw([
-            'config',
-            'user.name'
-        ]);
-
-        return username;
     }
 
     public static async GetAvailableFileName(fileName: string, repoPath: string): Promise<string> {
@@ -58,6 +45,23 @@ export class LocalGitRepoHelper {
         });
 
         return deferred.promise;
+    }
+
+    private static getIncreamentalFileName(fileName: string, count: number): string {
+        return fileName.substr(0, fileName.indexOf('.')).concat(` (${count})`, fileName.substr(fileName.indexOf('.')));
+    }
+
+    private gitReference: git.SimpleGit;
+    private constructor() {
+    }
+
+    public async getUsername(): Promise<string> {
+        let username = await this.gitReference.raw([
+            'config',
+            'user.name'
+        ]);
+
+        return username;
     }
 
     public async isGitRepository(): Promise<boolean> {
@@ -175,14 +179,6 @@ export class LocalGitRepoHelper {
         }
     }
 
-    private static getIncreamentalFileName(fileName: string, count: number): string {
-        return fileName.substr(0, fileName.indexOf('.')).concat(` (${count})`, fileName.substr(fileName.indexOf('.')));
-    }
-
-    private initialize(repositoryPath: string): void {
-        this.gitReference = git(repositoryPath);
-    }
-
     public async createAndDisplayManifestFile(manifestFile: string, pipelineConfigurer: Configurer, filesToCommit: string[], inputs: WizardInputs, targetfileName: string = null) {
         let targetFile: string = targetfileName ? targetfileName : manifestFile;
         let manifestPath: string = path.join(path.dirname(__dirname), "/templates/dependencies/");
@@ -198,8 +194,17 @@ export class LocalGitRepoHelper {
         await vscode.window.showTextDocument(vscode.Uri.file(manifestFilePath));
     }
 
-    public async readFileContent(pathToFile: string): Promise<string>{
+    public async readFileContent(pathToFile: string): Promise<string> {
         const buf = fs.readFileSync(pathToFile);
         return buf.toString();
+    }
+
+    public async writeFileContent(content: string, pathToFile: string): Promise<string> {
+        fs.writeFileSync(pathToFile, content);
+        return pathToFile;
+    }
+
+    private initialize(repositoryPath: string): void {
+        this.gitReference = git(repositoryPath);
     }
 }

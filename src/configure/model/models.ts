@@ -16,10 +16,12 @@ class ExtensionVariables implements UIExtensionVariables {
     public ui: IAzureUserInput;
     public enableGitHubWorkflow: boolean;
     public remoteConfigurerEnabled: boolean;
+    public isLocalRepo: boolean;
 
     constructor() {
         this.enableGitHubWorkflow = !workspace.getConfiguration().get('deployToAzure.UseAzurePipelinesForGithub');
         this.remoteConfigurerEnabled = true;
+        this.isLocalRepo = false;
     }
 }
 
@@ -288,4 +290,9 @@ export interface IVisibilityRule {
 export enum PipelineType {
     AzurePipeline,
     GitHubPipeline
+}
+
+export interface IResourceNode {
+    resource: GenericResource;
+    subscriptionId: string;
 }

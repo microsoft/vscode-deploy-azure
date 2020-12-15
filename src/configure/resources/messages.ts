@@ -109,12 +109,16 @@ export class Messages {
     public static languageNotSupported = "The language of the repository selected is not supported.";
     public static UnableToGetTemplateParameters = "Unable to get parameters for the selected template.";
     public static AnalyzingRepo = "Analyzing your repository";
-    public static AzureLoginError = "Error in getting Azure login information, Please try again.";
-    public static AdoDifferentTenantError = " One potential reason can be the AAD tenant of your Azure DevOps repository is different than the one you have been logged-in to VSCode. Open 'Command Pallete' and select 'Azure: Sign Out' and then Sign-In to other tenant by invoking 'Deploy to Azure' extension";
+    public static AzureLoginError = "Error in getting Azure login information. Please open 'Command Palette' and select 'Azure: Sign Out' and then invoke 'Deploy to Azure' extension.";
+    public static AdoDifferentTenantError = " One potential reason can be the AAD tenant of your Azure DevOps repository is different than the one you have been logged-in to VSCode. Open 'Command Palette' and select 'Azure: Sign Out' and then Sign-In to other tenant by invoking 'Deploy to Azure' extension";
     public static ConfiguringPipelineFailed = "Configuring provisioning pipeline failed due to %s";
     public static CreatingSPN = "Creating SPN";
-    public static GeneratingWorkflowFiles = "Generating workflow files";
+    public static GeneratingWorkflowFiles = "Generating workflow file(s)";
     public static CreatingResourceGroup = "Creating resource group";
     public static ConfiguringGithubWorkflowAndDeployment = 'Configuring github workflow and proceeding to deployment...';
     public static ConfiguringGitubWorkflowFailed = 'Configuring github workflow failed due to %s';
+    public static NoAzureSubscriptionFound = 'No Azure Subscription Found.';
+    public static GithubRepoRequired = "The selected folder is not a GitHub repository.Please ensure your repository is hosted on GitHub and try again.";
+    public static GithubWorkflowSetupMultiFile: string = "The workflow files are pushed to your Github repository([commit URL](%s)) and workflow is set up successfully !";
+    public static GithubWorkflowSetup: string = "The workflow file is pushed to your Github repository([commit URL](%s)) and workflow is set up successfully !";
 }

@@ -69,14 +69,14 @@ export class RepoAnalysisHelper {
                     if (!!analysis.buildTargetName) {
                         applicationSettings.buildTargetName = analysis.buildTargetName;
                         if (analysis.language === SupportedLanguage.NODE) {
-                            applicationSettings.settings.nodePackageFilePath = analysis.settings[RepoAnalysisConstants.PackageFilePath];
-                            applicationSettings.settings.nodePackageFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.PackageFilePath]);
+                            applicationSettings.settings[RepoAnalysisConstants.PackageFilePath] = analysis.settings[RepoAnalysisConstants.PackageFilePath];
+                            applicationSettings.settings.packageFileDirectory = path.dirname(analysis.settings[RepoAnalysisConstants.PackageFilePath]);
                             if (analysis.buildTargetName === RepoAnalysisConstants.Gulp && !!analysis.settings[RepoAnalysisConstants.GulpFilePath]) {
-                                applicationSettings.settings.nodeGulpFilePath = this.GetRelativePath(
+                                applicationSettings.settings[RepoAnalysisConstants.GulpFilePath] = this.GetRelativePath(
                                     applicationSettings.settings.workingDirectory, analysis.settings[RepoAnalysisConstants.GulpFilePath]);
                             }
                             else if (analysis.buildTargetName === RepoAnalysisConstants.Grunt && !!analysis.settings[RepoAnalysisConstants.GruntFilePath]) {
-                                applicationSettings.settings.nodeGruntFilePath = this.GetRelativePath(
+                                applicationSettings.settings[RepoAnalysisConstants.GruntFilePath] = this.GetRelativePath(
                                     applicationSettings.settings.workingDirectory, analysis.settings[RepoAnalysisConstants.GruntFilePath]);
                             }
                         }

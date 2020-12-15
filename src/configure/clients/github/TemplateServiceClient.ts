@@ -14,6 +14,7 @@ export class TemplateServiceClient implements ITemplateServiceClient {
     private readonly extendedPipelineTemplateResource = "ExtendedPipelineTemplates";
     private readonly templatesInfoResource = "TemplatesInfo";
     private readonly templateAssetFilesResource = "TemplateAssetFiles";
+    private readonly hideKey = "vside";
 
     constructor(url: string, creds?: ServiceClientCredentials, headers?) {
         this.restClient = new RestClient(creds);
@@ -31,7 +32,8 @@ export class TemplateServiceClient implements ITemplateServiceClient {
                     'api-version': this.apiVersion,
                     'languageFilter': language,
                     'deployTargetFilter': deployTarget,
-                    'buildTargetFilter': buildTarget
+                    'buildTargetFilter': buildTarget,
+                    'hideKey': this.hideKey
                 },
                 deserializationMapper: null,
                 serializationMapper: null
@@ -45,7 +47,8 @@ export class TemplateServiceClient implements ITemplateServiceClient {
                 method: 'POST',
                 headers: this.headers,
                 queryParameters: {
-                    'api-version': this.apiVersion
+                    'api-version': this.apiVersion,
+                    'hideKey': this.hideKey
                 },
                 body: body,
                 deserializationMapper: null,
