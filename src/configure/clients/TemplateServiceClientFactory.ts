@@ -24,5 +24,9 @@ export class TemplateServiceClientFactory {
         return this.client;
     }
 
+    public static resetClient() {
+        this.client = null;
+    }
+
     private static client: ITemplateServiceClient;
 }

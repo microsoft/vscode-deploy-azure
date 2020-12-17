@@ -5,6 +5,8 @@ import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
+import { ProvisioningServiceClientFactory } from "./clients/provisioningServiceClientFactory";
+import { TemplateServiceClientFactory } from './clients/TemplateServiceClientFactory';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
 import { ProvisioningConfigurer } from './configurers/provisioningConfigurer';
@@ -100,10 +102,13 @@ class Orchestrator {
         UniqueResourceNameSuffix = uuid().substr(0, 5);
         this.context['isResourceAlreadySelected'] = false;
         this.context['resourceId'] = '';
+        ProvisioningServiceClientFactory.resetClient()
+        TemplateServiceClientFactory.resetClient()
     }
 
     public async configure(node: IResourceNode | vscode.Uri): Promise<void> {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
+
         await this.getInputs(node);
         if (this.continueOrchestration) {
             if (this.doesLanguageAndTargetSupportRemoteProvisioning()) {

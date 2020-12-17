@@ -8,6 +8,7 @@ export class ProvisioningServiceClientFactory {
         if (!!this.client) {
             return this.client;
         }
+
         const defaultHeaders: { [propertyName: string]: string } = { "Content-Type": "application/json" };
         const serviceDefinition = await RemoteServiceUrlHelper.getProvisioningServiceDefinition();
         if (serviceDefinition.serviceFramework === ServiceFramework.Vssf) {
@@ -18,6 +19,10 @@ export class ProvisioningServiceClientFactory {
         }
 
         return this.client;
+    }
+
+    public static resetClient() {
+        this.client = null;
     }
 
     private static client: IProvisioningServiceClient;
