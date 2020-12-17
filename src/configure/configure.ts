@@ -108,7 +108,6 @@ class Orchestrator {
 
     public async configure(node: IResourceNode | vscode.Uri): Promise<void> {
         telemetryHelper.setCurrentStep('GetAllRequiredInputs');
-
         await this.getInputs(node);
         if (this.continueOrchestration) {
             if (this.doesLanguageAndTargetSupportRemoteProvisioning()) {
