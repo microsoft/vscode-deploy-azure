@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). Versionin
 ## 1.2.2
 ### Updated
 - Fixed azure pipeline support for Github repository.
+- Updated Github PAT permissions needed for workflow commit
 
 ## 1.2.1
 ### Updated
