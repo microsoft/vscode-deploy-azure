@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
-import { ProvisioningServiceClientFactory } from "./clients/provisioningServiceClientFactory";
+import { ProvisioningServiceClientFactory } from './clients/provisioningServiceClientFactory';
 import { TemplateServiceClientFactory } from './clients/TemplateServiceClientFactory';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
@@ -102,8 +102,6 @@ class Orchestrator {
         UniqueResourceNameSuffix = uuid().substr(0, 5);
         this.context['isResourceAlreadySelected'] = false;
         this.context['resourceId'] = '';
-        ProvisioningServiceClientFactory.resetClient()
-        TemplateServiceClientFactory.resetClient()
     }
 
     public async configure(node: IResourceNode | vscode.Uri): Promise<void> {
@@ -206,6 +204,9 @@ class Orchestrator {
             }
 
             const repoAnalysisResult = await this.getRepositoryAnalysis();
+
+            TemplateServiceClientFactory.setClientCredentials(this.inputs.azureSession.credentials, this.inputs.githubPATToken)
+            ProvisioningServiceClientFactory.setClientCredentials(this.inputs.azureSession.credentials, this.inputs.githubPATToken)
 
             this.setPipelineType();
             await this.getTemplatesByRepoAnalysis(repoAnalysisResult);

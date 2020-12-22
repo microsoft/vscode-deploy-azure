@@ -174,7 +174,7 @@ async function convertToPipelineTemplate(remoteTemplates: TemplateInfo[]): Promi
 
 export async function getFilteredTemplates(azureSession: AzureSession, resourceType: string, githubPatToken?: string): Promise<TemplateInfo[]> {
 
-    const client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
+    const client = await TemplateServiceClientFactory.getClient();
     let filteredTemplates: TemplateInfo[];
     switch (resourceType) {
         case TargetResourceType.AKS:
@@ -188,7 +188,7 @@ export async function getFilteredTemplates(azureSession: AzureSession, resourceT
 }
 
 export async function getTemplates(azureSession: AzureSession, repoAnalysisParameters: RepositoryAnalysis, githubPatToken?: string) {
-    const client = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
+    const client = await TemplateServiceClientFactory.getClient();
     let templates: TemplateInfo[];
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
         templates = await client.getTemplates(repoAnalysisParameters);
@@ -233,7 +233,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
 export async function getTemplateParameters(azureSession: AzureSession, templateId: string, githubPatToken?: string): Promise<ExtendedPipelineTemplate> {
     let parameters: ExtendedPipelineTemplate;
     try {
-        let serviceClient = await TemplateServiceClientFactory.getClient(azureSession.credentials, githubPatToken);
+        let serviceClient = await TemplateServiceClientFactory.getClient();
         parameters = await serviceClient.getTemplateParameters(templateId);
         return parameters;
     }
