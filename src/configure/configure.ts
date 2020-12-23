@@ -238,7 +238,7 @@ class Orchestrator {
     private async getTemplateParameters() {
         if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
             const template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
-            const extendedPipelineTemplate = await templateHelper.getTemplateParameters(this.inputs.azureSession, template.id, this.inputs.githubPATToken);
+            const extendedPipelineTemplate = await templateHelper.getTemplateParameters(template.id);
             template.attributes = extendedPipelineTemplate.attributes;
             template.parameters = extendedPipelineTemplate.parameters;
             const controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this.context);

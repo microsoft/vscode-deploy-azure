@@ -172,7 +172,7 @@ async function convertToPipelineTemplate(remoteTemplates: TemplateInfo[]): Promi
     return pipelineTemplates;
 }
 
-export async function getFilteredTemplates(azureSession: AzureSession, resourceType: string, githubPatToken?: string): Promise<TemplateInfo[]> {
+export async function getFilteredTemplates(resourceType: string): Promise<TemplateInfo[]> {
 
     const client = await TemplateServiceClientFactory.getClient();
     let filteredTemplates: TemplateInfo[];
@@ -187,7 +187,7 @@ export async function getFilteredTemplates(azureSession: AzureSession, resourceT
     }
 }
 
-export async function getTemplates(azureSession: AzureSession, repoAnalysisParameters: RepositoryAnalysis, githubPatToken?: string) {
+export async function getTemplates(repoAnalysisParameters: RepositoryAnalysis) {
     const client = await TemplateServiceClientFactory.getClient();
     let templates: TemplateInfo[];
     await telemetryHelper.executeFunctionWithTimeTelemetry(async () => {
@@ -206,10 +206,10 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
         try {
             if (!!resource) {
                 localPipelineTemplates = [];
-                remoteTemplates = await getFilteredTemplates(azureSession, resource.type, githubPatToken);
+                remoteTemplates = await getFilteredTemplates(resource.type);
             }
             else if (repoAnalysisParameters && repoAnalysisParameters.applicationSettingsList) {
-                remoteTemplates = await getTemplates(azureSession, repoAnalysisParameters, githubPatToken);
+                remoteTemplates = await getTemplates(repoAnalysisParameters);
             }
             pipelineTemplates = await convertToPipelineTemplate(remoteTemplates);
             pipelineTemplates = pipelineTemplates.concat(localPipelineTemplates);
@@ -230,7 +230,7 @@ export async function analyzeRepoAndListAppropriatePipeline2(azureSession: Azure
     }
 }
 
-export async function getTemplateParameters(azureSession: AzureSession, templateId: string, githubPatToken?: string): Promise<ExtendedPipelineTemplate> {
+export async function getTemplateParameters(templateId: string): Promise<ExtendedPipelineTemplate> {
     let parameters: ExtendedPipelineTemplate;
     try {
         let serviceClient = await TemplateServiceClientFactory.getClient();
