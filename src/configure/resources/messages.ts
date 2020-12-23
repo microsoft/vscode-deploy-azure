@@ -27,7 +27,7 @@ export class Messages {
     public static failedToCreateAzurePipeline: string = 'Couldn\'t configure pipeline. Error: %s';
     public static failedToDetermineAzureRepoDetails: string = 'Failed to determine Azure Repo details from remote url. Please ensure that the remote points to a valid Azure Repos url.';
     public static githubPatTokenErrorMessage: string = 'GitHub PAT token cannot be empty.';
-    public static githubPatTokenHelpMessage: string = 'GitHub personal access token (PAT) with following permissions: full access to repository webhooks and services, read and write access to all repository data.';
+    public static githubPatTokenHelpMessage: string = 'GitHub personal access token (PAT) with following permissions: Update github action workflows, read and write access to all repository data.';
     public static githubPatTokenHelpMessageGithubWorkflow: string = 'GitHub personal access token (PAT) with following permissions: read and write access to all repository data.';
     public static modifyAndCommitFile: string = 'Modify and save your YAML file. %s will commit this file, push the branch \'%s\' to remote \'%s\' and proceed with deployment.';
     public static modifyAndCommitFileWithGitInitialization: string = 'Modify and save your YAML file to proceed with deployment.';
@@ -119,6 +119,7 @@ export class Messages {
     public static ConfiguringGitubWorkflowFailed = 'Configuring github workflow failed due to %s';
     public static NoAzureSubscriptionFound = 'No Azure Subscription Found.';
     public static GithubRepoRequired = "The selected folder is not a GitHub repository.Please ensure your repository is hosted on GitHub and try again.";
-    public static GithubWorkflowSetupMultiFile: string = "The workflow files are pushed to your Github repository([commit URL](%s)) and workflow is set up successfully !";
-    public static GithubWorkflowSetup: string = "The workflow file is pushed to your Github repository([commit URL](%s)) and workflow is set up successfully !";
+    public static GithubWorkflowSetupMultiFile: string = "The workflow files are pushed to your Github repository([commit URL](%s)) and workflow is set up successfully!";
+    public static GithubWorkflowSetup: string = "The workflow file is pushed to your Github repository([commit URL](%s)) and workflow is set up successfully!";
+    public static UndefinedClientCredentials: string = "Undefined client credentials"
 }
