@@ -31,7 +31,7 @@ export class TemplateServiceClientFactory {
         return this.client;
     }
 
-    public static setClientCredentials(credentials: ServiceClientCredentials, githubPatToken: string): void {
+    public static initialize(credentials: ServiceClientCredentials, githubPatToken: string): void {
         this.client = null;
         this.credentials = credentials;
         this.githubPatToken = githubPatToken

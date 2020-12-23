@@ -205,8 +205,7 @@ class Orchestrator {
 
             const repoAnalysisResult = await this.getRepositoryAnalysis();
 
-            TemplateServiceClientFactory.setClientCredentials(this.inputs.azureSession.credentials, this.inputs.githubPATToken);
-            ProvisioningServiceClientFactory.setClientCredentials(this.inputs.azureSession.credentials, this.inputs.githubPATToken);
+            this.initializeClientFactories();
             this.setPipelineType();
             await this.getTemplatesByRepoAnalysis(repoAnalysisResult);
             try {
@@ -734,6 +733,11 @@ class Orchestrator {
 
         telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
         pipelineConfigurer.browseQueuedPipeline();
+    }
+
+    private initializeClientFactories(): void {
+        TemplateServiceClientFactory.initialize(this.inputs.azureSession.credentials, this.inputs.githubPATToken);
+        ProvisioningServiceClientFactory.initialize(this.inputs.azureSession.credentials, this.inputs.githubPATToken);
     }
 }
 
