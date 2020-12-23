@@ -205,9 +205,8 @@ class Orchestrator {
 
             const repoAnalysisResult = await this.getRepositoryAnalysis();
 
-            TemplateServiceClientFactory.setClientCredentials(this.inputs.azureSession.credentials, this.inputs.githubPATToken)
-            ProvisioningServiceClientFactory.setClientCredentials(this.inputs.azureSession.credentials, this.inputs.githubPATToken)
-
+            TemplateServiceClientFactory.setClientCredentials(this.inputs.azureSession.credentials, this.inputs.githubPATToken);
+            ProvisioningServiceClientFactory.setClientCredentials(this.inputs.azureSession.credentials, this.inputs.githubPATToken);
             this.setPipelineType();
             await this.getTemplatesByRepoAnalysis(repoAnalysisResult);
             try {
