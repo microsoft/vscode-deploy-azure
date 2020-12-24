@@ -48,7 +48,7 @@ export class RemoteGitHubWorkflowConfigurer extends LocalGitHubWorkflowConfigure
     public async getInputs(wizardInputs: WizardInputs): Promise<void> {
         this.inputs = wizardInputs;
         this.githubClient = new GithubClient(wizardInputs.githubPATToken, wizardInputs.sourceRepository.remoteUrl);
-        this.templateServiceClient = await TemplateServiceClientFactory.getClient(wizardInputs.azureSession.credentials, wizardInputs.githubPATToken);
+        this.templateServiceClient = await TemplateServiceClientFactory.getClient();
         this.template = wizardInputs.pipelineConfiguration.template as RemotePipelineTemplate;
         let extendedPipelineTemplate;
         try {

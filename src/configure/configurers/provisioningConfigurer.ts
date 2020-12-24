@@ -46,7 +46,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
 
     public async queueProvisioningPipelineJob(provisioningConfiguration: ProvisioningConfiguration, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration> {
         try {
-            this.provisioningServiceClient = await ProvisioningServiceClientFactory.getClient(wizardInputs.githubPATToken, wizardInputs.azureSession.credentials);
+            this.provisioningServiceClient = await ProvisioningServiceClientFactory.getClient();
             const OrgAndRepoDetails = wizardInputs.sourceRepository.repositoryId.split('/');
             return await this.provisioningServiceClient.createProvisioningConfiguration(provisioningConfiguration, OrgAndRepoDetails[0], OrgAndRepoDetails[1]);
         } catch (error) {
@@ -57,7 +57,7 @@ export class ProvisioningConfigurer implements IProvisioningConfigurer {
 
     public async getProvisioningPipeline(jobId: string, githubOrg: string, repository: string, wizardInputs: WizardInputs): Promise<ProvisioningConfiguration> {
         try {
-            this.provisioningServiceClient = await ProvisioningServiceClientFactory.getClient(wizardInputs.githubPATToken, wizardInputs.azureSession.credentials);
+            this.provisioningServiceClient = await ProvisioningServiceClientFactory.getClient();
             return await this.provisioningServiceClient.getProvisioningConfiguration(jobId, githubOrg, repository);
         } catch (error) {
             telemetryHelper.logError(Layer, TracePoints.UnabletoGetProvisioningPipeline, error);
