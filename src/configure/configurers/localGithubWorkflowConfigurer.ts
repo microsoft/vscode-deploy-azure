@@ -67,7 +67,7 @@ export class LocalGitHubWorkflowConfigurer implements Configurer {
                 }
                 catch (error) {
                     vscode.window.showErrorMessage(error.message);
-                    throw Error;
+                    throw error;
                 }
             }
             else {

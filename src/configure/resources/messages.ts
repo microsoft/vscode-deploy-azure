@@ -119,7 +119,8 @@ export class Messages {
     public static ConfiguringGitubWorkflowFailed = 'Configuring github workflow failed due to %s';
     public static NoAzureSubscriptionFound = 'No Azure Subscription Found.';
     public static GithubRepoRequired = "The selected folder is not a GitHub repository.Please ensure your repository is hosted on GitHub and try again.";
-    public static GithubWorkflowSetupMultiFile: string = "The workflow files are pushed to your Github repository([commit URL](%s)) and workflow is set up successfully!";
-    public static GithubWorkflowSetup: string = "The workflow file is pushed to your Github repository([commit URL](%s)) and workflow is set up successfully!";
+    public static GithubWorkflowSetupMultiFile: string = "The workflow files are pushed to your Github repository([commit URL](%s)) and workflow is set up successfully !";
+    public static GithubWorkflowSetup: string = "The workflow file is pushed to your Github repository([commit URL](%s)) and workflow is set up successfully !";
+    public static GitHubPatInvalid: string = "The GitHub Personal Access token is Invalid. Please retry the command with a valid Personal Access token and ensure that it has permission for required scopes.";
     public static UndefinedClientCredentials: string = "Undefined client credentials"
 }

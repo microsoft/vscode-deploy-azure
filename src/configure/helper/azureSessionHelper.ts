@@ -2,6 +2,7 @@ import { SubscriptionModels } from "azure-arm-resource";
 import { isNullOrUndefined } from "util";
 import { AzureSession, extensionVariables } from "../model/models";
 import { Messages } from "../resources/messages";
+import { WhiteListedError } from "../utilities/utilities";
 
 export async function getSubscriptionSession(subscriptionId: string): Promise<AzureSession> {
     if (!(await extensionVariables.azureAccountExtensionApi.waitForSubscriptions())) {
@@ -27,7 +28,7 @@ export async function getAzureSession(): Promise<AzureSession> {
 
     const currentSubscription = extensionVariables.azureAccountExtensionApi.subscriptions[0];
     if (isNullOrUndefined(currentSubscription)) {
-        throw new Error(Messages.NoAzureSubscriptionFound);
+        throw new WhiteListedError(Messages.NoAzureSubscriptionFound);
     }
 
     return currentSubscription.session;
