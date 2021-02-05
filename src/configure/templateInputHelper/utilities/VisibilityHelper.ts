@@ -60,7 +60,7 @@ export class VisibilityHelper {
     }
 
     private static getPredicateRule(visibleRule: string): IPredicate {
-        let reg = /([a-zA-Z0-9 ]+)([!=<>]+)([a-zA-Z0-9. ]+)|([a-zA-Z0-9 ]+(?=NotContains|NotEndsWith|NotStartsWith))(NotContains|NotEndsWith|NotStartsWith)([a-zA-Z0-9. ]+)|([a-zA-Z0-9 ]+(?=Contains|EndsWith|StartsWith))(Contains|EndsWith|StartsWith)([a-zA-Z0-9. ]+)/g;
+        let reg = /([a-zA-Z0-9 ]+)([!=<>]+)([a-zA-Z0-9. \-\_]+)|([a-zA-Z0-9 ]+(?=NotContains|NotEndsWith|NotStartsWith))(NotContains|NotEndsWith|NotStartsWith)([a-zA-Z0-9. \-\_]+)|([a-zA-Z0-9 ]+(?=Contains|EndsWith|StartsWith))(Contains|EndsWith|StartsWith)([a-zA-Z0-9. \-\_]+)/g;
         let rule: IPredicate = null;
         let matches = reg.exec(visibleRule);
         if (matches && matches.length === 10) {
