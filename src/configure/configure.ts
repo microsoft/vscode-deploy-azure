@@ -1,4 +1,3 @@
-
 import { GenericResource } from 'azure-arm-resource/lib/resource/models';
 import { ApplicationSettings, RepositoryAnalysis } from 'azureintegration-repoanalysis-client-internal';
 import * as path from 'path';
@@ -6,6 +5,8 @@ import * as vscode from 'vscode';
 import { UserCancelledError } from 'vscode-azureextensionui';
 import { AppServiceClient } from './clients/azure/appServiceClient';
 import { AzureResourceClient } from './clients/azure/azureResourceClient';
+import { ProvisioningServiceClientFactory } from './clients/provisioningServiceClientFactory';
+import { TemplateServiceClientFactory } from './clients/TemplateServiceClientFactory';
 import { Configurer } from './configurers/configurerBase';
 import { ConfigurerFactory } from './configurers/configurerFactory';
 import { ProvisioningConfigurer } from './configurers/provisioningConfigurer';
@@ -204,6 +205,7 @@ class Orchestrator {
 
             const repoAnalysisResult = await this.getRepositoryAnalysis();
 
+            this.initializeClientFactories();
             this.setPipelineType();
             await this.getTemplatesByRepoAnalysis(repoAnalysisResult);
             try {
@@ -235,7 +237,7 @@ class Orchestrator {
     private async getTemplateParameters() {
         if (this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE) {
             const template = this.inputs.pipelineConfiguration.template as RemotePipelineTemplate;
-            const extendedPipelineTemplate = await templateHelper.getTemplateParameters(this.inputs.azureSession, template.id, this.inputs.githubPATToken);
+            const extendedPipelineTemplate = await templateHelper.getTemplateParameters(template.id);
             template.attributes = extendedPipelineTemplate.attributes;
             template.parameters = extendedPipelineTemplate.parameters;
             const controlProvider = new InputControlProvider(this.inputs.azureSession, extendedPipelineTemplate, this.context);
@@ -731,6 +733,11 @@ class Orchestrator {
 
         telemetryHelper.setCurrentStep('DisplayCreatedPipeline');
         pipelineConfigurer.browseQueuedPipeline();
+    }
+
+    private initializeClientFactories(): void {
+        TemplateServiceClientFactory.initialize(this.inputs.azureSession.credentials, this.inputs.githubPATToken);
+        ProvisioningServiceClientFactory.initialize(this.inputs.azureSession.credentials, this.inputs.githubPATToken);
     }
 }
 
