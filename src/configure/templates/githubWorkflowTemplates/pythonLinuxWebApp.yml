@@ -42,6 +42,7 @@ jobs:
       with:
         app-name: {{{ targetResource.resource.name }}}
         general-settings-json: '{"linuxFxVersion": "PYTHON|3.7"}' #'General configuration settings as Key Value pairs'
+        app-settings-json: '[{ "name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "true" }]'
 
     # deploy web app
     - uses: azure/webapps-deploy@v1
