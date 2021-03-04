@@ -10,7 +10,7 @@ on:
 name: Build and deploy Python app
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
 
@@ -32,7 +32,28 @@ jobs:
         source antenv/bin/activate
         pip install setuptools
         pip install -r {{{repositoryAnalysisApplicationSettings.settings.pythonRequirementsFilePath}}}
+    
+    # Upload artificats
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v2
+      with:
+        name: webapp
+        path: |
+          .
+          !venv/
 
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+
+    # Download artifacts
+    - name: Download artifact from build job
+      uses: actions/download-artifact@v2
+      with:
+        name: webapp
+        path: .  
+    
     # Azure login
     - uses: azure/login@v1
       with:
@@ -42,6 +63,7 @@ jobs:
       with:
         app-name: {{{ targetResource.resource.name }}}
         general-settings-json: '{"linuxFxVersion": "PYTHON|3.7"}' #'General configuration settings as Key Value pairs'
+        app-settings-json: '[{ "name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "true" }]'
 
     # deploy web app
     - uses: azure/webapps-deploy@v1
