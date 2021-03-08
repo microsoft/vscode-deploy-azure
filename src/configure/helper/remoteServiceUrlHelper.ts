@@ -16,6 +16,9 @@ export class RemoteServiceUrlHelper {
     public static repoAnalysisRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2127646";
     public static templateServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2133849";
     public static provisioningServiceRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2142042";
+    public static repoAnalysisStagingRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2156682";
+    public static templateServiceStagingRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2156978";
+    public static provisioningServiceStagingRedirectUrl: string = "https://go.microsoft.com/fwlink/?linkid=2156977";
 
     public static async getTemplateServiceDefinition(): Promise<IServiceUrlDefinition> {
         const deployment = process.env["DEPLOY_TO_AZURE_EXT_ENVIRONMENT"];
@@ -26,10 +29,19 @@ export class RemoteServiceUrlHelper {
             } as IServiceUrlDefinition;
         }
 
-        return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com", this.templateServiceRedirectUrl);
+        if (deployment != undefined && deployment === "test") {
+            return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/TemplateService/", this.templateServiceStagingRedirectUrl);
+        }
+
+        return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/TemplateService/", this.templateServiceRedirectUrl);
     }
 
     public static async getRepositoryAnalysisDefinition(): Promise<IServiceUrlDefinition> {
+        const deployment = process.env["DEPLOY_TO_AZURE_EXT_ENVIRONMENT"];
+        if (deployment != undefined && deployment === "test") {
+            return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/RepositoryAnalysis?api-version=5.2-preview.1", this.repoAnalysisStagingRedirectUrl);
+        }
+
         return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/RepositoryAnalysis?api-version=5.2-preview.1", this.repoAnalysisRedirectUrl);
     }
 
@@ -41,6 +53,11 @@ export class RemoteServiceUrlHelper {
                 serviceUrl: process.env["PROXY_URL"] + "repos/"
             } as IServiceUrlDefinition;
         }
+
+        if (deployment != undefined && deployment === "test") {
+            return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/PipelineProvisioningService/", this.provisioningServiceStagingRedirectUrl);
+        }
+
 
         return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/ProvisioningService/", this.provisioningServiceRedirectUrl);
     }
