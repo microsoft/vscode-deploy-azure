@@ -58,7 +58,6 @@ export class RemoteServiceUrlHelper {
             return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/PipelineProvisioningService/", this.provisioningServiceStagingRedirectUrl);
         }
 
-
         return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/ProvisioningService/", this.provisioningServiceRedirectUrl);
     }
 
