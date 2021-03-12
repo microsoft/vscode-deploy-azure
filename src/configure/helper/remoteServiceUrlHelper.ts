@@ -29,7 +29,7 @@ export class RemoteServiceUrlHelper {
             } as IServiceUrlDefinition;
         }
 
-        if (deployment != undefined && deployment === "test") {
+        if (deployment != undefined && deployment === "staging") {
             return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/TemplateService/", this.templateServiceStagingRedirectUrl);
         }
 
@@ -38,7 +38,7 @@ export class RemoteServiceUrlHelper {
 
     public static async getRepositoryAnalysisDefinition(): Promise<IServiceUrlDefinition> {
         const deployment = process.env["DEPLOY_TO_AZURE_EXT_ENVIRONMENT"];
-        if (deployment != undefined && deployment === "test") {
+        if (deployment != undefined && deployment === "staging") {
             return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/RepositoryAnalysis?api-version=5.2-preview.1", this.repoAnalysisStagingRedirectUrl);
         }
 
@@ -54,7 +54,7 @@ export class RemoteServiceUrlHelper {
             } as IServiceUrlDefinition;
         }
 
-        if (deployment != undefined && deployment === "test") {
+        if (deployment != undefined && deployment === "staging") {
             return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/PipelineProvisioningService/", this.provisioningServiceStagingRedirectUrl);
         }
 
