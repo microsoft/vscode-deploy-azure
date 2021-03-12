@@ -30,19 +30,19 @@ export class RemoteServiceUrlHelper {
         }
 
         if (deployment != undefined && deployment === "staging") {
-            return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/TemplateService/", this.templateServiceStagingRedirectUrl);
+            return this.getServiceurlDefinition(this.templateServiceStagingRedirectUrl);
         }
 
-        return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/TemplateService/", this.templateServiceRedirectUrl);
+        return this.getServiceurlDefinition(this.templateServiceRedirectUrl);
     }
 
     public static async getRepositoryAnalysisDefinition(): Promise<IServiceUrlDefinition> {
         const deployment = process.env["DEPLOY_TO_AZURE_EXT_ENVIRONMENT"];
         if (deployment != undefined && deployment === "staging") {
-            return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/RepositoryAnalysis?api-version=5.2-preview.1", this.repoAnalysisStagingRedirectUrl);
+            return this.getServiceurlDefinition(this.repoAnalysisStagingRedirectUrl);
         }
 
-        return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/RepositoryAnalysis?api-version=5.2-preview.1", this.repoAnalysisRedirectUrl);
+        return this.getServiceurlDefinition(this.repoAnalysisRedirectUrl);
     }
 
     public static async getProvisioningServiceDefinition(): Promise<IServiceUrlDefinition> {
@@ -55,16 +55,15 @@ export class RemoteServiceUrlHelper {
         }
 
         if (deployment != undefined && deployment === "staging") {
-            return this.getServiceurlDefinition("https://pepfcusc.portalext.visualstudio.com/_apis/PipelineProvisioningService/", this.provisioningServiceStagingRedirectUrl);
+            return this.getServiceurlDefinition(this.provisioningServiceStagingRedirectUrl);
         }
 
-        return this.getServiceurlDefinition("https://peprodscussu2.portalext.visualstudio.com/_apis/ProvisioningService/", this.provisioningServiceRedirectUrl);
+        return this.getServiceurlDefinition(this.provisioningServiceRedirectUrl);
     }
 
-    private static async getServiceurlDefinition(serviceUrl: string, redirectUrl: string) {
+    private static async getServiceurlDefinition(redirectUrl: string) {
         const result = <IServiceUrlDefinition>{
-            serviceFramework: ServiceFramework.Vssf,
-            serviceUrl: serviceUrl
+            serviceFramework: ServiceFramework.Vssf
         };
         try {
             const requestOptions = {
