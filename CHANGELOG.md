@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). Versionin
 
 ## 1.2.2
 ### Updated
+- Moved Simple web app to use remote provisioning.
+- Bug fixes
+
+## 1.2.2
+### Updated
 - Fixed azure pipeline support for Github repository.
 - Updated Github PAT permissions needed for workflow commit
 
