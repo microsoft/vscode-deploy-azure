@@ -3,6 +3,11 @@ All notable changes to the Deploy to Azure extension will be documented in this 
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/). Versioning follows an internal Azure DevOps format that is not compatible with SemVer.
 
+## 1.2.3
+### Updated
+- Moved Simple web app and python linux web app to use remote provisioning.
+- Bug fixes
+
 ## 1.2.2
 ### Updated
 - Fixed azure pipeline support for Github repository.
