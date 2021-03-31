@@ -117,7 +117,8 @@ class Orchestrator {
 
     private doesLanguageAndTargetSupportRemoteProvisioning(): boolean {
         return extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
-            (this.inputs.targetResource.resource.type === TargetResourceType.AKS || this.inputs.targetResource.resource.type === TargetResourceType.WebApp) && !!this.inputs.sourceRepository.remoteUrl;
+            (this.inputs.targetResource.resource.type === TargetResourceType.AKS || this.inputs.targetResource.resource.type === TargetResourceType.WebApp)
+            && !!this.inputs.sourceRepository.remoteUrl && this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE;
     }
 
     private async getAzureResource(targetType: TargetResourceType) {
