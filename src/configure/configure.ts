@@ -116,8 +116,10 @@ class Orchestrator {
     }
 
     private doesLanguageAndTargetSupportRemoteProvisioning(): boolean {
+        // This check is to enable for all remote repository webapps and aks flows to use remote provisioning service.
+        // Both template type as remote and remote url check is required because remote provisioning is only applicable for remote templates and there are scenario where template selected is remote but repo is not remote (in cases where resource is already selected)
         return extensionVariables.remoteConfigurerEnabled === true && this.inputs.sourceRepository.repositoryProvider === RepositoryProvider.Github &&
-            (this.inputs.targetResource.resource.type === TargetResourceType.AKS || this.inputs.targetResource.resource.type === TargetResourceType.WebApp) && !!this.inputs.sourceRepository.remoteUrl;
+            (this.inputs.targetResource.resource.type === TargetResourceType.AKS || this.inputs.targetResource.resource.type === TargetResourceType.WebApp) && !!this.inputs.sourceRepository.remoteUrl && this.inputs.pipelineConfiguration.template.templateType === TemplateType.REMOTE;
     }
 
     private async getAzureResource(targetType: TargetResourceType) {
