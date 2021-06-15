@@ -22,7 +22,7 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
   }
 
   public async createProvisioningConfiguration(provisioningConfiguration: ProvisioningConfiguration, githubOrg: string, repositoryId: string): Promise<ProvisioningConfiguration> {
-    const requestUrl = this.serviceDefinition.serviceUrl + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob;
+    const requestUrl = "https://pepfcusc.portalext.visualstudio.com/_apis/PipelineProvisioningService/" + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob;
 
     return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
       url: requestUrl,
@@ -37,7 +37,7 @@ export class ProvisioningServiceClient implements IProvisioningServiceClient {
   }
 
   public async getProvisioningConfiguration(jobId: string, githubOrg: string, repositoryId: string): Promise<ProvisioningConfiguration> {
-    const requestUrl = this.serviceDefinition.serviceUrl + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob + "/" + jobId;
+    const requestUrl = "https://pepfcusc.portalext.visualstudio.com/_apis/PipelineProvisioningService/" + githubOrg + "/" + repositoryId + "/" + this.pipelineProvisioningJob + "/" + jobId;
 
     return this.restClient.sendRequest(<UrlBasedRequestPrepareOptions>{
       url: requestUrl,
