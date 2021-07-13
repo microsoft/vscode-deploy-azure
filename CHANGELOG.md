@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/). Versionin
 
 ## 1.2.3
 ### Updated
+- Removed app id uris being set through the `identifierUris` field while creating the aad app
+
+## 1.2.3
+### Updated
 - Moved Simple web app and python linux web app to use remote provisioning.
 - Bug fixes
 
