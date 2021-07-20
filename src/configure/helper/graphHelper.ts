@@ -18,44 +18,44 @@ export class GraphHelper {
         var aadApp: AadApplication;
 
         return this.createAadApp(graphClient, aadAppName, tenantId)
-        .then((aadApplication) => {
-            aadApp = aadApplication;
-            return this.createSpn(graphClient, aadApp.appId, tenantId);
-        })
-        .then((spn) => {
-            aadApp.objectId = spn.objectId;
-            return this.createRoleAssignment(session.credentials, scope, aadApp.objectId);
-        })
-        .then(() => {
-            return aadApp;
-        })
-        .catch((error) => {
-            let errorMessage = "";
+            .then((aadApplication) => {
+                aadApp = aadApplication;
+                return this.createSpn(graphClient, aadApp.appId, tenantId);
+            })
+            .then((spn) => {
+                aadApp.objectId = spn.objectId;
+                return this.createRoleAssignment(session.credentials, scope, aadApp.objectId);
+            })
+            .then(() => {
+                return aadApp;
+            })
+            .catch((error) => {
+                let errorMessage = "";
 
-            if (typeof error == "string") {
-                errorMessage = error;
-            }
-            else {
-                errorMessage = !!error && error.message;
-                if (!errorMessage && error["odata.error"]) {
-                    if (typeof error["odata.error"]["message"] === "object") {
-                        errorMessage = error["odata.error"]["message"].value;
+                if (typeof error == "string") {
+                    errorMessage = error;
+                }
+                else {
+                    errorMessage = !!error && error.message;
+                    if (!errorMessage && error["odata.error"]) {
+                        if (typeof error["odata.error"]["message"] === "object") {
+                            errorMessage = error["odata.error"]["message"].value;
+                        }
+                        else {
+                            errorMessage = error["odata.error"]["message"];
+                        }
                     }
-                    else {
-                        errorMessage = error["odata.error"]["message"];
+                    if (!errorMessage) {
+                        try {
+                            errorMessage = JSON.stringify(error);
+                        }
+                        catch (err) {
+
+                        }
                     }
                 }
-                if (!errorMessage) {
-                    try {
-                        errorMessage = JSON.stringify(error);
-                    }
-                    catch (err) {
-
-                    }
-                }
-            }
-            throw new Error(errorMessage);
-        });
+                throw new Error(errorMessage);
+            });
     }
 
     public static generateAadApplicationName(accountName: string, projectName: string): string {
@@ -84,10 +84,10 @@ export class GraphHelper {
         return accountName + "-" + projectName + "-" + guid;
     }
 
-    public static async getAccessToken(session: AzureSession): Promise<string>{
-      const token = await this.getRefreshToken(session);
-      return token.accessToken;
-     }
+    public static async getAccessToken(session: AzureSession): Promise<string> {
+        const token = await this.getRefreshToken(session);
+        return token.accessToken;
+    }
 
     private static contributorRoleId = "b24988ac-6180-42a0-ab88-20f7382dd24c";
     private static retryTimeIntervalInSec = 2;
@@ -149,9 +149,6 @@ export class GraphHelper {
                 "availableToOtherTenants": false,
                 "displayName": name,
                 "homepage": "https://" + name,
-                "identifierUris": [
-                    "https://" + name
-                ],
                 "passwordCredentials": [
                     {
                         "startDate": startDate,
@@ -163,12 +160,12 @@ export class GraphHelper {
             deserializationMapper: null,
             serializationMapper: null
         })
-        .then((data) => {
-            return <AadApplication>{
-                appId: data.appId,
-                secret: secret
-            };
-        });
+            .then((data) => {
+                return <AadApplication>{
+                    appId: data.appId,
+                    secret: secret
+                };
+            });
     }
 
     private static async createSpn(graphClient: RestClient, appId: string, tenantId: string): Promise<any> {
