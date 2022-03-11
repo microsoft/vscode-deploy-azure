@@ -5,9 +5,9 @@
 [Get it on the Visual Studio Code Marketplace!](https://marketplace.visualstudio.com/items?itemName=ms-vscode-deploy-azure.azure-deploy)
 
 
-## 📢 Attention - Deprecation notice
+# 📢 ⛔ ATTENTION!! - Deprecation notice
 
-This extension is being deprecated and will not be supported. Please see details [here](https://github.com/microsoft/vscode-deploy-azure/issues/239)
+This extension is being deprecated and will not be supported. Please see details [here](https://github.com/microsoft/vscode-deploy-azure/issues/239).
 
 ----------------
 
