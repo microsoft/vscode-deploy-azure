@@ -4,6 +4,14 @@
 
 [Get it on the Visual Studio Code Marketplace!](https://marketplace.visualstudio.com/items?itemName=ms-vscode-deploy-azure.azure-deploy)
 
+
+# 📢 ⛔ ATTENTION!! - Deprecation notice
+
+This extension is being deprecated and will not be supported. Please see details [here](https://github.com/microsoft/vscode-deploy-azure/issues/239).
+
+----------------
+
+
 This Visual Studio Code extension helps you set up continuous build and deployment for Azure App Service or for Azure Kubernetes Service without leaving Visual Studio Code.
 
 ![Configure CI/CD Pipeline Demo](https://gist.githubusercontent.com/dikhakha/d86193a3195f50d6125ec5b1b033c373/raw/c8e5c1452b068fd01387fcf5627029f9ac8db424/configure-cicd-pipeline.gif)
