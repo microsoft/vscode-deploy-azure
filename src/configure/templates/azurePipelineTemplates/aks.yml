@@ -1,0 +1,192 @@
+# Kubernetes Service on Azure
+# Build an image and deploy it to Azure as Kubernetes service.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+- {{{ sourceRepository.branch }}}
+
+variables:
+  # Azure Resource Manager connection created during pipeline creation
+  azureSubscription: '{{{ assets.serviceConnectionId }}}'
+
+  # Kubernetes Service name
+  serviceName: '{{ #sanitizeString }} {{{ inputs.AKSresource.name }}} {{ /sanitizeString }}'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
+  containerRegistry: '{{{ inputs.containerRegistry }}}.azurecr.io'                                                   
+  kubernetesServiceConnection: '{{{ assets.kubernetesServiceConnection }}}'                                                   
+  namespace: '$(serviceName) {{#tinyguid}}{{/tinyguid}}'                                                                      
+  appName: '$(serviceName)_{{#tinyguid}}{{/tinyguid}}'                                                                         
+  dockerAuthSecretName: '$(serviceName)dockerauth'                                                                                     
+  imageName: "$(serviceName){{#tinyguid }}{{ /tinyguid }}"           
+ 
+  # Working Directory
+  workingDirectory: '{{{ workingDirectory }}}'
+
+  # Build Projects
+  dockerFile: "$(workingDirectory)/Dockerfile"                                         
+
+
+stages:
+- stage: Build
+  displayName: Build stage
+
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: $(vmImageName)
+
+    steps:
+
+    - task: Docker@1
+  displayName: 'Build an image'
+  inputs:
+    azureSubscriptionEndpoint: $(azureSubscription)
+    azureContainerRegistry: $(containerRegistry)
+    dockerFile: $(dockerFile)                                                       
+    imageName: $(imageName) 
+    useDefaultContext: false
+    buildContext: Application
+
+    - task: Docker@1
+  displayName: 'Push an image'
+  inputs:
+    azureSubscriptionEndpoint: $(azureSubscription)
+    azureContainerRegistry: $(containerRegistry)
+    command: 'Push an image'
+    imageName: $(imageName) 
+          
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+  condition: succeeded()
+
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy
+    environment: $(appName)
+    pool:
+      vmImage: $(vmImageName)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: Kubernetes@1
+              displayName: 'kubectl set imagePullSecrets'
+              inputs:
+                kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+                namespace: $(namespace)
+                command: get
+                arguments: service
+                azureSubscriptionEndpointForSecrets: $(azureSubscription)
+                azureContainerRegistry: $(containerRegistry)
+                secretName: $(dockerAuthSecretName)                                       
+                versionSpec: 1.10.12
+
+            - powershell: |
+                  '# $(appName)/deployment.yaml
+                  apiVersion: apps/v1
+                  kind: Deployment
+                  metadata:
+                    name: $(appName)
+                    labels:
+                      app: $(appName)
+                  spec:
+                    replicas: 2
+                    selector:
+                      matchLabels:
+                        app: $(appName)
+                    template:
+                      metadata:
+                        labels:
+                          app: $(appName)
+                      spec:
+                        containers:
+                          - name: $(appName)
+                            image:  $(imageName) 
+                            ports:
+                              - name: http
+                                containerPort: {{{ inputs.containerPort }}}
+                                protocol: TCP
+                  
+                  ---
+                  
+                  {{#if}} {{{inputs.AKSresource.properties.addonProfiles.httpapplicationrouting.enabled}}}      
+
+                  # $(appName)/service.yaml
+                  apiVersion: v1
+                  kind: Service
+                  metadata:
+                      name: $(appName)
+                      labels:
+                          app: $(appName)
+                  spec:
+                      type: ClusterIP
+                      ports:
+                          - port: {{{ inputs.containerPort }}}
+                            targetPort: {{{ inputs.containerPort }}}
+                            protocol: TCP
+                            name: http
+                      selector:
+                          app: $(appName)
+                  
+                  ---
+                  
+                  # $(appName)/ingress.yaml
+                  apiVersion: extensions/v1beta1
+                  kind: Ingress
+                  metadata:
+                      name: $(appName)
+                      labels:
+                          app: $(appName)
+                      annotations:
+                          kubernetes.io/ingress.class: addon-http-application-routing
+                  spec:
+                      rules:
+                          - host: $(namespace)-$(appName).{{{inputs.AKSresource.properties.fqdn}}}
+                            http:
+                              paths:
+                              - path: /
+                                backend:
+                                  serviceName: $(appName)
+                                  servicePort: {{{ inputs.containerPort }}}'
+
+                  {{#else}}
+
+                     # $(appName)/service.yaml
+                    apiVersion: v1
+                    kind: Service
+                    metadata:
+                      name: $(appName)
+                      labels:
+                        app: $(appName)
+                    spec:
+                      type: LoadBalancer
+                      ports:
+                        - port: {{{ inputs.containerPort }}}
+                          targetPort: http
+                          protocol: TCP
+                          name: http
+                      selector:
+                        app: $(appName)'
+
+                  {{/if}}    
+                      
+                      | 
+
+                  Set-Content $(Agent.TempDirectory)/manifest.yaml                                     
+                  displayName: 'Generate Kubernetes Manifest file'
+
+            - task: KubernetesManifest@0
+              displayName: 'Kubernetes Manifest Deploy'
+              inputs:
+                kubernetesServiceConnection: $(kubernetesServiceConnection)
+                namespace: '$(namespace)'
+                manifests: '$(Agent.TempDirectory)/manifest.yaml'
+                imagePullSecrets: '$(dockerAuthSecretName)'
+
