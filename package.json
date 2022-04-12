@@ -150,7 +150,7 @@
         "q": "1.5.1",
         "semver": "^7.3.2",
         "shelljs": "^0.3.0",
-        "simple-git": "^1.110.0",
+        "simple-git": "^3.5.0",
         "tweetsodium": "0.0.4",
         "typed-rest-client": "1.0.7",
         "underscore": "1.9.1",
